@@ -375,7 +375,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 			i++;
 			if (!ffxivDll->hooks()->GetOverlayRenderer()->GetUseDrawOverlayEveryone() && it->first != mSelfId)
 				continue;
-			else if (mCalculatedDamages.size() > 8 && mypos - 4 <= i && i < mypos + 4)
+			else if (mCalculatedDamages.size() > 8 && !(mypos - 4 <= i && i < mypos + 4))
 				continue;
 			OVERLAY_RENDER_TABLE_ROW row;
 			TEMPDMG &max = mDpsInfo[it->first].maxDamage;
@@ -637,7 +637,8 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 			} else if (msg->Combat.Info1.c1 == 6) {
 				// death
 				int who = msg->Combat.Info1.c5;
-				mDpsInfo[msg->actor].deaths++;
+				if(GetActorType(msg->actor) == ACTOR_TYPE_PC)
+					mDpsInfo[msg->actor].deaths++;
 				/*
 				sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
 				ffxivDll->pipe()->sendInfo(tss);
