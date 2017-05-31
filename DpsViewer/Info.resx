@@ -4664,13 +4664,29 @@
 폰트 크기: /o:s [크기]
 폰트 이름: /o:f [폰트 이름]
 글자 굵기: /o:b
-위치: /o:p [x:0~1] [y:0~1]
+DPS 위치: /o:p1 [x:0~1] [y:0~1]
+DoT 위치: /o:p2 [x:0~1] [y:0~1]
 글자 두께: /o:w [0~3]
 다른 유저 이름 숨기기: /o:h
 캡쳐 경로 지정: /o:cp [경로]
 캡쳐 형식 지정: /o:cf [bmp/jpg/png]
-
+배경 투명도: /t [0~255]
 </value>
+  </data>
+  <data name="label2.Text" xml:space="preserve">
+    <value>Show/Hide: /o
+Reset meter: /o:r
+Show only myself: /o:a
+Font size: /o:s [size]
+Font name: /o:f [폰트 이름]
+Font weight(bold): /o:b
+DPS meter position: /o:p1 [x:0~1] [y:0~1]
+DoT meter position: /o:p2 [x:0~1] [y:0~1]
+Font border: /o:w [0~3]
+Hide other users' names: /o:h
+Capture path: /o:cp [path]
+Capture format: /o:cf [bmp/jpg/png]
+Background transparency: /t [0~255]</value>
   </data>
   <metadata name="$this.Locked" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>

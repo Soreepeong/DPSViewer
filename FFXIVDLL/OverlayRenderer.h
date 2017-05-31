@@ -8,6 +8,7 @@
 struct OVERLAY_RENDER_TABLE_ROW {
 	std::wstring icon;
 	std::wstring cols[12];
+	int align[12];
 	float barSize;
 	int count;
 };
@@ -52,6 +53,7 @@ private:
 	void DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9 tex);
 	void DrawBox(int x, int y, int w, int h, D3DCOLOR Color);
 	void DrawText(int x, int y, TCHAR *text, D3DCOLOR Color);
+	void DrawText(int x, int y, int width, TCHAR *text, D3DCOLOR Color, int align);
 	void RenderOverlay();
 	void RenderDpsBox(D3DVIEWPORT9 &prt);
 	void RenderDotBox(D3DVIEWPORT9 &prt);

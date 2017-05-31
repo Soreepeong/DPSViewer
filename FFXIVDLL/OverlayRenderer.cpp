@@ -271,6 +271,18 @@ void OverlayRenderer::DrawText(int x, int y, TCHAR *text, D3DCOLOR Color) {
 	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP, D3DCOLOR_ARGB(255, 255, 255, 255));
 }
 
+void OverlayRenderer::DrawText(int x, int y, int width, TCHAR *text, D3DCOLOR Color, int align) {
+	if(mConfig.border)
+		for (int i = -mConfig.border; i <= mConfig.border; i++)
+			for (int j = -mConfig.border; j <= mConfig.border; j++)
+				if (i != 0 && j != 0) {
+					RECT rc4 = { x + i, y + j, x + i + width, 10000 };
+					mFont->DrawTextW(NULL, text, -1, &rc4, DT_NOCLIP | align, (~Color & 0xFFFFFF) | 0xFF000000);
+				}
+	RECT rc = { x, y , x + width, 10000 };
+	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP | align, D3DCOLOR_ARGB(255, 255, 255, 255));
+}
+
 void OverlayRenderer::DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9 tex) {
 	D3DSURFACE_DESC desc;
 	tex->GetLevelDesc(0, &desc);
@@ -297,27 +309,30 @@ void OverlayRenderer::RenderDpsBox(D3DVIEWPORT9 &prt) {
 	int boxBaseX = rc2.left - 4;
 	int boxBaseY = rc2.bottom + 4;
 	int cols[13] = { 0 };
+	int colLeft[13] = { 0 };
 	int row = 0;
+	int horizontalSpacing = 8;
+	int verticalSpacing = 8;
 	for (auto it = mTableRows.begin(); it != mTableRows.end(); ++it) {
 		for (int i = 0; i < it->count; i++) {
 			mFont->DrawTextW(NULL, (TCHAR*)it->cols[i].c_str(), -1, &lineHeightTset, DT_CALCRECT, D3DCOLOR_ARGB(255, 255, 255, 255));
-			cols[i + 1] = max(cols[i + 1], lineHeightTset.right - lineHeightTset.left);
+			cols[i] = max(cols[i], lineHeightTset.right - lineHeightTset.left + horizontalSpacing);
 		}
 	}
 	for (int i = 1; i < sizeof(cols) / sizeof(int); i++)
-		cols[i] += cols[i - 1] + 8;
+		colLeft[i] = colLeft[i - 1] + cols[i - 1];
 	mSprite->Begin(16);
 	lineHeight += 8;
-	int tableWidth = lineHeight + cols[8];
+	int tableWidth = lineHeight + colLeft[10];
 	DrawBox(boxBaseX, boxBaseY, tableWidth, lineHeight * mTableRows.size(), mConfig.backgroundTransparency << 24);
 	for (auto it = mTableRows.begin(); it != mTableRows.end(); ++it, ++row) {
 		int bw = (int)(tableWidth * it->barSize);
 		if (bw > 0)
 			DrawBox(boxBaseX, boxBaseY + row * lineHeight, bw, lineHeight, (mClassColors[it->icon] & 0xFFFFFF) | 0x80000000);
 		if (mClassIcons.find(it->icon) != mClassIcons.end())
-			DrawTexture(boxBaseX + 4, boxBaseY + 4 + row * lineHeight, lineHeight - 8, lineHeight - 8, mClassIcons[it->icon]);
+			DrawTexture(boxBaseX + horizontalSpacing/2, boxBaseY + verticalSpacing /2 + row * lineHeight, lineHeight - verticalSpacing, lineHeight - verticalSpacing, mClassIcons[it->icon]);
 		for (int i = 0; i < it->count; i++) {
-			DrawText(boxBaseX + lineHeight + cols[i], boxBaseY + row * lineHeight + 4, (TCHAR*)it->cols[i].c_str(), D3DCOLOR_ARGB(255, 255, 255, 255));
+			DrawText(boxBaseX + lineHeight + colLeft[i] + horizontalSpacing/2, boxBaseY + row * lineHeight + verticalSpacing/2, cols[i] - horizontalSpacing, (TCHAR*)it->cols[i].c_str(), D3DCOLOR_ARGB(255, 255, 255, 255), it->align[i]);
 		}
 	}
 	mSprite->End();
@@ -370,7 +385,6 @@ void OverlayRenderer::DrawOverlay() {
 }
 void OverlayRenderer::CheckCapture() {
 	if (mDoCapture) {
-		D3DVIEWPORT9 prt;
 		HRESULT hr;
 		IDirect3DSurface9 *renderTarget, *old = nullptr;
 		hr = pDevice->GetRenderTarget(0, &renderTarget);

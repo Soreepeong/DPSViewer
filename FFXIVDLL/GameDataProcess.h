@@ -226,7 +226,7 @@ private:
 	static TCHAR* getDoTName(int skill);
 	int getDoTDuration(int skill);
 
-	PVOID *pTargetMap;
+	PVOID pTargetMap;
 	PVOID **pActorMap;
 	HWND ffxivhWnd;
 
@@ -241,8 +241,10 @@ private:
 		PER_USER_DMG totalDamage;
 		TEMPDMG maxDamage;
 		int deaths;
+		int dotHits;
 		int totalHits;
 		int critHits;
+		int missHits;
 	};
 	std::map<int, DPS_METER_TEMP_INFO> mDpsInfo;
 

@@ -53,10 +53,13 @@ GameDataProcess::GameDataProcess(FILE *f, HANDLE unloadEvent) :
 	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"#";
 	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Name";
 	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"DPS";
+	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Total";
 	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Crit";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Hits";
+	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"C/M/H";
 	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Max";
 	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Death";
+	for (int i = 0; i < mTableHeaderDef.count; i++) mTableHeaderDef.align[i] = DT_CENTER;
+	mTableHeaderDef.align[1] = DT_LEFT;
 }
 
 GameDataProcess::~GameDataProcess() {
@@ -195,7 +198,7 @@ inline int GameDataProcess::GetActorType(int id) {
 }
 
 inline int GameDataProcess::GetTargetId(int type) {
-	char *c = (char*)(pTargetMap + type);
+	char *c = (char*)((int)pTargetMap + type);
 	if (c == 0)
 		return NULL_ACTOR;
 	int ptr = *(int*)c;
@@ -321,9 +324,12 @@ void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 				mDpsInfo[dmg.source].maxDamage = dmg;
 			if (dmg.isCrit)
 				mDpsInfo[dmg.source].critHits++;
+			if (dmg.dmg == 0)
+				mDpsInfo[dmg.source].missHits++;
 			mDpsInfo[dmg.source].totalHits++;
 		} else {
 			mDpsInfo[dmg.source].totalDamage.ind += dmg.dmg;
+			mDpsInfo[dmg.source].dotHits++;
 			dmg.isCrit = 0;
 		}
 	}
@@ -385,18 +391,23 @@ void GameDataProcess::UpdateOverlayMessage() {
 				char *name = GetActorName(it->first);
 				MultiByteToWideChar(CP_UTF8, 0, name, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 			}
-			row.barSize = curDps / maxDps;
 			row.cols[row.count++] = tmp;
 			swprintf(tmp, L"%.2f", curDps);
-			row.cols[row.count++] = tmp; // DPS
+			row.cols[row.count++] = tmp;
+			swprintf(tmp, L"%d", it->second);
+			row.cols[row.count++] = tmp;
 			swprintf(tmp, L"%.2f%%", 100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits);
 			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].totalHits);
+			swprintf(tmp, L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 			row.cols[row.count++] = tmp;
 			swprintf(tmp, L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
 			row.cols[row.count++] = tmp;
 			swprintf(tmp, L"%d", mDpsInfo[it->first].deaths);
 			row.cols[row.count++] = tmp;
+
+			row.barSize = curDps / maxDps;
+			for (int i = 0; i < row.count; i++) row.align[i] = DT_CENTER;
+			row.align[1] = DT_LEFT;
 			table.push_back(row);
 		}
 		ffxivDll->hooks()->GetOverlayRenderer()->SetTable(table);
@@ -416,19 +427,24 @@ void GameDataProcess::UpdateOverlayMessage() {
 	pos = swprintf(res, L"DoTs\n");
 	int currentTarget = GetTargetId(pTarget.current);
 	int focusTarget = GetTargetId(pTarget.focus);
+	int hoverTarget = GetTargetId(pTarget.hover);
 	std::sort(buff_sort.begin(), buff_sort.end(), [&](const TEMPBUFF & a, const TEMPBUFF & b) {
 		if (a.target == focusTarget ^ b.target == focusTarget)
 			return (a.target == focusTarget ? 1 : 0) > (b.target == focusTarget ? 1 : 0);
 		if (a.target == currentTarget ^ b.target == currentTarget)
 			return (a.target == currentTarget ? 1 : 0) > (b.target == currentTarget ? 1 : 0);
+		if (a.target == hoverTarget ^ b.target == hoverTarget)
+			return (a.target == hoverTarget ? 1 : 0) > (b.target == hoverTarget ? 1 : 0);
 		return a.expires < b.expires;
 	});
 	int i = 0;
-	for (auto it = buff_sort.begin(); it != buff_sort.end() && i < 6; ++it, i++) {
+	for (auto it = buff_sort.begin(); it != buff_sort.end(); ++it, i++) {
+		if (i > 9 && it->target != currentTarget && it->target != hoverTarget && it->target != focusTarget)
+			break;
 		MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 		pos += swprintf(res + pos, L"%s[%s] %s: %.1fs%s\n",
 			currentTarget == it->target ? L"[T] " :
-			GetTargetId(pTarget.hover) == it->target ? L"[M] " :
+			hoverTarget == it->target ? L"[M] " :
 			focusTarget == it->target ? L"[F] " : L"",
 			tmp, getDoTName(it->buffid),
 			(it->expires - timestamp) / 1000.f,
@@ -473,6 +489,13 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			break;
 		}
 		switch(info->attack[i].swingtype){
+		case 1:
+		case 10:
+			if (info->attack[i].damage == 0) {
+				dmg.dmg = 0;
+				AddDamageInfo(dmg, true);
+			}
+			break;
 		case 5:
 			dmg.isCrit = true;
 		case 3:
@@ -533,7 +556,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		}
 		/*
 		char tss[512];
-		sprintf(tss, "cmsg    => %d/%d/%d/%d/%d/%d",
+		sprintf(tss, "/e    => %d/%d/%d/%d/%d/%d",
 			(int)info->attack[i].swingtype,
 			(int)info->attack[i].damagetype,
 			(int)info->attack[i].elementtype,
@@ -541,7 +564,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			(int)info->attack[i].damage,
 			(int)info->attack[i].data1_right
 			);
-		ffxivDll->pipe()->sendInfo(tss);
+		ffxivDll->pipe()->AddChat(tss);
 		//*/
 	}
 }
@@ -676,18 +699,14 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 			}
 			break;
 		case GAME_MESSAGE::C2_UseAbility:
-			/*
-			sprintf(tss, "cmsgAbility %s / %d / %d", getActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
-			ffxivDll->pipe()->sendInfo(tss);
-			//*/
+			// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
+			// ffxivDll->pipe()->AddChat(tss);
 			
 			ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
 			break;
 		case GAME_MESSAGE::C2_UseAoEAbility:
-			/*
-			sprintf(tss, "cmsgAoE %s / %d", getActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
-			ffxivDll->pipe()->sendInfo(tss);
-			//*/
+			// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
+			// ffxivDll->pipe()->AddChat(tss);
 
 			if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
 				int baseActor = NULL_ACTOR;
