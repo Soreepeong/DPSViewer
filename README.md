@@ -1,5 +1,10 @@
 ﻿# DPSViewer
 
+![DPS Viewer](https://raw.githubusercontent.com/soreepeong/DPSViewer/master/readme-images/window.png)
+![DPS Meter](https://raw.githubusercontent.com/soreepeong/DPSViewer/master/readme-images/meter-dps.png)
+![DoT Meter](https://raw.githubusercontent.com/soreepeong/DPSViewer/master/readme-images/meter-dot.png)
+
+
 DPSViewer is a lightweight DPS meter for FFXIV (v3.57 for Global version and v3.3 for Korean version).
 
   - See the DPS of everyone around you
