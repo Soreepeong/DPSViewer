@@ -65,8 +65,6 @@ OverlayRenderer::OverlayRenderer(IDirect3DDevice9* device) :
 		fclose(f);
 	}
 
-	EnumResourceNames(ffxivDll->instance(), MAKEINTRESOURCE(RT_RCDATA), OverlayRenderer::EnumResNameProcExternal, (LONG_PTR) this);
-
 	HRSRC hResource = FindResource(ffxivDll->instance(), MAKEINTRESOURCE(IDR_CLASS_COLORDEF), L"TEXT");
 	if (hResource) {
 		HGLOBAL hLoadedResource = LoadResource(ffxivDll->instance(), hResource);
@@ -101,6 +99,10 @@ OverlayRenderer::~OverlayRenderer() {
 	if (mFont != nullptr) {
 		mFont->Release();
 		mFont = nullptr;
+	}
+	if (mSprite != nullptr) {
+		mSprite->Release();
+		mSprite = nullptr;
 	}
 	for (auto it = mClassIcons.begin(); it != mClassIcons.end(); it = mClassIcons.erase(it))
 		it->second->Release();
@@ -177,6 +179,10 @@ void OverlayRenderer::ReloadResources() {
 		mSprite->Release();
 		mSprite = nullptr;
 	}
+	for (auto it = mClassIcons.begin(); it != mClassIcons.end(); it = mClassIcons.erase(it))
+		it->second->Release();
+
+	EnumResourceNames(ffxivDll->instance(), MAKEINTRESOURCE(RT_RCDATA), OverlayRenderer::EnumResNameProcExternal, (LONG_PTR) this);
 	D3DXCreateSprite(pDevice, &mSprite);
 	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, mConfig.fontName, &mFont);
 }

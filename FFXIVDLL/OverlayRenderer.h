@@ -8,9 +8,9 @@
 struct OVERLAY_RENDER_TABLE_ROW {
 	std::wstring icon;
 	std::wstring cols[12];
-	int align[12];
-	float barSize;
-	int count;
+	int align[12] = { 0 };
+	float barSize = 0;
+	int count = 0;
 };
 
 class OverlayRenderer {
