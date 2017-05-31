@@ -1,0 +1,257 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{80f0a630-fd87-4ba2-b4fb-9462d62b1eca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources\class_img">
+      <UniqueIdentifier>{1bf7c977-93f6-424d-b99e-254fc2fbfb0a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NtHookEngine\distorm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dx9hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dx9table.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MinHook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FFXIVDLL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExternalPipe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Hooks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameDataProcess.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MedianCalculator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Hooks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FFXIVDLL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExternalPipe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameDataProcess.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OverlayRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MedianCalculator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="zlib.lib" />
+    <Library Include="libMinHook-x86-v140-mt.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="img\acn.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\alc.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\arc.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\arm.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\ast.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\bishop.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\blm.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\brd.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\bsm.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\btn.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\chocobo.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\cnj.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\crp.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\cul.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\drg.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\drk.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\emerald.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\empty.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\eos.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\error.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\fsh.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\garuda.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\gld.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\gsm.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\ifrit.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\limit break.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\lnc.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\ltw.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\mch.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\min.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\mnk.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\mrd.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\nin.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\pgl.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\pld.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\pug.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\rog.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\rook.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\sch.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\selene.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\smn.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\thm.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\titan.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\topaz.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\war.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\whm.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+    <Image Include="img\wvr.png">
+      <Filter>Resources\class_img</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="rcdata1.bin">
+      <Filter>Resources</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FFXIVDLL.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ColorDef.txt">
+      <Filter>Resources</Filter>
+    </Text>
+  </ItemGroup>
+</Project>
