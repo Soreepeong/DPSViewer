@@ -38,8 +38,7 @@ namespace DpsViewer {
 		const uint WM_KEYUP = 0x101;
 
 		public static string version;
-
-		static uint craft_base_addr;
+		
 		static IntPtr ffxivhWnd;
 		static Process process;
 
@@ -143,12 +142,10 @@ namespace DpsViewer {
 					info.WriteLine(0x1F20);
 					info.WriteLine(0x33B420 - 0x1A0000);
 					info.WriteLine(0xF19DD0 - 0x400000);
-					craft_base_addr = 0x225dc44 - 0x1140000 - 12;
 				} else {
 					info.WriteLine(0x2910); // ProcessWindowMessage
 					info.WriteLine(0x9E4650 - 0x840000); // processNewLine
 					info.WriteLine(0x1E97EB0 - 0x12F0000); // onNewChatItem
-					craft_base_addr = 0x2406324 - 0x1240000 - 12;
 				}
 				info.WriteLine(ffxivhWnd.ToInt32());
 				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt32());

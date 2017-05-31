@@ -4678,7 +4678,7 @@ DoT 위치: /o:p2 [x:0~1] [y:0~1]
 Reset meter: /o:r
 Show only myself: /o:a
 Font size: /o:s [size]
-Font name: /o:f [폰트 이름]
+Font name: /o:f [fontname]
 Font weight(bold): /o:b
 DPS meter position: /o:p1 [x:0~1] [y:0~1]
 DoT meter position: /o:p2 [x:0~1] [y:0~1]

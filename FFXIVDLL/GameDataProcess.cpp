@@ -351,8 +351,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 		(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
 	if (!mDpsInfo.empty()) {
 		uint64_t dur = mLastAttack.timestamp - mLastIdleTime;
-		pos += swprintf(res + pos, L" / %02d:%02d.%03d",
-			(int)((dur / 60000) % 60), (int)((dur/1000) % 60), (int) (dur % 1000));
+		int total;
+		for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
+			total += it->second;
+		pos += swprintf(res + pos, L" / %02d:%02d.%03d / %.2f (%d)",
+			(int)((dur / 60000) % 60), (int)((dur/1000) % 60), (int) (dur % 1000),
+			total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
 	}
 	ffxivDll->hooks()->GetOverlayRenderer()->SetText(res);
 
@@ -371,12 +375,15 @@ void GameDataProcess::UpdateOverlayMessage() {
 		std::vector<OVERLAY_RENDER_TABLE_ROW> table;
 		table.push_back(mTableHeaderDef);
 		float maxDps = (float)(mCalculatedDamages.begin()->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
+		int displayed = 0;
 		for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
 			i++;
 			if (!ffxivDll->hooks()->GetOverlayRenderer()->GetUseDrawOverlayEveryone() && it->first != mSelfId)
 				continue;
-			else if (mCalculatedDamages.size() > 8 && !(mypos - 4 <= i && i < mypos + 4))
+			else if (mCalculatedDamages.size() > 8 && !(mypos - 4 <= i))
 				continue;
+			else if (++displayed > 8)
+				break;
 			OVERLAY_RENDER_TABLE_ROW row;
 			TEMPDMG &max = mDpsInfo[it->first].maxDamage;
 			float curDps = (float)(it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
