@@ -25,6 +25,21 @@
     <ClCompile Include="Tools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OverlayRenderer_Control.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DPSWindowController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DOTWindowController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="zlib.h">
@@ -71,6 +86,18 @@
     </ClInclude>
     <ClInclude Include="MinHook.h">
       <Filter>Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="DPSWindowController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DOTWindowController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -225,9 +252,6 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Resources">
-      <UniqueIdentifier>{11097885-5fef-460a-a588-6d055c930814}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Libraries">
       <UniqueIdentifier>{89b9ad6a-064f-4c0a-b177-61d8ff8430dd}</UniqueIdentifier>
     </Filter>
@@ -236,6 +260,9 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{73af3980-37fb-4ca9-a8be-32f96aa962f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{11097885-5fef-460a-a588-6d055c930814}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

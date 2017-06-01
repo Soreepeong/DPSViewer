@@ -24,6 +24,9 @@ namespace DpsViewer {
 		protected static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 		[DllImport("user32.dll")]
 		protected static extern bool IsWindowVisible(IntPtr hWnd);
+		[DllImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		static extern bool SetForegroundWindow(IntPtr hWnd);
 
 		[DllImport("user32.dll", CharSet = CharSet.Auto)]
 		static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, int wParam, int lParam);
@@ -164,6 +167,9 @@ namespace DpsViewer {
 				zlib = InjectDLL(injectedProcess = MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + "zlib1.dll");
 				injectedDll = InjectDLL(injectedProcess = MemoryHandler.Instance.ProcessHandle,
 					AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
+
+				SetForegroundWindow(ffxivhWnd);
+				ExitProcess(0);
 
 				pipeChatWriter = new NamedPipeClientStream(".", "ffxivchatinject_" + process.Id, PipeDirection.InOut);
 				pipeChatReader = new NamedPipeClientStream(".", "ffxivchatstream_" + process.Id, PipeDirection.InOut);

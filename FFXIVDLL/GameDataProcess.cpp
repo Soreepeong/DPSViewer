@@ -1,18 +1,23 @@
+#define _CRT_NON_CONFORMING_SWPRINTFS
+
 #include "stdafx.h"
-#include "GameDataProcess.h"
 #include<deque>
 #include<vector>
 #include<map>
 #include <psapi.h>
+#include "resource.h"
 
-GameDataProcess::GameDataProcess(FILE *f, HANDLE unloadEvent) :
+GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
+	dll(dll), 
 	hUnloadEvent(unloadEvent),
 	mSent(1048576 * 8),
 	mRecv(1048576 * 8),
-	mLastIdleTime(0) {
+	mLastIdleTime(0),
+	wDPS(*new OverlayRenderer::Control()),
+	wDOT(*new OverlayRenderer::Control()),
+	wConfig(*new OverlayRenderer::Control()) {
 	mLastAttack.dmg = 0;
 	mLastAttack.timestamp = 0;
-	fwscanf(f, L"%d", &ffxivhWnd);
 	fwscanf(f, L"%d%d%d%d%d%d",
 		&pActorMap, &pActor.id, &pActor.name, &pActor.owner, &pActor.type, &pActor.job);
 	fwscanf(f, L"%d%d%d%d",
@@ -31,8 +36,21 @@ GameDataProcess::GameDataProcess(FILE *f, HANDLE unloadEvent) :
 	ExpandEnvironmentStrings(L"%APPDATA%", path, MAX_PATH);
 	wsprintf(path + wcslen(path), L"\\ffxiv_overlay_cache_%d.txt", h);
 
+	// default colors
+	wDPS.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
+	wDPS.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
+	wDPS.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
+	wDPS.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
+	wDOT.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
+	wDOT.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
+	wDOT.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
+	wDOT.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
+
 	FILE *f2 = _wfopen(path, L"r");
 	if (f2 != nullptr) {
+		mDPSController = new DPSWindowController(wDPS, f2);
+		mDOTController = new DOTWindowController(wDOT, f2);
+		mConfigController = new ConfigWindowController(dll, wConfig, f2);
 		mContagionApplyDelayEstimation.load(f2);
 		int cnt = 0;
 		fscanf(f2, "%d", &cnt);
@@ -45,21 +63,72 @@ GameDataProcess::GameDataProcess(FILE *f, HANDLE unloadEvent) :
 			mDotApplyDelayEstimation[buff].load(f2);
 		}
 		fclose(f2);
+	} else {
+		mDPSController = new DPSWindowController(wDPS, nullptr);
+		mDOTController = new DOTWindowController(wDOT, nullptr);
+		mConfigController = new ConfigWindowController(dll, wConfig, nullptr);
 	}
 
-	mTableHeaderDef.icon = L"";
-	mTableHeaderDef.count = 0;
-	//# Name DPS Def Indef Crit Hits Max
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"#";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Name";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"DPS";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Total";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Crit";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"C/M/H";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Max";
-	mTableHeaderDef.cols[mTableHeaderDef.count++] = L"Death";
-	for (int i = 0; i < mTableHeaderDef.count; i++) mTableHeaderDef.align[i] = DT_CENTER;
-	mTableHeaderDef.align[1] = DT_LEFT;
+
+	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_CLASS_COLORDEF), L"TEXT");
+	if (hResource) {
+		HGLOBAL hLoadedResource = LoadResource(dll->instance(), hResource);
+		if (hLoadedResource) {
+			LPVOID pLockedResource = LockResource(hLoadedResource);
+			if (pLockedResource) {
+				DWORD dwResourceSize = SizeofResource(dll->instance(), hResource);
+				if (0 != dwResourceSize) {
+					struct membuf : std::streambuf {
+						membuf(char* base, std::ptrdiff_t n) {
+							this->setg(base, base, base + n);
+						}
+					} sbuf((char*)pLockedResource, dwResourceSize);
+					std::istream in(&sbuf);
+					std::string job;
+					TCHAR buf[64];
+					int r, g, b;
+					while (in >> job >> r >> g >> b) {
+						std::transform(job.begin(), job.end(), job.begin(), ::toupper);
+						MultiByteToWideChar(CP_UTF8, 0, job.c_str(), -1, buf, sizeof(buf) / sizeof(TCHAR));
+						mClassColors[buf] = D3DCOLOR_XRGB(r, g, b);
+					}
+				}
+			}
+		}
+	}
+
+	wDPS.addChild(new OverlayRenderer::Control(L"DPS Table Title", CONTROL_TEXT_STRING, DT_LEFT));
+
+	OverlayRenderer::Control *mTable = new OverlayRenderer::Control(), *mTableHeaderDef = new OverlayRenderer::Control();
+	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_RESNAME, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"#", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Name", CONTROL_TEXT_STRING, DT_LEFT));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"DPS", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Total", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Crit", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"C/M/H", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Max", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Death", CONTROL_TEXT_STRING, DT_CENTER));
+	mTable->layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
+	mTable->addChild(mTableHeaderDef);
+	wDPS.addChild(mTable);
+
+	wDPS.layoutDirection = LAYOUT_DIRECTION_VERTICAL;
+	wDPS.relativePosition = 1;
+	wDOT.relativePosition = 1;
+	wDPS.callback = mDPSController;
+	wDOT.callback = mDOTController;
+	wConfig.callback = mConfigController;
+
+	mTableHeaderDef = new OverlayRenderer::Control();
+	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_RESNAME, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Name", CONTROL_TEXT_STRING, DT_LEFT));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Skill", CONTROL_TEXT_STRING, DT_CENTER));
+	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Time", CONTROL_TEXT_STRING, DT_RIGHT));
+	wDOT.layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
+	wDOT.addChild(mTableHeaderDef);
 }
 
 GameDataProcess::~GameDataProcess() {
@@ -77,6 +146,9 @@ GameDataProcess::~GameDataProcess() {
 
 	FILE *f = _wfopen(path, L"w");
 	if (f != nullptr) {
+		mDPSController->save(f);
+		mDOTController->save(f);
+		mConfigController->save(f);
 		mContagionApplyDelayEstimation.save(f);
 		int cnt = 0;
 		fprintf(f, "\n%d", mDotApplyDelayEstimation.size());
@@ -86,6 +158,7 @@ GameDataProcess::~GameDataProcess() {
 		}
 		fclose(f);
 	}
+	delete mDPSController;
 }
 
 int GameDataProcess::getDoTPotency(int dot) {
@@ -335,138 +408,173 @@ void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 	}
 }
 
-
 void GameDataProcess::UpdateOverlayMessage() {
 	uint64_t timestamp = mServerTimestamp - mLocalTimestamp + Tools::GetLocalTimestamp();
 	TCHAR res[32768];
-	CalculateDps(timestamp);
-	int pos = 0;
 	TCHAR tmp[512];
-	SYSTEMTIME s1, s2;
-	Tools::MillisToLocalTime(timestamp, &s1);
-	Tools::MillisToSystemTime(timestamp*EORZEA_CONSTANT, &s2);
-	pos += swprintf(res + pos, L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d",
-		ffxivDll->hooks()->GetOverlayRenderer()->GetFPS(),
-		(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
-		(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
-	if (!mDpsInfo.empty()) {
-		uint64_t dur = mLastAttack.timestamp - mLastIdleTime;
-		int total;
-		for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
-			total += it->second;
-		pos += swprintf(res + pos, L" / %02d:%02d.%03d / %.2f (%d)",
-			(int)((dur / 60000) % 60), (int)((dur/1000) % 60), (int) (dur % 1000),
-			total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
-	}
-	ffxivDll->hooks()->GetOverlayRenderer()->SetText(res);
+	int pos = 0;
+	if (dll->hooks()->GetOverlayRenderer() == nullptr)
+		return;
+	{
+		CalculateDps(timestamp);
 
-	if (!mDpsInfo.empty()) {
-		int i = 0;
-		int disp = 0;
-		bool dispme = false;
-		int mypos = 0;
-		if (mCalculatedDamages.size() > 8) {
-			for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it, mypos++)
-				if (it->first == mSelfId)
-					break;
-			mypos = max(4, mypos);
-			mypos = min(mCalculatedDamages.size() - 4, mypos);
-		}
-		std::vector<OVERLAY_RENDER_TABLE_ROW> table;
-		table.push_back(mTableHeaderDef);
-		float maxDps = (float)(mCalculatedDamages.begin()->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
-		int displayed = 0;
-		for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
-			i++;
-			if (!ffxivDll->hooks()->GetOverlayRenderer()->GetUseDrawOverlayEveryone() && it->first != mSelfId)
-				continue;
-			else if (mCalculatedDamages.size() > 8 && !(mypos - 4 <= i))
-				continue;
-			else if (++displayed > 8)
-				break;
-			OVERLAY_RENDER_TABLE_ROW row;
-			TEMPDMG &max = mDpsInfo[it->first].maxDamage;
-			float curDps = (float)(it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
-
-			row.icon = GetActorJobString(it->first);
-			row.count = 0;
-			swprintf(tmp, L"%d", i);
-			row.cols[row.count++] = tmp;
-			if (ffxivDll->hooks()->GetOverlayRenderer()->GetHideOtherUser() && it->first != mSelfId)
-				wcscpy(tmp, L"...");
-			else {
-				char *name = GetActorName(it->first);
-				MultiByteToWideChar(CP_UTF8, 0, name, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+		std::lock_guard<std::recursive_mutex> guard(dll->hooks()->GetOverlayRenderer()->GetRoot()->getLock());
+		{
+			SYSTEMTIME s1, s2;
+			Tools::MillisToLocalTime(timestamp, &s1);
+			Tools::MillisToSystemTime(timestamp*EORZEA_CONSTANT, &s2);
+			pos += swprintf(res + pos, L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d",
+				dll->hooks()->GetOverlayRenderer()->GetFPS(),
+				(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
+				(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
+			if (!mDpsInfo.empty()) {
+				uint64_t dur = mLastAttack.timestamp - mLastIdleTime;
+				int total = 0;
+				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
+					total += it->second;
+				pos += swprintf(res + pos, L" / %02d:%02d.%03d / %.2f (%d)",
+					(int)((dur / 60000) % 60), (int)((dur / 1000) % 60), (int)(dur % 1000),
+					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
 			}
-			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%.2f", curDps);
-			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%d", it->second);
-			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%.2f%%", 100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits);
-			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
-			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
-			row.cols[row.count++] = tmp;
-			swprintf(tmp, L"%d", mDpsInfo[it->first].deaths);
-			row.cols[row.count++] = tmp;
+			wDPS.getChild(0, CHILD_TYPE_NORMAL)->text = res;
+			OverlayRenderer::Control &wTable = *wDPS.getChild(1, CHILD_TYPE_NORMAL);
+			while (wTable.getChildCount() > 1)
+				delete wTable.removeChild(1);
 
-			row.barSize = curDps / maxDps;
-			for (int i = 0; i < row.count; i++) row.align[i] = DT_CENTER;
-			row.align[1] = DT_LEFT;
-			table.push_back(row);
-		}
-		ffxivDll->hooks()->GetOverlayRenderer()->SetTable(table);
-		// pos += swprintf(res + pos, L"\n");
-	}
-	std::vector<TEMPBUFF> buff_sort;
-	for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
-		if (it->expires < timestamp)
-			it = mActiveDoT.erase(it);
-		else {
-			if (it->source == mSelfId) {
-				buff_sort.push_back(*it);
+			if (!mDpsInfo.empty()) {
+				int i = 0;
+				int disp = 0;
+				bool dispme = false;
+				int mypos = 0;
+				if (mCalculatedDamages.size() > 8) {
+					for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it, mypos++)
+						if (it->first == mSelfId)
+							break;
+					mypos = max(4, mypos);
+					mypos = min(mCalculatedDamages.size() - 4, mypos);
+				}
+				float maxDps = (float)(mCalculatedDamages.begin()->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
+				int displayed = 0;
+
+
+
+
+				for(int aa=0;aa<5;aa++)
+
+
+
+				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
+					i++;
+					if (!dll->hooks()->GetOverlayRenderer()->GetUseDrawOverlayEveryone() && it->first != mSelfId)
+						continue;
+					else if (mCalculatedDamages.size() > 8 && !(mypos - 4 <= i))
+						continue;
+					else if (++displayed > 8)
+						break;
+					OverlayRenderer::Control &wRow = *(new OverlayRenderer::Control());
+					TEMPDMG &max = mDpsInfo[it->first].maxDamage;
+					float curDps = (float)(it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
+
+					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
+
+					wRow.addChild(new OverlayRenderer::Control(GetActorJobString(it->first), CONTROL_TEXT_RESNAME, DT_CENTER));
+					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, (mClassColors[GetActorJobString(it->first)] & 0xFFFFFF) | 0x80000000), CHILD_TYPE_BACKGROUND);
+
+					swprintf(tmp, L"%d", i);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+
+					if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUser() && it->first != mSelfId)
+						wcscpy(tmp, L"...");
+					else {
+						char *name = GetActorName(it->first);
+						MultiByteToWideChar(CP_UTF8, 0, name, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+					}
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT));
+					swprintf(tmp, L"%.2f", curDps);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%d", it->second);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%.2f%%", 100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%d", mDpsInfo[it->first].deaths);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+
+					wTable.addChild(&wRow);
+				}
 			}
-			++it;
+		}
+		{
+			std::vector<TEMPBUFF> buff_sort;
+			for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
+				if (it->expires < timestamp || GetActorType(it->target) == ACTOR_TYPE_PC)
+					it = mActiveDoT.erase(it);
+				else {
+					if (it->source == mSelfId) {
+						buff_sort.push_back(*it);
+					}
+					++it;
+				}
+			}
+			if (!buff_sort.empty()) {
+				while (wDOT.getChildCount() > 1)
+					delete wDOT.removeChild(1);
+				int currentTarget = GetTargetId(pTarget.current);
+				int focusTarget = GetTargetId(pTarget.focus);
+				int hoverTarget = GetTargetId(pTarget.hover);
+				std::sort(buff_sort.begin(), buff_sort.end(), [&](const TEMPBUFF & a, const TEMPBUFF & b) {
+					if (a.target == focusTarget ^ b.target == focusTarget)
+						return (a.target == focusTarget ? 1 : 0) > (b.target == focusTarget ? 1 : 0);
+					if (a.target == currentTarget ^ b.target == currentTarget)
+						return (a.target == currentTarget ? 1 : 0) > (b.target == currentTarget ? 1 : 0);
+					if (a.target == hoverTarget ^ b.target == hoverTarget)
+						return (a.target == hoverTarget ? 1 : 0) > (b.target == hoverTarget ? 1 : 0);
+					return a.expires < b.expires;
+				});
+				int i = 0;
+				for (auto it = buff_sort.begin(); it != buff_sort.end(); ++it, i++) {
+					if (i > 9 && it->target != currentTarget && it->target != hoverTarget && it->target != focusTarget)
+						break;
+					OverlayRenderer::Control &wRow = *(new OverlayRenderer::Control());
+					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
+					wRow.addChild(new OverlayRenderer::Control(currentTarget == it->target ? L"T" :
+						hoverTarget == it->target ? L"M" :
+						focusTarget == it->target ? L"F" : L"", CONTROL_TEXT_STRING, DT_CENTER));
+					MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					wRow.addChild(new OverlayRenderer::Control(getDoTName(it->buffid), CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%.1fs%s",
+						(it->expires - timestamp) / 1000.f,
+						it->simulated ? (
+						(getDoTDuration(it->buffid) + (it->contagioned ? 15000 : 0)) < it->expires - timestamp
+							? L"(x)" :
+							L"(?)") : L"");
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					wDOT.addChild(&wRow);
+				}
+				i = buff_sort.size() - i;
+				if (i > 0) {
+					OverlayRenderer::Control &wRow = *(new OverlayRenderer::Control());
+					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
+					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
+					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
+					swprintf(tmp, L"%d", i);
+					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
+					wDOT.addChild(&wRow);
+				}
+			}
+		}
+		if (!mWindowsAdded) {
+			mWindowsAdded = true;
+			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDPS);
+			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDOT);
+			dll->hooks()->GetOverlayRenderer()->AddWindow(&wConfig);
 		}
 	}
-	pos = swprintf(res, L"DoTs\n");
-	int currentTarget = GetTargetId(pTarget.current);
-	int focusTarget = GetTargetId(pTarget.focus);
-	int hoverTarget = GetTargetId(pTarget.hover);
-	std::sort(buff_sort.begin(), buff_sort.end(), [&](const TEMPBUFF & a, const TEMPBUFF & b) {
-		if (a.target == focusTarget ^ b.target == focusTarget)
-			return (a.target == focusTarget ? 1 : 0) > (b.target == focusTarget ? 1 : 0);
-		if (a.target == currentTarget ^ b.target == currentTarget)
-			return (a.target == currentTarget ? 1 : 0) > (b.target == currentTarget ? 1 : 0);
-		if (a.target == hoverTarget ^ b.target == hoverTarget)
-			return (a.target == hoverTarget ? 1 : 0) > (b.target == hoverTarget ? 1 : 0);
-		return a.expires < b.expires;
-	});
-	int i = 0;
-	for (auto it = buff_sort.begin(); it != buff_sort.end(); ++it, i++) {
-		if (i > 9 && it->target != currentTarget && it->target != hoverTarget && it->target != focusTarget)
-			break;
-		MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-		pos += swprintf(res + pos, L"%s[%s] %s: %.1fs%s\n",
-			currentTarget == it->target ? L"[T] " :
-			hoverTarget == it->target ? L"[M] " :
-			focusTarget == it->target ? L"[F] " : L"",
-			tmp, getDoTName(it->buffid),
-			(it->expires - timestamp) / 1000.f,
-			it->simulated ? (
-			(getDoTDuration(it->buffid) + (it->contagioned ? 15000 : 0)) < it->expires - timestamp
-				? L"(x)" :
-				L"(?)") : L"");
-	}
-	i = buff_sort.size() - i;
-	if (i > 0)
-		pos += swprintf(res + pos, L"...and %d more\n", i);
-
-	while (pos > 0 && res[pos - 1] == '\n')
-		res[--pos] = 0;
-	ffxivDll->hooks()->GetOverlayRenderer()->SetDoTText(res);
 }
 
 void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp) {
@@ -571,7 +679,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			(int)info->attack[i].damage,
 			(int)info->attack[i].data1_right
 			);
-		ffxivDll->pipe()->AddChat(tss);
+		dll->pipe()->AddChat(tss);
 		//*/
 	}
 }
@@ -648,7 +756,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					mDpsInfo[msg->actor].deaths++;
 				/*
 				sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
-				ffxivDll->pipe()->sendInfo(tss);
+				dll->pipe()->sendInfo(tss);
 				//*/
 				auto it = mActiveDoT.begin();
 				while (it != mActiveDoT.end()) {
@@ -663,7 +771,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 			/*
 			sprintf(tss, "cmsgAddBuff %s / %d", getActorName(msg->actor), 
 				msg->Combat.AddBuff._u1);
-			ffxivDll->pipe()->sendInfo(tss);
+			dll->pipe()->sendInfo(tss);
 			//*/
 			for (int i = 0; i < msg->Combat.AddBuff.buff_count && i < 5; i++) {
 				if (getDoTPotency(msg->Combat.AddBuff.buffs[i].buffID) == 0)
@@ -681,7 +789,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 								mDotApplyDelayEstimation[it->buffid].add((int) (nexpire - it->expires));
 								//sprintf(tss, "cmsg => simulated (%d: %d / %d)", it->buffid, nexpire - it->expires, estimatedDelays[it->buffid].get());
 							}
-							//ffxivDll->pipe()->sendInfo(tss);
+							//dll->pipe()->sendInfo(tss);
 						}
 						it->expires = nexpire;
 						it->simulated = 0;
@@ -708,13 +816,13 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 			break;
 		case GAME_MESSAGE::C2_UseAbility:
 			// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
-			// ffxivDll->pipe()->AddChat(tss);
+			// dll->pipe()->AddChat(tss);
 			
 			ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
 			break;
 		case GAME_MESSAGE::C2_UseAoEAbility:
 			// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
-			// ffxivDll->pipe()->AddChat(tss);
+			// dll->pipe()->AddChat(tss);
 
 			if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
 				int baseActor = NULL_ACTOR;
@@ -767,7 +875,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
 						/*
 						sprintf(tss, "cmsg  => Target[%i] %d / %s", i, msg->Combat.UseAoEAbility.targets[i].target, getActorName(msg->Combat.UseAoEAbility.targets[i].target));
-						ffxivDll->pipe()->sendInfo(tss);
+						dll->pipe()->sendInfo(tss);
 						//*/
 						ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attackToTarget[i], timestamp);
 					}
@@ -784,7 +892,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 		int pos = sprintf(tss, "cmsg%04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, getActorName(msg->actor), msg->length);
 		for (int i = 0; i < msg->length - 32 && i<64; i ++)
 			pos += sprintf(tss + pos, "%02X ", (int)((unsigned char*)msg->data)[i]);
-		ffxivDll->pipe()->sendInfo(tss);
+		dll->pipe()->sendInfo(tss);
 		//*/
 		break;
 	}
@@ -793,7 +901,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 void GameDataProcess::PacketErrorMessage(int signature, int length) {
 	char t[1024];
 	sprintf(t, "cmsgError: packet error %08X / %08X", signature, length);
-	ffxivDll->pipe()->SendInfo(t);
+	dll->pipe()->SendInfo(t);
 }
 
 void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
@@ -838,13 +946,13 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 				if (Z_STREAM_END != res) {
 					inflateEnd(&inflater);
 					p.waste(1);
-					ffxivDll->pipe()->SendInfo("zlib error");
+					dll->pipe()->SendInfo("zlib error");
 					continue;
 				}
 				inflateEnd(&inflater);
 				if (inflater.avail_out == 0) {
 					p.waste(1);
-					ffxivDll->pipe()->SendInfo("zlib error");
+					dll->pipe()->SendInfo("zlib error");
 					continue;
 				}
 				buf = inflateBuffer;
@@ -870,10 +978,12 @@ void GameDataProcess::UpdateInfoThread() {
 		ResolveUsers();
 		ParsePacket(mSent, false);
 		ParsePacket(mRecv, true);
+		UpdateOverlayMessage();
+		/*
 		__try {
-			UpdateOverlayMessage();
 		} __except (EXCEPTION_EXECUTE_HANDLER) {
 		}
+		//*/
 	}
 	TerminateThread(GetCurrentThread(), 0);
 }

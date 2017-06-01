@@ -4,24 +4,14 @@
 #include <shlobj.h>
 #include <Shlwapi.h>
 #include "Tools.h"
-#include "resource.h"
+#include "FFXIVDLL.h"
 #pragma comment(lib, "Shlwapi.lib")
 
-BOOL CALLBACK OverlayRenderer::EnumResNameProc(HMODULE hModule, LPCTSTR lpszType, LPTSTR lpszName) {
-	LPDIRECT3DTEXTURE9 tex;
-	D3DXCreateTextureFromResource(pDevice, ffxivDll->instance(), lpszName, &tex);
-	if (wcsncmp(lpszName, L"CLASS_", 6) == 0)
-		mClassIcons[lpszName + 6] = tex;
-	else
-		tex->Release();
-	return true;
-}
-
-
-OverlayRenderer::OverlayRenderer(IDirect3DDevice9* device) :
+OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	pDevice(device),
 	mFont(nullptr),
 	mSprite(nullptr),
+	dll (dll),
 	hSaverThread(INVALID_HANDLE_VALUE) {
 
 	TCHAR path[256];
@@ -34,15 +24,12 @@ OverlayRenderer::OverlayRenderer(IDirect3DDevice9* device) :
 
 	FILE *f = _wfopen(path, L"r");
 	if (f != nullptr) {
-		fwscanf(f, L"%d%d%f%f%f%f%d%d%d%d%d%d",
+		fwscanf(f, L"%d%d%d%d%d%d%d",
 			&mConfig.UseDrawOverlay,
 			&mConfig.UseDrawOverlayEveryone,
-			&mConfig.x, &mConfig.y,
-			&mConfig.xdot, &mConfig.ydot,
 			&mConfig.fontSize, &mConfig.bold,
 			&mConfig.border, &mConfig.hideOtherUser,
-			&mConfig.captureFormat,
-			&mConfig.backgroundTransparency);
+			&mConfig.captureFormat);
 		fwscanf(f, L"\n");
 		fgetws(mConfig.fontName, sizeof(mConfig.fontName) / sizeof(mConfig.fontName[0]), f);
 		fgetws(mConfig.capturePath, sizeof(mConfig.capturePath) / sizeof(mConfig.capturePath[0]), f);
@@ -50,8 +37,6 @@ OverlayRenderer::OverlayRenderer(IDirect3DDevice9* device) :
 			mConfig.fontName[wcslen(mConfig.fontName) - 1] = 0;
 		while (wcslen(mConfig.capturePath) > 0 && mConfig.capturePath[wcslen(mConfig.capturePath) - 1] == '\n')
 			mConfig.capturePath[wcslen(mConfig.capturePath) - 1] = 0;
-		mConfig.x = max(0, min(mConfig.x, 1));
-		mConfig.y = max(0, min(mConfig.y, 1));
 		mConfig.fontSize = max(9, min(128, mConfig.fontSize));
 		mConfig.border = max(0, min(3, mConfig.border));
 		switch (mConfig.captureFormat) {
@@ -65,32 +50,8 @@ OverlayRenderer::OverlayRenderer(IDirect3DDevice9* device) :
 		fclose(f);
 	}
 
-	HRSRC hResource = FindResource(ffxivDll->instance(), MAKEINTRESOURCE(IDR_CLASS_COLORDEF), L"TEXT");
-	if (hResource) {
-		HGLOBAL hLoadedResource = LoadResource(ffxivDll->instance(), hResource);
-		if (hLoadedResource) {
-			LPVOID pLockedResource = LockResource(hLoadedResource);
-			if (pLockedResource) {
-				DWORD dwResourceSize = SizeofResource(ffxivDll->instance(), hResource);
-				if (0 != dwResourceSize) {
-					struct membuf : std::streambuf {
-						membuf(char* base, std::ptrdiff_t n) {
-							this->setg(base, base, base + n);
-						}
-					} sbuf((char*)pLockedResource, dwResourceSize);
-					std::istream in(&sbuf);
-					std::string job;
-					TCHAR buf[64];
-					int r, g, b;
-					while (in >> job >> r >> g >> b) {
-						std::transform(job.begin(), job.end(), job.begin(), ::toupper);
-						MultiByteToWideChar(CP_UTF8, 0, job.c_str(), -1, buf, sizeof(buf) / sizeof(TCHAR));
-						mClassColors[buf] = D3DCOLOR_XRGB(r, g, b);
-					}
-				}
-			}
-		}
-	}
+	memset(mWindows.statusMap, 0, sizeof(mWindows.statusMap));
+	mWindows.layoutDirection = LAYOUT_ABSOLUTE;
 
 	ReloadResources();
 }
@@ -104,8 +65,9 @@ OverlayRenderer::~OverlayRenderer() {
 		mSprite->Release();
 		mSprite = nullptr;
 	}
-	for (auto it = mClassIcons.begin(); it != mClassIcons.end(); it = mClassIcons.erase(it))
-		it->second->Release();
+	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
+		if(it->second != nullptr)
+			it->second->Release();
 
 	if (hSaverThread != INVALID_HANDLE_VALUE)
 		WaitForSingleObject(hSaverThread, -1);
@@ -120,15 +82,12 @@ OverlayRenderer::~OverlayRenderer() {
 
 	FILE *f = _wfopen(path, L"w");
 	if (f != nullptr) {
-		fwprintf(f, L"%d %d %f %f %f %f %d %d %d %d %d %d\n",
+		fwprintf(f, L"%d %d %d %d %d %d %d\n",
 			mConfig.UseDrawOverlay,
 			mConfig.UseDrawOverlayEveryone,
-			mConfig.x, mConfig.y,
-			mConfig.xdot, mConfig.ydot,
 			mConfig.fontSize, mConfig.bold,
 			mConfig.border, mConfig.hideOtherUser,
-			mConfig.captureFormat,
-			mConfig.backgroundTransparency);
+			mConfig.captureFormat);
 		fputws(mConfig.fontName, f);
 		fwprintf(f, L"\n");
 		fputws(mConfig.capturePath, f);
@@ -137,9 +96,22 @@ OverlayRenderer::~OverlayRenderer() {
 	}
 }
 
-void OverlayRenderer::SetTable(std::vector<OVERLAY_RENDER_TABLE_ROW> &tbl) {
-	std::lock_guard<std::mutex> lock(mDrawLock);
-	mTableRows = tbl;
+LPDIRECT3DTEXTURE9 OverlayRenderer::GetTextureFromResource(TCHAR *resName) {
+	LPDIRECT3DTEXTURE9 tex = nullptr;
+	if (mResourceTextures.find(resName) != mResourceTextures.end())
+		return mResourceTextures[resName];
+	D3DXCreateTextureFromResource(pDevice, dll->instance(), resName, &tex);
+	mResourceTextures[resName] = tex;
+	return tex;
+}
+
+LPDIRECT3DTEXTURE9 OverlayRenderer::GetTextureFromFile(TCHAR *resName) {
+	LPDIRECT3DTEXTURE9 tex = nullptr;
+	if (mFileTextures.find(resName) != mResourceTextures.end())
+		return mFileTextures[resName];
+	D3DXCreateTextureFromFile(pDevice, resName, &tex);
+	mFileTextures[resName] = tex;
+	return tex;
 }
 
 void OverlayRenderer::SetCapturePath(TCHAR *chr) {
@@ -151,18 +123,14 @@ void OverlayRenderer::SetCapturePath(TCHAR *chr) {
 		WideCharToMultiByte(CP_UTF8, 0, path, -1, path2, sizeof(path2), 0, 0);
 		std::string s("/e Saving screenshots in ");
 		s += path2;
-		ffxivDll->pipe()->AddChat(s);
+		dll->pipe()->AddChat(s);
 	} else {
 		char path2[MAX_PATH * 4];
 		WideCharToMultiByte(CP_UTF8, 0, chr, -1, path2, sizeof(path2), 0, 0);
 		std::string s("/e Saving screenshots in ");
 		s += path2;
-		ffxivDll->pipe()->AddChat(s);
+		dll->pipe()->AddChat(s);
 	}
-}
-
-void OverlayRenderer::SetBackgroundTransparency(int t) {
-	mConfig.backgroundTransparency = t;
 }
 
 void OverlayRenderer::GetCaptureFormat(int f) {
@@ -170,7 +138,7 @@ void OverlayRenderer::GetCaptureFormat(int f) {
 }
 
 void OverlayRenderer::ReloadResources() {
-	std::lock_guard<std::mutex> lock(mDrawLock);
+	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	if (mFont != nullptr) {
 		mFont->Release();
 		mFont = nullptr;
@@ -179,10 +147,9 @@ void OverlayRenderer::ReloadResources() {
 		mSprite->Release();
 		mSprite = nullptr;
 	}
-	for (auto it = mClassIcons.begin(); it != mClassIcons.end(); it = mClassIcons.erase(it))
+	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
 		it->second->Release();
 
-	EnumResourceNames(ffxivDll->instance(), MAKEINTRESOURCE(RT_RCDATA), OverlayRenderer::EnumResNameProcExternal, (LONG_PTR) this);
 	D3DXCreateSprite(pDevice, &mSprite);
 	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, mConfig.fontName, &mFont);
 }
@@ -194,14 +161,6 @@ int OverlayRenderer::GetHideOtherUser() {
 	return mConfig.hideOtherUser;
 }
 
-void OverlayRenderer::SetDpsBoxLocation(float x, float y) {
-	mConfig.x = x;
-	mConfig.y = y;
-}
-void OverlayRenderer::SetDotBoxLocation(float x, float y) {
-	mConfig.xdot = x;
-	mConfig.ydot = y;
-}
 void OverlayRenderer::SetFontSize(int size) {
 	mConfig.fontSize = size;
 	ReloadResources();
@@ -222,17 +181,6 @@ void OverlayRenderer::SetBorder(int n) {
 int OverlayRenderer::GetFPS() {
 	return mFpsMeter.size();
 }
-
-void OverlayRenderer::SetText(TCHAR *t) {
-	std::lock_guard<std::mutex> lock(mDrawLock);
-	wcscpy(mDebugText, t);
-}
-
-void OverlayRenderer::SetDoTText(TCHAR *t) {
-	std::lock_guard<std::mutex> lock(mDrawLock);
-	wcscpy(mDotText, t);
-}
-
 void OverlayRenderer::SetUseDrawOverlay(bool b) {
 	mConfig.UseDrawOverlay = b;
 }
@@ -245,6 +193,10 @@ void OverlayRenderer::SetUseDrawOverlayEveryone(bool b) {
 }
 int OverlayRenderer::GetUseDrawOverlayEveryone() {
 	return mConfig.UseDrawOverlayEveryone;
+}
+
+OverlayRenderer::Control* OverlayRenderer::GetRoot() {
+	return &mWindows;
 }
 
 
@@ -277,15 +229,15 @@ void OverlayRenderer::DrawText(int x, int y, TCHAR *text, D3DCOLOR Color) {
 	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP, D3DCOLOR_ARGB(255, 255, 255, 255));
 }
 
-void OverlayRenderer::DrawText(int x, int y, int width, TCHAR *text, D3DCOLOR Color, int align) {
+void OverlayRenderer::DrawText(int x, int y, int width, int height, TCHAR *text, D3DCOLOR Color, int align) {
 	if(mConfig.border)
 		for (int i = -mConfig.border; i <= mConfig.border; i++)
 			for (int j = -mConfig.border; j <= mConfig.border; j++)
 				if (i != 0 && j != 0) {
-					RECT rc4 = { x + i, y + j, x + i + width, 10000 };
+					RECT rc4 = { x + i, y + j, x + i + width, y + j + height };
 					mFont->DrawTextW(NULL, text, -1, &rc4, DT_NOCLIP | align, (~Color & 0xFFFFFF) | 0xFF000000);
 				}
-	RECT rc = { x, y , x + width, 10000 };
+	RECT rc = { x, y , x + width, y + height };
 	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP | align, D3DCOLOR_ARGB(255, 255, 255, 255));
 }
 
@@ -296,78 +248,54 @@ void OverlayRenderer::DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9
 	D3DXVECTOR3 scale((float)w / desc.Width, (float)h / desc.Height, 1);
 	D3DXVECTOR3 translate(x, y, 0);
 	D3DXMatrixTransformation(&matrix, NULL, NULL, &scale, NULL, NULL, &translate);
+	mSprite->Begin(D3DXSPRITE_ALPHABLEND);
 	mSprite->SetTransform(&matrix);
 	mSprite->Draw(tex, NULL, NULL, NULL, 0xFFFFFFFF);
-}
-
-void OverlayRenderer::RenderDpsBox(D3DVIEWPORT9 &prt) {
-	RECT rc2 = { (int)(mConfig.x * prt.Width) , (int)(mConfig.y * prt.Height),prt.Width, prt.Height };
-	RECT lineHeightTset;
-	int lineHeight;
-	mFont->DrawTextW(NULL, L"Dummy", -1, &lineHeightTset, DT_CALCRECT, D3DCOLOR_ARGB(255, 255, 255, 255));
-	lineHeight = lineHeightTset.bottom - lineHeightTset.top;
-	mFont->DrawTextW(NULL, mDebugText, -1, &rc2, DT_CALCRECT, D3DCOLOR_ARGB(255, 255, 255, 255));
-	if (mConfig.border == 0) {
-		DrawBox(rc2.left - 4, rc2.top - 4, rc2.right - rc2.left + 8, rc2.bottom - rc2.top + 8, mConfig.backgroundTransparency << 24);
-	}
-	DrawText(rc2.left, rc2.top, mDebugText, D3DCOLOR_ARGB(255, 255, 255, 255));
-
-	int boxBaseX = rc2.left - 4;
-	int boxBaseY = rc2.bottom + 4;
-	int cols[13] = { 0 };
-	int colLeft[13] = { 0 };
-	int row = 0;
-	int horizontalSpacing = 8;
-	int verticalSpacing = 8;
-	for (auto it = mTableRows.begin(); it != mTableRows.end(); ++it) {
-		for (int i = 0; i < it->count; i++) {
-			mFont->DrawTextW(NULL, (TCHAR*)it->cols[i].c_str(), -1, &lineHeightTset, DT_CALCRECT, D3DCOLOR_ARGB(255, 255, 255, 255));
-			cols[i] = max(cols[i], lineHeightTset.right - lineHeightTset.left + horizontalSpacing);
-		}
-	}
-	for (int i = 1; i < sizeof(cols) / sizeof(int); i++)
-		colLeft[i] = colLeft[i - 1] + cols[i - 1];
-	mSprite->Begin(16);
-	lineHeight += 8;
-	int tableWidth = lineHeight + colLeft[10];
-	DrawBox(boxBaseX, boxBaseY, tableWidth, lineHeight * mTableRows.size(), mConfig.backgroundTransparency << 24);
-	for (auto it = mTableRows.begin(); it != mTableRows.end(); ++it, ++row) {
-		int bw = (int)(tableWidth * it->barSize);
-		if (bw > 0)
-			DrawBox(boxBaseX, boxBaseY + row * lineHeight, bw, lineHeight, (mClassColors[it->icon] & 0xFFFFFF) | 0x80000000);
-		if (mClassIcons.find(it->icon) != mClassIcons.end())
-			DrawTexture(boxBaseX + horizontalSpacing/2, boxBaseY + verticalSpacing /2 + row * lineHeight, lineHeight - verticalSpacing, lineHeight - verticalSpacing, mClassIcons[it->icon]);
-		for (int i = 0; i < it->count; i++) {
-			DrawText(boxBaseX + lineHeight + colLeft[i] + horizontalSpacing/2, boxBaseY + row * lineHeight + verticalSpacing/2, cols[i] - horizontalSpacing, (TCHAR*)it->cols[i].c_str(), D3DCOLOR_ARGB(255, 255, 255, 255), it->align[i]);
-		}
-	}
 	mSprite->End();
 }
 
-void OverlayRenderer::RenderDotBox(D3DVIEWPORT9 &prt) {
-	RECT rc2 = { (int)(mConfig.xdot * prt.Width) , (int)(mConfig.ydot * prt.Height),prt.Width, prt.Height };
-	mFont->DrawTextW(NULL, mDotText, -1, &rc2, DT_CALCRECT, D3DCOLOR_ARGB(255, 255, 255, 255));
-	if (mConfig.border == 0) {
-		DrawBox(rc2.left - 4, rc2.top - 4, rc2.right - rc2.left + 8, rc2.bottom - rc2.top + 8, mConfig.backgroundTransparency << 24);
-	}
-	DrawText(rc2.left, rc2.top, mDotText, D3DCOLOR_ARGB(255, 255, 255, 255));
+void OverlayRenderer::AddWindow(Control* windows) {
+	mWindows.addChild(windows);
+}
+
+OverlayRenderer::Control* OverlayRenderer::GetWindowAt(Control *in, int x, int y) {
+	std::lock_guard<std::recursive_mutex> lock(in->layoutLock);
+	for(int i = 0; i < _CHILD_TYPE_COUNT; i++)
+		for (auto it = in->children[i].rbegin(); it != in->children[i].rend(); ++it)
+			if ((*it)->hittest(x, y)) {
+				if ((*it)->callback && !(*it)->callback->isLocked())
+					return *it;
+			}
+	return nullptr;
+}
+
+OverlayRenderer::Control* OverlayRenderer::GetWindowAt(int x, int y) {
+	return GetWindowAt(&mWindows, x, y);
 }
 
 void OverlayRenderer::RenderOverlay() {
 
 	if (mConfig.UseDrawOverlay && mFont != nullptr) {
-		std::lock_guard<std::mutex> lock(mDrawLock);
-
+		std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
 		if (mFont == nullptr)
 			D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, mConfig.fontName, &mFont);
 
 		D3DVIEWPORT9 prt;
 		pDevice->GetViewport(&prt);
+		RECT rect = { prt.X, prt.Y, prt.X+prt.Width, prt.Y+prt.Height };
 
 		pDevice->BeginScene();
 
-		RenderDpsBox(prt);
-		RenderDotBox(prt);
+		mWindows.width = prt.Width;
+		mWindows.height = prt.Height;
+		mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
+		for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
+			if ((*it)->relativeSize) {
+				(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
+				(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+			}
+		}
+		mWindows.draw(this);
 
 		pDevice->EndScene();
 	}
@@ -383,9 +311,9 @@ void OverlayRenderer::DrawOverlay() {
 
 	CheckCapture();
 
-	__try {
-		RenderOverlay();
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
+	// __try {
+	RenderOverlay();
+	// } __except (EXCEPTION_EXECUTE_HANDLER) {}
 
 
 }
@@ -428,12 +356,12 @@ void OverlayRenderer::CheckCapture() {
 }
 
 void OverlayRenderer::CaptureBackgroundSave(IDirect3DSurface9 *buf) {
-	std::lock_guard<std::mutex> lock(mCaptureMutex);
+	std::lock_guard<std::recursive_mutex> lock(mCaptureMutex);
 	mCaptureBuffers.push_back(buf);
 	if (hSaverThread == INVALID_HANDLE_VALUE)
 		hSaverThread = CreateThread(NULL, NULL, OverlayRenderer::CaptureBackgroundSaverExternal, this, NULL, NULL);
 
-	ffxivDll->pipe()->AddChat("/e Saving screenshot...");
+	dll->pipe()->AddChat("/e Saving screenshot...");
 }
 
 void OverlayRenderer::CaptureScreen() {
@@ -445,7 +373,7 @@ void OverlayRenderer::CaptureBackgroundSaverThread() {
 	ID3DXBuffer *buf;
 	while (mCaptureBuffers.size() > 0) {
 		{
-			std::lock_guard<std::mutex> lock(mCaptureMutex);
+			std::lock_guard<std::recursive_mutex> lock(mCaptureMutex);
 			surface = mCaptureBuffers.front();
 			mCaptureBuffers.pop_front();
 		}
@@ -485,7 +413,7 @@ void OverlayRenderer::CaptureBackgroundSaverThread() {
 				message = "/e Capture error: " + message + " (";
 				message += err;
 				message += ")";
-				ffxivDll->pipe()->AddChat(message);
+				dll->pipe()->AddChat(message);
 			} else {
 				DWORD wr;
 				WriteFile(h, buf->GetBufferPointer(), buf->GetBufferSize(), &wr, NULL);
@@ -494,16 +422,16 @@ void OverlayRenderer::CaptureBackgroundSaverThread() {
 				char path2[MAX_PATH * 4];
 				WideCharToMultiByte(CP_UTF8, 0, path, -1, path2, sizeof(path2), 0, 0);
 				message += path2;
-				ffxivDll->pipe()->AddChat(message);
+				dll->pipe()->AddChat(message);
 			}
 		}
 		buf->Release();
 	}
 	{
-		std::lock_guard<std::mutex> lock(mCaptureMutex);
+		std::lock_guard<std::recursive_mutex> lock(mCaptureMutex);
 		CloseHandle(hSaverThread);
 		hSaverThread = INVALID_HANDLE_VALUE;
 	}
-	if (ffxivDll->isUnloading())
+	if (dll->isUnloading())
 		TerminateThread(GetCurrentThread(), 0);
 }

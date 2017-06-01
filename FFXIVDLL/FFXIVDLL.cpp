@@ -15,9 +15,9 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	hUnloadEvent = CreateEvent(NULL, true, false, NULL);
 
 	pPipe = new ExternalPipe(hUnloadEvent);
-	pHooks = new Hooks(f);
+	pHooks = new Hooks(this, f);
 
-	pDataProcess = new GameDataProcess(f, hUnloadEvent);
+	pDataProcess = new GameDataProcess(this, f, hUnloadEvent);
 
 	fclose(f);
 	DeleteFile(fn);
@@ -35,12 +35,8 @@ FFXIVDLL::~FFXIVDLL()
 
 	SetEvent(hUnloadEvent);
 
-	delete pHooks;
-
-	Sleep(100);
-
-
 	delete pDataProcess;
+	delete pHooks;
 	delete pPipe;
 
 	CloseHandle(hUnloadEvent);

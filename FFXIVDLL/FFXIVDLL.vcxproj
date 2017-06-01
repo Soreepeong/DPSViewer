@@ -169,6 +169,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.h" />
+    <ClInclude Include="DOTWindowController.h" />
+    <ClInclude Include="DPSWindowController.h" />
     <ClInclude Include="dx9hook.h" />
     <ClInclude Include="dx9table.h" />
     <ClInclude Include="ExternalPipe.h" />
@@ -182,10 +185,14 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Tools.h" />
+    <ClInclude Include="WindowController.h" />
     <ClInclude Include="zconf.h" />
     <ClInclude Include="zlib.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.cpp" />
+    <ClCompile Include="DOTWindowController.cpp" />
+    <ClCompile Include="DPSWindowController.cpp" />
     <ClCompile Include="ExternalPipe.cpp" />
     <ClCompile Include="FFXIVDLL.cpp" />
     <ClCompile Include="GameDataProcess.cpp" />
@@ -206,7 +213,9 @@
     <ClCompile Include="Hooks.cpp" />
     <ClCompile Include="MedianCalculator.cpp" />
     <ClCompile Include="OverlayRenderer.cpp" />
+    <ClCompile Include="OverlayRenderer_Control.cpp" />
     <ClCompile Include="Tools.cpp" />
+    <ClCompile Include="WindowController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libMinHook-x86-v140-mt.lib" />

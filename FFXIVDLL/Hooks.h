@@ -62,11 +62,20 @@ private:
 		Dx9SwapChainPresent Dx9SwapChainPresent;
 	}pfnBridge;
 
+	static HWND ffxivhWnd;
+	static WNDPROC ffxivWndProc;
+	static int ffxivWndPressed;
+	static OverlayRenderer::Control *lastHover;
+	static OverlayRenderer::Control* ffxivHookCaptureControl;
+	static void updateLastFocus(OverlayRenderer::Control *control);
+	static LRESULT CALLBACK hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
+
 	static bool mHookStarted;
 	static std::atomic_int mHookedFunctionDepth;
 	static HMODULE hGame;
 	static PVOID *pDX9Table;
 	static OverlayRenderer *pOverlayRenderer;
+	static FFXIVDLL *dll;
 
 	static void* chatObject;
 	static char* chatPtrs[4];
@@ -80,7 +89,7 @@ private:
 
 
 public:
-	Hooks(FILE *f);
+	Hooks(FFXIVDLL *dll, FILE *f);
 	~Hooks();
 	void Activate();
 

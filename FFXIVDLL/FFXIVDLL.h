@@ -37,5 +37,14 @@ public:
 	HINSTANCE instance() {
 		return hInstance;
 	}
-};
 
+	static DWORD WINAPI SelfUnloaderThread(PVOID p) {
+		HINSTANCE inst = ((FFXIVDLL*)p)->hInstance;
+		delete (FFXIVDLL*)p;
+		FreeLibraryAndExitThread(inst, 0);
+	}
+
+	void spawnSelfUnloader() {
+		CloseHandle(CreateThread(NULL, NULL, FFXIVDLL::SelfUnloaderThread, this, NULL, NULL));
+	}
+};

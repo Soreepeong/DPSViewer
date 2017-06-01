@@ -9,13 +9,13 @@ private:
 	template <typename T>
 	class bqueue {
 	private:
-		std::mutex              d_mutex;
+		std::recursive_mutex              d_mutex;
 		std::condition_variable d_condition;
 		std::deque<T>           d_queue;
 	public:
 		void push(T const& value) {
 			{
-				std::unique_lock<std::mutex> lock(this->d_mutex);
+				std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
 				d_queue.push_front(value);
 				if (d_queue.size() > 400) {
 					d_queue.pop_back();
@@ -24,14 +24,14 @@ private:
 			this->d_condition.notify_one();
 		};
 		T pop() {
-			std::unique_lock<std::mutex> lock(this->d_mutex);
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
 			this->d_condition.wait(lock, [=] { return !this->d_queue.empty(); });
 			T rc(std::move(this->d_queue.back()));
 			this->d_queue.pop_back();
 			return rc;
 		};
 		bool tryPop(T *res) {
-			std::unique_lock<std::mutex> lock(this->d_mutex);
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
 			if (this->d_queue.empty())
 				return 0;
 			T rc(std::move(this->d_queue.back()));
@@ -40,7 +40,7 @@ private:
 			return 1;
 		};
 		void clear() {
-			std::unique_lock<std::mutex> lock(this->d_mutex);
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
 			this->d_queue.clear();
 		}
 	};

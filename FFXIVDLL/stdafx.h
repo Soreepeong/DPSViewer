@@ -19,8 +19,6 @@
 #include "FFXIVDLL.h"
 #pragma comment(lib, "psapi.lib")
 
-extern FFXIVDLL *ffxivDll;
-
 #define SAFE_RELEASE(punk)  \
               if ((punk) != NULL)  \
 			                  { (punk)->Release(); (punk) = NULL; }

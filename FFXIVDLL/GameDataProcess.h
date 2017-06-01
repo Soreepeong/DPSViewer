@@ -2,7 +2,12 @@
 #include<Windows.h>
 #include"Tools.h"
 #include"zlib.h"
-#include"MedianCalculator.h"
+#include "MedianCalculator.h"
+#include "DPSWindowController.h"
+#include "DOTWindowController.h"
+#include "ConfigWindowController.h"
+
+class FFXIVDLL;
 
 #define IDLETIME 10000
 
@@ -208,6 +213,9 @@ struct GAME_MESSAGE {
 #define EORZEA_CONSTANT 20.571428571428573
 
 class GameDataProcess {
+	friend class Hooks;
+	friend class ConfigWindowController;
+
 private:
 	struct {
 		int id;
@@ -226,9 +234,10 @@ private:
 	static TCHAR* getDoTName(int skill);
 	int getDoTDuration(int skill);
 
+	std::map<std::wstring, D3DCOLOR> mClassColors;
+
 	PVOID pTargetMap;
 	PVOID **pActorMap;
-	HWND ffxivhWnd;
 
 	Tools::ByteQueue mSent, mRecv;
 
@@ -248,10 +257,9 @@ private:
 	};
 	std::map<int, DPS_METER_TEMP_INFO> mDpsInfo;
 
+
 	std::vector<std::pair<int, int>> mCalculatedDamages;
 	uint64_t mLastIdleTime = 0;
-
-	OVERLAY_RENDER_TABLE_ROW mTableHeaderDef;
 
 	std::map<int, MedianCalculator> mDotApplyDelayEstimation;
 	MedianCalculator mContagionApplyDelayEstimation;
@@ -259,7 +267,14 @@ private:
 	uint64_t mServerTimestamp;
 	uint64_t mLocalTimestamp;
 
+	FFXIVDLL *dll;
 	HANDLE hUnloadEvent;
+
+	bool mWindowsAdded = false;
+	OverlayRenderer::Control &wDPS, &wDOT, &wConfig;
+	DPSWindowController *mDPSController;
+	DOTWindowController *mDOTController;
+	ConfigWindowController *mConfigController;
 
 	z_stream inflater;
 	unsigned char inflateBuffer[DEFLATE_CHUNK_SIZE];
@@ -279,7 +294,7 @@ private:
 	static DWORD WINAPI UpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*)p)->UpdateInfoThread(); return 0; }
 
 public:
-	GameDataProcess(FILE *f, HANDLE unloadEvent);
+	GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent);
 	~GameDataProcess();
 
 	inline int GetActorType(int id);
