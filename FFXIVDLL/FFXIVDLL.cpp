@@ -1,4 +1,8 @@
 #include "FFXIVDLL.h"
+#include "ExternalPipe.h"
+#include "Hooks.h"
+#include "GameDataProcess.h"
+#include "OverlayRenderer.h"
 #include "Tools.h"
 
 FFXIVDLL::FFXIVDLL(HMODULE instance) :

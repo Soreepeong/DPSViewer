@@ -1,10 +1,15 @@
 #pragma once
-#define _CRT_SECURE_NO_WARNINGS
 #include<Windows.h>
-#include"ExternalPipe.h"
-#include"Hooks.h"
-#include"GameDataProcess.h"
-#include"OverlayRenderer.h"
+#include "ExternalPipe.h"
+#include "Hooks.h"
+#include "GameDataProcess.h"
+#include "OverlayRenderer.h"
+
+class ExternalPipe;
+class Hooks;
+class GameDataProcess;
+class OverlayRenderer;
+
 class FFXIVDLL
 {
 private:

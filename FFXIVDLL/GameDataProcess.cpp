@@ -1,12 +1,22 @@
-#define _CRT_NON_CONFORMING_SWPRINTFS
-
-#include "stdafx.h"
+#include <Windows.h>
 #include <deque>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <psapi.h>
 #include "resource.h"
 #include "Languages.h"
+#include "FFXIVDLL.h"
+#include "GameDataProcess.h"
+#include "MedianCalculator.h"
+#include "DPSWindowController.h"
+#include "DOTWindowController.h"
+#include "ImGuiConfigWindow.h"
+#include "OverlayRenderer.h"
+#include "Hooks.h"
+#include "ExternalPipe.h"
+
+#pragma comment(lib, "psapi.lib")
 
 GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	dll(dll), 
@@ -388,7 +398,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 			SYSTEMTIME s1, s2;
 			Tools::MillisToLocalTime(timestamp, &s1);
 			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
-			pos += swprintf(res + pos, L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d",
+			pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d",
 				dll->hooks()->GetOverlayRenderer()->GetFPS(),
 				(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
 				(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
@@ -397,7 +407,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 				int total = 0;
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
 					total += it->second;
-				pos += swprintf(res + pos, L" / %02d:%02d.%03d / %.2f (%d)",
+				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0])-pos, L" / %02d:%02d.%03d / %.2f (%d)",
 					(int)((dur / 60000) % 60), (int)((dur / 1000) % 60), (int)(dur % 1000),
 					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
 			}
@@ -438,7 +448,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(new OverlayRenderer::Control(GetActorJobString(it->first), CONTROL_TEXT_RESNAME, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, (mClassColors[GetActorJobString(it->first)] & 0xFFFFFF) | 0x80000000), CHILD_TYPE_BACKGROUND);
 
-					swprintf(tmp, L"%d", i);
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 
 					if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUser() && it->first != mSelfId)
@@ -448,17 +458,17 @@ void GameDataProcess::UpdateOverlayMessage() {
 						MultiByteToWideChar(CP_UTF8, 0, name, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 					}
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT));
-					swprintf(tmp, L"%.2f", curDps);
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f", curDps);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%d", it->second);
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", it->second);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits));
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits));
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
+					swprintf(tmp, sizeof(tmp)/sizeof(tmp[0]), L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%d", mDpsInfo[it->first].deaths);
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", mDpsInfo[it->first].deaths);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 
 					wTable.addChild(&wRow);
@@ -504,7 +514,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(Languages::getDoTName(it->buffid), CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%.1fs%s",
+					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.1fs%s",
 						(it->expires - timestamp) / 1000.f,
 						it->simulated ? (
 						(getDoTDuration(it->buffid) + (it->contagioned ? 15000 : 0)) < it->expires - timestamp
@@ -519,7 +529,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%d", i);
+					swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
 					wDOT.addChild(&wRow);

@@ -1,5 +1,8 @@
 #pragma once
+#include <Windows.h>
 #include "OverlayRenderer.h"
+
+class OverlayRenderer::Control;
 
 class WindowControllerBase : public OverlayRenderer::Control{
 protected:

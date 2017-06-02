@@ -1,13 +1,17 @@
 #pragma once
 #include<Windows.h>
 #include"Tools.h"
-#include"zlib.h"
+#define ZLIB_WINAPI
+#include"../madler-zlib/zlib.h"
+#include "FFXIVDLL.h"
 #include "MedianCalculator.h"
-#include "DPSWindowController.h"
-#include "DOTWindowController.h"
-#include "ImGuiConfigWindow.h"
+
+#define DEFLATE_CHUNK_SIZE (1 << 18)
 
 class FFXIVDLL;
+class MedianCalculator;
+class DPSWindowController;
+class DOTWindowController;
 
 struct PER_USER_DMG {
 	int def;

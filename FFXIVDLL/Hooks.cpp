@@ -1,6 +1,5 @@
-#include "stdafx.h"
-#include "Hooks.h"
-#include "Tools.h"
+#pragma comment(lib, "ws2_32.lib")
+#include <Winsock2.h>
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx9.h"
 #include <Psapi.h>

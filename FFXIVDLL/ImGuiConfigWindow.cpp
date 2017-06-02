@@ -1,11 +1,11 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include "imgui/imgui.h"
 #include "ImGuiConfigWindow.h"
-#include "OverlayRenderer.h"
 #include <Windows.h>
 #include <windowsx.h>
 #include <Psapi.h>
 #include "FFXIVDLL.h"
+#include "DPSWindowController.h"
+#include "DOTWindowController.h"
 
 ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll(dll),

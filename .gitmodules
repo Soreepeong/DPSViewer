@@ -1,3 +1,6 @@
 [submodule "TsudaKageyu-minhook"]
 	path = TsudaKageyu-minhook
 	url = https://github.com/TsudaKageyu/minhook
+[submodule "madler-zlib"]
+	path = madler-zlib
+	url = https://github.com/madler/zlib

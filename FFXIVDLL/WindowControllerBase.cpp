@@ -1,4 +1,5 @@
 #include "WindowControllerBase.h"
+#include "OverlayRenderer.h"
 
 WindowControllerBase::WindowControllerBase() :
 	OverlayRenderer::Control(),

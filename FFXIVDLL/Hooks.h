@@ -4,10 +4,8 @@
 #include<atomic>
 #include "dx9hook.h"
 #include "dx9table.h"
-#include "OverlayRenderer.h"
+#include "FFXIVDLL.h"
 #include "WindowControllerBase.h"
-
-#define DEFLATE_CHUNK_SIZE (1 << 18)
 
 class Hooks {
 	friend class OverlayRenderer;

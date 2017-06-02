@@ -1,6 +1,6 @@
-#include "stdafx.h"
 #include "OverlayRenderer.h"
 #include "WindowControllerBase.h"
+#include "ExternalPipe.h"
 #include <psapi.h>
 #include <shlobj.h>
 #include <Shlwapi.h>
