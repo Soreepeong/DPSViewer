@@ -1,0 +1,3 @@
+[submodule "TsudaKageyu-minhook"]
+	path = TsudaKageyu-minhook
+	url = https://github.com/TsudaKageyu/minhook
