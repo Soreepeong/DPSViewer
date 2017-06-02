@@ -6,7 +6,7 @@
 
 
 DPSWindowController::DPSWindowController(OverlayRenderer::Control &c, FILE *f) :
-	WindowController(c, f),
+	WindowControllerBase(c, f),
 	mDragging (0)
 {
 }

@@ -5,7 +5,7 @@
 #include "FFXIVDLL.h"
 
 ConfigWindowController::ConfigWindowController(FFXIVDLL *dll, OverlayRenderer::Control &c, FILE *f) :
-	WindowController(c, f),
+	WindowControllerBase(c, f),
 	dll(dll), 
 	mDragging (0)
 {

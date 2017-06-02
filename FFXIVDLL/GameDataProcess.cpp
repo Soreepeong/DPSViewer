@@ -627,6 +627,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			bool add = true;
 			while (it != mActiveDoT.end()) {
 				if (it->source == source && it->target == target && it->buffid == buffId) {
+					it->applied = timestamp;
 					it->expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[it->buffid].get();
 					it->simulated = 1;
 					it->contagioned = 0;
@@ -642,6 +643,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				b.buffid = buffId;
 				b.source = source;
 				b.target = target;
+				b.applied = timestamp;
 				b.expires = timestamp + getDoTDuration(buffId);
 				b.potency = getDoTPotency(b.buffid);
 				b.simulated = 1;
@@ -658,6 +660,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 					if (it->expires - mContagionApplyDelayEstimation.get() < timestamp) {
 						it = mActiveDoT.erase(it);
 					} else if (it->source == source && it->target == target) {
+						it->applied = timestamp;
 						it->expires += 15000;
 						it->simulated = 1;
 						it->contagioned = 1;
@@ -783,14 +786,15 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 						uint64_t nexpire = timestamp + (int)(msg->Combat.AddBuff.buffs[i].duration * 1000);
 						if (it->simulated) {
 							if (it->contagioned) {
-								mContagionApplyDelayEstimation.add((int) (nexpire - it->expires));
+								mContagionApplyDelayEstimation.add((int) (timestamp - it->applied));
 								//sprintf(tss, "cmsg => simulated (Contagion: %d / %d)", nexpire - it->expires, estimatedContagionDelay.get());
 							} else {
-								mDotApplyDelayEstimation[it->buffid].add((int) (nexpire - it->expires));
+								mDotApplyDelayEstimation[it->buffid].add((int) (timestamp - it->applied));
 								//sprintf(tss, "cmsg => simulated (%d: %d / %d)", it->buffid, nexpire - it->expires, estimatedDelays[it->buffid].get());
 							}
 							//dll->pipe()->sendInfo(tss);
 						}
+						it->applied = timestamp;
 						it->expires = nexpire;
 						it->simulated = 0;
 						it->contagioned = 0;
@@ -806,6 +810,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					b.buffid = msg->Combat.AddBuff.buffs[i].buffID;
 					b.source = msg->Combat.AddBuff.buffs[i].actorID;
 					b.target = msg->actor;
+					b.applied = timestamp;
 					b.expires = timestamp + (int)(msg->Combat.AddBuff.buffs[i].duration * 1000);
 					b.potency = getDoTPotency(b.buffid);
 					b.contagioned = 0;
@@ -851,6 +856,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 											if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
 												it->source == msg->actor &&
 												it->target == msg->Combat.UseAoEAbility.targets[i].target) {
+												it->applied = timestamp;
 												it->expires = expires;
 												it->simulated = 1;
 												addNew = false;
@@ -858,6 +864,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 											}
 										if (addNew) {
 											buff.buffid = msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage;
+											buff.applied = timestamp;
 											buff.expires = expires;
 											buff.source = msg->actor;
 											buff.target = msg->Combat.UseAoEAbility.targets[i].target;

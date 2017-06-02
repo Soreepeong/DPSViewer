@@ -63,6 +63,7 @@ struct TEMPBUFF {
 	int target;
 	int buffid;
 	int potency;
+	uint64_t applied;
 	uint64_t expires;
 	int simulated : 1;
 	int contagioned : 1;

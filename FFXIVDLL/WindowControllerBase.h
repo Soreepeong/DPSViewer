@@ -1,13 +1,12 @@
 #pragma once
 #include "OverlayRenderer.h"
 
-class WindowControllerBase {
+class WindowControllerBase : public OverlayRenderer::Control{
 protected:
-	OverlayRenderer::Control& mControl;
 	int mLocked;
 
 public:
-	WindowControllerBase(OverlayRenderer::Control &mControl, FILE *f);
+	WindowControllerBase(FILE *f);
 	~WindowControllerBase();
 
 	void save(FILE *f);

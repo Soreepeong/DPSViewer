@@ -232,26 +232,6 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 						child.left += (*it)->calcWidth;
 					}
 				}
-			} else if (layoutDirection == LAYOUT_DIRECTION_HORIZONTAL_REVERSE) {
-				int base = child.right;
-				int maxHeight = 0;
-				std::map<
-				for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it) {
-					(*it)->measure(target, child, -1, -1, 0);
-					child.right -= (*it)->calcWidth;
-					if (heightFixed == -1 && height == SIZE_WRAP && !relativeSize && maxHeight < (*it)->calcHeight)
-						maxHeight = (*it)->calcHeight;
-				}
-				child.bottom = min(child.top + maxHeight, area.bottom);
-				rc.right = child.left + border + padding + margin - calcX;
-				rc.bottom = child.bottom + border + padding + margin - calcY;
-				if (height == SIZE_WRAP && heightFixed == -1) {
-					child.left = base;
-					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it) {
-						(*it)->measure(target, child, -1, rc.bottom - rc.top - 2 * (border + padding + margin), 0);
-						child.left += (*it)->calcWidth;
-					}
-				}
 			} else {
 				int base = child.top;
 				int maxWidth = 0;

@@ -5,8 +5,8 @@
 
 
 
-DOTWindowController::DOTWindowController(OverlayRenderer::Control &c, FILE *f) :
-	WindowController(c, f),
+DOTWindowController::DOTWindowController(FILE *f) :
+	WindowControllerBase(f),
 	mDragging (0)
 {
 }
@@ -39,8 +39,8 @@ int DOTWindowController::callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			return 3; // capture and eat
 		} else if (mDragging == 2) {
 
-			mControl.xF = min(1 - mControl.calcWidth / mControl.getParent()->width, max(0, mControl.xF + (float)(x - mLastX) / mControl.getParent()->width));
-			mControl.yF = min(1 - mControl.calcHeight / mControl.getParent()->height, max(0, mControl.yF + (float)(y - mLastY) / mControl.getParent()->height));
+			xF = min(1 - mControl.calcWidth / mControl.getParent()->width, max(0, mControl.xF + (float)(x - mLastX) / mControl.getParent()->width));
+			yF = min(1 - mControl.calcHeight / mControl.getParent()->height, max(0, mControl.yF + (float)(y - mLastY) / mControl.getParent()->height));
 
 			mLastX = x; mLastY = y;
 			return 3; // capture and eat

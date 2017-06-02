@@ -28,9 +28,6 @@
     <ClCompile Include="OverlayRenderer_Control.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowController.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DPSWindowController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -38,6 +35,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowControllerBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,13 +90,13 @@
     <ClInclude Include="DPSWindowController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="WindowController.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DOTWindowController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowControllerBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

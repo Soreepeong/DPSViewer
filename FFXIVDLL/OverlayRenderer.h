@@ -15,9 +15,7 @@ enum CONTROL_STATUS_ID : uint32_t{
 };
 enum CONTROL_LAYOUT_DIRECTION {
 	LAYOUT_DIRECTION_HORIZONTAL,
-	LAYOUT_DIRECTION_HORIZONTAL_REVERSE,
 	LAYOUT_DIRECTION_VERTICAL,
-	LAYOUT_DIRECTION_VERTICAL_REVERSE,
 	LAYOUT_DIRECTION_VERTICAL_TABLE,
 	LAYOUT_ABSOLUTE
 };
@@ -34,7 +32,7 @@ enum CONTROL_CHILD_TYPE : uint32_t {
 };
 
 class FFXIVDLL;
-class WindowController;
+class WindowControllerBase;
 
 class OverlayRenderer {
 	friend class Hooks;
@@ -68,7 +66,7 @@ public:
 
 		CONTROL_LAYOUT_DIRECTION layoutDirection;
 
-		WindowController *callback;
+		WindowControllerBase *callback;
 
 		int visible;
 

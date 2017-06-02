@@ -185,7 +185,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Tools.h" />
-    <ClInclude Include="WindowController.h" />
+    <ClInclude Include="WindowControllerBase.h" />
     <ClInclude Include="zconf.h" />
     <ClInclude Include="zlib.h" />
   </ItemGroup>
@@ -215,7 +215,7 @@
     <ClCompile Include="OverlayRenderer.cpp" />
     <ClCompile Include="OverlayRenderer_Control.cpp" />
     <ClCompile Include="Tools.cpp" />
-    <ClCompile Include="WindowController.cpp" />
+    <ClCompile Include="WindowControllerBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="libMinHook-x86-v140-mt.lib" />

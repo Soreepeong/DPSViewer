@@ -1,6 +1,6 @@
 #pragma once
 #include "WindowController.h"
-class DPSWindowController : public WindowController{
+class DPSWindowController : public WindowControllerBase{
 private:
 	int mLastX;
 	int mLastY;

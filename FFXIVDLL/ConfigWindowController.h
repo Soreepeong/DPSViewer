@@ -1,7 +1,7 @@
 #pragma once
-#include "WindowController.h"
+#include "WindowControllerBase.h"
 
-class ConfigWindowController : public WindowController{
+class ConfigWindowController : public WindowControllerBase{
 private:
 	typedef OverlayRenderer::Control ORC;
 	int mLastX;
