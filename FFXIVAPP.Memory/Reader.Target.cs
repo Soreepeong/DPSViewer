@@ -40,7 +40,6 @@ namespace FFXIVAPP.Memory
                     if (Scanner.Instance.Locations.ContainsKey("TARGET"))
                     {
                         var targetAddress = (IntPtr) Scanner.Instance.Locations["TARGET"];
-                        var somethingFound = false;
                         if (targetAddress.ToInt64() > 0)
                         {
                             //var targetInfo = MemoryHandler.Instance.GetStructure<Structures.Target>(targetAddress);

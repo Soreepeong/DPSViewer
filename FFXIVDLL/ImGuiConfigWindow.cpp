@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "imgui/imgui.h"
 #include "ImGuiConfigWindow.h"
 #include "OverlayRenderer.h"
@@ -20,8 +21,8 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 
 	Languages::language = (Languages::LANGUAGE)readIni(L"UI", L"Language", 0, 0, Languages::_LANGUAGE_COUNT);
 	UseDrawOverlay = readIni(L"UI", L"UseOverlay", 1, 0, 1);
-	fontSize = readIni(L"UI", L"FontSize", 17, 9, 64);
-	bold = readIni(L"UI", L"FontBold", 1, 0, 1);
+	fontSize_old = fontSize = readIni(L"UI", L"FontSize", 17, 9, 36);
+	bold = readIni(L"UI", L"FontBold", 1, 0, 1)?true:false;
 	border = readIni(L"UI", L"FontBorder", 0, 0, 3);
 	readIni(L"UI", L"FontName", "Segoe UI", fontName, sizeof(fontName));
 	
@@ -41,8 +42,11 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 		dll->process()->wDPS.lock();
 	}
 	transparency = readIni(L"Meters", L"Transparency", 100, 0, 255);
+	padding = readIni(L"Meters", L"Padding", 4, 0, 32);
 	dll->process()->wDOT.setTransparency(transparency);
 	dll->process()->wDPS.setTransparency(transparency);
+	dll->process()->wDOT.setPaddingRecursive(padding);
+	dll->process()->wDPS.setPaddingRecursive(padding);
 
 	dll->process()->wDOT.visible = readIni(L"DOTMeter", L"Visible", 1, 0, 1);
 	dll->process()->wDOT.xF = readIni(L"DOTMeter", L"x", 0.1f, 0.f, 1.f);
@@ -52,6 +56,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDPS.xF = readIni(L"DPSMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDPS.yF = readIni(L"DPSMeter", L"y", 0.1f, 0.f, 1.f);
 	UseDrawOverlayEveryone = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
+	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
 
 	dll->process()->ReloadLocalization();
 
@@ -81,6 +86,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 
 	writeIni(L"Meters", L"Locked", (int) dll->process()->wDOT.isLocked());
 	writeIni(L"Meters", L"Transparency", transparency);
+	writeIni(L"Meters", L"Padding", padding);
 
 	writeIni(L"DOTMeter", L"Visible", dll->process()->wDOT.visible);
 	writeIni(L"DOTMeter", L"x", dll->process()->wDOT.xF);
@@ -90,6 +96,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"x", dll->process()->wDPS.xF);
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
 	writeIni(L"DPSMeter", L"ShowEveryone", UseDrawOverlayEveryone);
+	writeIni(L"DPSMeter", L"CombatResetTime", combatResetTime);
 
 }
 
@@ -116,12 +123,12 @@ void ImGuiConfigWindow::readIni(TCHAR *k1, TCHAR *k2, char *def, char *target, i
 
 void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, int val) {
 	TCHAR str[256];
-	swprintf(str, L"%d", val);
+	swprintf(str, sizeof(str)/sizeof(TCHAR), L"%d", val);
 	WritePrivateProfileString(k1, k2, str, mSettingFilePath);
 }
 void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, float val) {
 	TCHAR str[256];
-	swprintf(str, L"%f", val);
+	swprintf(str, sizeof(str) / sizeof(TCHAR), L"%f", val);
 	WritePrivateProfileString(k1, k2, str, mSettingFilePath);
 }
 void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, char* val) {
@@ -136,6 +143,8 @@ void ImGuiConfigWindow::Show() {
 
 void ImGuiConfigWindow::Render() {
 	if (mConfigVisibility) {
+		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, transparency/255.f);
+		ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiSetCond_FirstUseEver);
 		ImGui::Begin(Languages::get("OPTION_WINDOW_TITLE"), &mConfigVisibility);
 
 		ImGui::Combo(Languages::get("OPTION_LANGUAGE"), &Languages::language, mLanguageChoice);
@@ -157,12 +166,21 @@ void ImGuiConfigWindow::Render() {
 		}
 		ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
 		ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
-		ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 64);
+		ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
 		ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);
 		ImGui::InputText(Languages::get("OPTION_FONT_NAME"), fontName, sizeof(fontName));
+		ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
+		ImGui::SliderInt(Languages::get("OPTION_METER_PADDING"), &padding, 0, 32);
 		if (ImGui::Button(Languages::get("OPTION_APPLY"))) {
 			dll->process()->wDPS.setTransparency(transparency);
 			dll->process()->wDOT.setTransparency(transparency);
+			dll->process()->wDPS.setPaddingRecursive(padding);
+			dll->process()->wDOT.setPaddingRecursive(padding);
+			dll->process()->mCombatResetTime = combatResetTime * 1000;
+			if (fontSize_old != fontSize) {
+				mRenderer->ReloadImGuiFromConfig();
+				fontSize_old = fontSize;
+			}
 			mRenderer->ReloadFromConfig();
 			dll->process()->ReloadLocalization();
 		}

@@ -16,7 +16,7 @@ int MedianCalculator::calcMedian() {
 		return 0;
 
 	const size_t n = values.size();
-	double median = 0;
+	int median = 0;
 
 	auto iter = values.cbegin();
 	std::advance(iter, n / 2);
@@ -24,7 +24,7 @@ int MedianCalculator::calcMedian() {
 	// Middle or average of two middle values
 	if (n % 2 == 0) {
 		const auto iter2 = iter--;
-		median = double(*iter + *iter2) / 2;    // data[n/2 - 1] AND data[n/2]
+		median = (*iter + *iter2) / 2;    // data[n/2 - 1] AND data[n/2]
 	} else {
 		median = *iter;
 	}
@@ -51,11 +51,11 @@ void MedianCalculator::save(FILE *f) {
 }
 void MedianCalculator::load(FILE *f) {
 	int sz = 0, n;
-	fscanf(f, "%d", &sz);
+	fscanf_s(f, "%d", &sz);
 	sz = max(0, min(64, sz));
 	while (sz-- > 0) {
 		n = 0;
-		fscanf(f, "%d", &n);
+		fscanf_s(f, "%d", &n);
 		values.insert(n);
 	}
 	median = calcMedian();

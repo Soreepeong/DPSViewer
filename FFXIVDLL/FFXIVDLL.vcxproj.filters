@@ -99,9 +99,6 @@
     <ClInclude Include="Tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MinHook.h">
-      <Filter>Libraries</Filter>
-    </ClInclude>
     <ClInclude Include="WindowControllerBase.h">
       <Filter>CustomControls</Filter>
     </ClInclude>
@@ -132,18 +129,15 @@
     <ClInclude Include="imgui\imgui_impl_dx9.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGuiConfigWindow.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Languages.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiConfigWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="zlib.lib">
-      <Filter>Libraries</Filter>
-    </Library>
-    <Library Include="libMinHook-x86-v140-mt.lib">
       <Filter>Libraries</Filter>
     </Library>
   </ItemGroup>

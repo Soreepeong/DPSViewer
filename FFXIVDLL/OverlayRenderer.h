@@ -107,6 +107,8 @@ public:
 		std::wstring text;
 		int textAlign;
 
+		void setPaddingRecursive(int p);
+
 		void measure(OverlayRenderer *target, RECT &area, int widthFixed, int heightFixed, int skipChildren);
 		void draw(OverlayRenderer *target);
 		int hittest(int x, int y) const;
@@ -147,6 +149,9 @@ private:
 	void DrawText(int x, int y, TCHAR *text, D3DCOLOR Color);
 	void DrawText(int x, int y, int width, int height, TCHAR *text, D3DCOLOR Color, int align);
 	void RenderOverlay();
+
+	void ReloadImGuiFromConfig();
+	bool mRecreateImGuiObjects;
 
 	std::deque<IDirect3DSurface9*> mCaptureBuffers;
 	std::recursive_mutex mCaptureMutex;

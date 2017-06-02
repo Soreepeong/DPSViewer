@@ -9,8 +9,6 @@
 
 class FFXIVDLL;
 
-#define IDLETIME 10000
-
 struct PER_USER_DMG {
 	int def;
 	int ind;
@@ -72,7 +70,12 @@ struct TEMPBUFF {
 struct TEMPDMG {
 	uint64_t timestamp;
 	int source;
+	union {
+		int skill;
+		int buffId;
+	};
 	int dmg;
+	bool isDoT;
 	bool isCrit;
 };
 
@@ -260,6 +263,7 @@ private:
 
 	std::vector<std::pair<int, int>> mCalculatedDamages;
 	uint64_t mLastIdleTime = 0;
+	uint64_t mCombatResetTime = 10000;
 
 	std::map<int, MedianCalculator> mDotApplyDelayEstimation;
 	MedianCalculator mContagionApplyDelayEstimation;

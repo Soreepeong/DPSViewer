@@ -64,7 +64,7 @@ DWORD Tools::GetMainThreadID(DWORD dwProcID)
 						LARGE_INTEGER li;
 						li.LowPart = afTimes[0].dwLowDateTime;
 						li.HighPart = afTimes[0].dwHighDateTime;
-						if (li.QuadPart && li.QuadPart < ullMinCreateTime) {
+						if (li.QuadPart && (uint64_t)li.QuadPart < ullMinCreateTime) {
 							ullMinCreateTime = li.QuadPart;
 							dwMainThreadID = th32.th32ThreadID; // let it be main... :)
 						}

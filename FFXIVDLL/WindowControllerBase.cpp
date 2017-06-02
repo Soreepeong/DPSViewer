@@ -4,10 +4,9 @@ WindowControllerBase::WindowControllerBase() :
 	OverlayRenderer::Control(),
 	mLocked(0)
 {
-	xF = 0.1;
-	yF = 0.1;
+	xF = 0.1f;
+	yF = 0.1f;
 	visible = 1;
-	int tr = 0x80;
 	setTransparency(0x80);
 }
 

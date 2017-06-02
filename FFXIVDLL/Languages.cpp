@@ -29,7 +29,7 @@ namespace Languages {
 	}
 
 	void initialize() {
-		loc[LANGUAGE_ENGLISH]["OPTION_WINDOW_TITLE"] = "Options";
+		loc[LANGUAGE_ENGLISH]["OPTION_WINDOW_TITLE"] = "Options###IDOptionWindow";
 		loc[LANGUAGE_ENGLISH]["OPTION_LANGUAGE"] = "Language";
 		loc[LANGUAGE_ENGLISH]["OPTION_UNLOCK"] = "Unlock";
 		loc[LANGUAGE_ENGLISH]["OPTION_LOCK"] = "Lock";
@@ -44,6 +44,8 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_NAME"] = "Font name";
 		loc[LANGUAGE_ENGLISH]["OPTION_TEXT_BORDER"] = "Text border";
 		loc[LANGUAGE_ENGLISH]["OPTION_TRANSPARENCY"] = "Transparency";
+		loc[LANGUAGE_ENGLISH]["OPTION_METER_PADDING"] = "Padding";
+		loc[LANGUAGE_ENGLISH]["OPTION_DPS_RESET_TIME"] = "DPS reset wait";
 		loc[LANGUAGE_ENGLISH]["OPTION_APPLY"] = "Apply";
 		loc[LANGUAGE_ENGLISH]["OPTION_CAPTURE_PATH"] = "Capture path";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_RESET"] = "Reset DPS Meter";
@@ -59,7 +61,7 @@ namespace Languages {
 		loc2[LANGUAGE_ENGLISH][L"DOTTABLE_SKILL"] = L"Skill";
 		loc2[LANGUAGE_ENGLISH][L"DOTTABLE_TIME"] = L"Time";
 
-		loc[LANGUAGE_KOREAN]["OPTION_WINDOW_TITLE"] = u8"설정";
+		loc[LANGUAGE_KOREAN]["OPTION_WINDOW_TITLE"] = u8"설정###IDOptionWindow";
 		loc[LANGUAGE_KOREAN]["OPTION_LANGUAGE"] = u8"언어";
 		loc[LANGUAGE_KOREAN]["OPTION_UNLOCK"] = u8"잠금 해제";
 		loc[LANGUAGE_KOREAN]["OPTION_LOCK"] = u8"잠그기";
@@ -74,6 +76,8 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_NAME"] = u8"서체 이름";
 		loc[LANGUAGE_KOREAN]["OPTION_TEXT_BORDER"] = u8"글자 테두리";
 		loc[LANGUAGE_KOREAN]["OPTION_TRANSPARENCY"] = u8"투명도";
+		loc[LANGUAGE_KOREAN]["OPTION_METER_PADDING"] = u8"간격";
+		loc[LANGUAGE_KOREAN]["OPTION_DPS_RESET_TIME"] = u8"DPS 초기화 대기시간";
 		loc[LANGUAGE_KOREAN]["OPTION_APPLY"] = u8"적용";
 		loc[LANGUAGE_KOREAN]["OPTION_CAPTURE_PATH"] = u8"캡쳐 경로";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_RESET"] = u8"DPS 초기화";

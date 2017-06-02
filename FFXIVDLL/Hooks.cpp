@@ -6,6 +6,7 @@
 #include <Psapi.h>
 #include <windowsx.h>
 #include "FFXIVDLL.h"
+#include "../TsudaKageyu-minhook/include/MinHook.h"
 
 bool Hooks::mHookStarted = false;
 std::atomic_int Hooks::mHookedFunctionDepth;
@@ -175,6 +176,7 @@ char Hooks::hook_ProcessWindowMessage() {
 	if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT)0x8001)
 		pOverlayRenderer->CaptureScreen();
 
+
 	char res = pfnBridge.ProcessWindowMessage();
 	mHookedFunctionDepth--;
 	return res;
@@ -252,7 +254,6 @@ extern LRESULT ImGui_ImplDX9_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, 
 LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	bool callDef = false;
 	ImGuiIO &io = ImGui::GetIO();
-	// if (! || (!io.WantCaptureKeyboard && !io.WantCaptureMouse && !io.WantTextInput))
 	ImGui_ImplDX9_WndProcHandler(hWnd, iMessage, wParam, lParam);
 	if (io.WantCaptureMouse)
 		mLockCursor = true;
@@ -332,7 +333,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 	case WM_CHAR:
 		if (io.WantCaptureKeyboard || io.WantTextInput)
 			return 0;
-		if (ffxivHookCaptureControl && !ffxivWndPressed) {
+		else if (ffxivHookCaptureControl && !ffxivWndPressed) {
 			int res = ffxivHookCaptureControl->callback(hWnd, iMessage, wParam, lParam);
 			switch (res) {
 			case 0: updateLastFocus(nullptr); callDef = true; break;
@@ -342,7 +343,8 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 			case 4: callDef = true; break;
 			case 5: callDef = false; break;
 			}
-		}
+		} else
+			callDef = true;
 		break;
 	default:
 		callDef = true;

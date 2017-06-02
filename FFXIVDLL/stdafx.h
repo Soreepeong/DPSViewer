@@ -15,7 +15,6 @@
 #include <OleAuto.h>
 #include <atomic>
 #include "zlib.h"
-#include "MinHook.h"
 #include "FFXIVDLL.h"
 #pragma comment(lib, "psapi.lib")
 

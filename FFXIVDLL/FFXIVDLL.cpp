@@ -1,5 +1,4 @@
 #include "FFXIVDLL.h"
-#include "MinHook.h"
 #include "Tools.h"
 
 FFXIVDLL::FFXIVDLL(HMODULE instance) :
@@ -11,7 +10,9 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	FILE *f = _wfopen(fn, L"r");
 	if (f == nullptr)
 		return;
-	fwscanf(f, L"%d", &ffxivHwnd);
+	int n;
+	fscanf_s(f, "%d", &n);
+	ffxivHwnd = (HWND)n;
 
 	Languages::initialize();
 

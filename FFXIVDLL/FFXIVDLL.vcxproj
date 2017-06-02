@@ -99,10 +99,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;CHATINJECTOR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -135,12 +137,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CHATINJECTOR_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -187,7 +191,6 @@
     <ClInclude Include="imgui\stb_truetype.h" />
     <ClInclude Include="Languages.h" />
     <ClInclude Include="MedianCalculator.h" />
-    <ClInclude Include="MinHook.h" />
     <ClInclude Include="OverlayRenderer.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
@@ -231,7 +234,6 @@
     <ClCompile Include="WindowControllerBase.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="libMinHook-x86-v140-mt.lib" />
     <Library Include="zlib.lib" />
   </ItemGroup>
   <ItemGroup>
@@ -291,6 +293,11 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ColorDef.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TsudaKageyu-minhook\build\VC14\libMinHook.vcxproj">
+      <Project>{f142a341-5ee0-442d-a15f-98ae9b48dbae}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

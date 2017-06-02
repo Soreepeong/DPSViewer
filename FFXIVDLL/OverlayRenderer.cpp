@@ -16,13 +16,14 @@ OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	mSprite(nullptr),
 	dll (dll),
 	mConfig(dll, this),
+	mRecreateImGuiObjects(true),
 	hSaverThread(INVALID_HANDLE_VALUE) {
 
 	memset(mWindows.statusMap, 0, sizeof(mWindows.statusMap));
 	mWindows.layoutDirection = LAYOUT_ABSOLUTE;
 
 	ImGui_ImplDX9_Init(dll->ffxiv(), pDevice);
-	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", (float) mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
 	OnResetDevice();
 }
 
@@ -65,7 +66,10 @@ void OverlayRenderer::ReloadFromConfig() {
 	TCHAR fn[512];
 	MultiByteToWideChar(CP_UTF8, NULL, mConfig.fontName, -1, fn, sizeof(fn) / sizeof(fn[0]));
 	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fn, &mFont);
-	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+}
+
+void OverlayRenderer::ReloadImGuiFromConfig() {
+	mRecreateImGuiObjects = true;
 }
 
 void OverlayRenderer::OnLostDevice() {
@@ -127,7 +131,11 @@ void OverlayRenderer::DrawBox(int x, int y, int w, int h, D3DCOLOR Color) {
 		float x, y, z, ht;
 		DWORD Color;
 	}
+#pragma warning( push )
+#pragma warning( disable : 4838)
+#pragma warning( disable : 4244)
 	V[4] = { { x, y + h, 0.0f, 0.0f, Color },{ x, y, 0.0f, 0.0f, Color },{ x + w, y + h, 0.0f, 0.0f, Color },{ x + w, y, 0.0f, 0.0f, Color } };
+#pragma warning( pop )
 	pDevice->SetTexture(0, NULL);
 	pDevice->SetPixelShader(0);
 	pDevice->SetFVF(D3DFVF_XYZRHW | D3DFVF_DIFFUSE);
@@ -168,7 +176,7 @@ void OverlayRenderer::DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9
 	tex->GetLevelDesc(0, &desc);
 	D3DXMATRIX matrix;
 	D3DXVECTOR3 scale((float)w / desc.Width, (float)h / desc.Height, 1);
-	D3DXVECTOR3 translate(x, y, 0);
+	D3DXVECTOR3 translate((float) x, (float) y, 0);
 	D3DXMatrixTransformation(&matrix, NULL, NULL, &scale, NULL, NULL, &translate);
 	mSprite->Begin(D3DXSPRITE_ALPHABLEND);
 	mSprite->SetTransform(&matrix);
@@ -205,7 +213,10 @@ void OverlayRenderer::RenderOverlay() {
 		
 		D3DVIEWPORT9 prt;
 		pDevice->GetViewport(&prt);
+#pragma warning( push )
+#pragma warning( disable : 4838)
 		RECT rect = { prt.X, prt.Y, prt.X+prt.Width, prt.Y+prt.Height };
+#pragma warning( pop )
 
 		pDevice->BeginScene();
 
@@ -219,6 +230,14 @@ void OverlayRenderer::RenderOverlay() {
 			}
 		}
 		mWindows.draw(this);
+
+		if (mRecreateImGuiObjects) {
+			ImGui_ImplDX9_InvalidateDeviceObjects();
+			ImGui::GetIO().Fonts->Clear();
+			ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", (float)mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+			ImGui_ImplDX9_CreateDeviceObjects();
+			mRecreateImGuiObjects = false;
+		}
 
 		ImGui_ImplDX9_NewFrame();
 		mConfig.Render();

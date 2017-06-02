@@ -56,7 +56,6 @@ namespace FFXIVAPP.Memory
                     signatures.RemoveAll(a => Locations.ContainsKey(a.Key));
                     FindExtendedSignatures(signatures);
                 }
-                _memDump = null;
                 sw.Stop();
                 return true;
             };
@@ -264,8 +263,7 @@ namespace FFXIVAPP.Memory
         #endregion
 
         #region Declarations
-
-        private byte[] _memDump;
+		
         private List<UnsafeNativeMethods.MEMORY_BASIC_INFORMATION> _regions;
 
         #endregion

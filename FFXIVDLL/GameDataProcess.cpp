@@ -18,10 +18,13 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	wDOT(*new DOTWindowController()) {
 	mLastAttack.dmg = 0;
 	mLastAttack.timestamp = 0;
+#pragma warning( push )
+#pragma warning( disable : 4477)
 	fwscanf(f, L"%d%d%d%d%d%d",
 		&pActorMap, &pActor.id, &pActor.name, &pActor.owner, &pActor.type, &pActor.job);
 	fwscanf(f, L"%d%d%d%d",
 		&pTargetMap, &pTarget.current, &pTarget.hover, &pTarget.focus);
+#pragma warning( pop )
 
 	mLocalTimestamp = mServerTimestamp = Tools::GetLocalTimestamp();
 
@@ -105,7 +108,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 }
 
 void GameDataProcess::ReloadLocalization(){
-	wDPS.getChild(0)->removeAllChildren();
+	wDPS.getChild(1)->removeAllChildren();
 	wDOT.removeAllChildren();
 
 	OverlayRenderer::Control *mTableHeaderDef = new OverlayRenderer::Control();
@@ -119,7 +122,8 @@ void GameDataProcess::ReloadLocalization(){
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CMH"), CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_MAX"), CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DEATH"), CONTROL_TEXT_STRING, DT_CENTER));
-	wDPS.getChild(0)->addChild(mTableHeaderDef);
+	wDPS.getChild(1)->addChild(mTableHeaderDef);
+	wDPS.getChild(1)->setPaddingRecursive(wDPS.padding);
 	mTableHeaderDef = new OverlayRenderer::Control();
 	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_RESNAME, DT_CENTER));
@@ -127,6 +131,7 @@ void GameDataProcess::ReloadLocalization(){
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DOTTABLE_SKILL"), CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DOTTABLE_TIME"), CONTROL_TEXT_STRING, DT_RIGHT));
 	wDOT.addChild(mTableHeaderDef);
+	wDPS.setPaddingRecursive(wDPS.padding);
 }
 
 GameDataProcess::~GameDataProcess() {
@@ -345,7 +350,7 @@ void GameDataProcess::CalculateDps(uint64_t timestamp) {
 void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 	if (GetActorType(dmg.source) == ACTOR_TYPE_PC) {
 
-		if (mLastAttack.timestamp < dmg.timestamp - IDLETIME) {
+		if (mLastAttack.timestamp < dmg.timestamp - mCombatResetTime) {
 			mDpsInfo.clear();
 			mLastIdleTime = dmg.timestamp - 1000;
 		}
@@ -382,7 +387,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 		{
 			SYSTEMTIME s1, s2;
 			Tools::MillisToLocalTime(timestamp, &s1);
-			Tools::MillisToSystemTime(timestamp*EORZEA_CONSTANT, &s2);
+			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
 			pos += swprintf(res + pos, L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d",
 				dll->hooks()->GetOverlayRenderer()->GetFPS(),
 				(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
@@ -402,10 +407,10 @@ void GameDataProcess::UpdateOverlayMessage() {
 				delete wTable.removeChild(1);
 
 			if (!mDpsInfo.empty()) {
-				int i = 0;
-				int disp = 0;
+				uint32_t i = 0;
+				uint32_t disp = 0;
 				bool dispme = false;
-				int mypos = 0;
+				uint32_t mypos = 0;
 				if (mCalculatedDamages.size() > 8) {
 					for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it, mypos++)
 						if (it->first == mSelfId)
@@ -415,13 +420,6 @@ void GameDataProcess::UpdateOverlayMessage() {
 				}
 				float maxDps = (float)(mCalculatedDamages.begin()->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
 				int displayed = 0;
-
-
-
-
-				for(int aa=0;aa<5;aa++)
-
-
 
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
 					i++;
@@ -454,7 +452,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, L"%d", it->second);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, L"%.2f%%", 100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits);
+					swprintf(tmp, L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits));
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
@@ -479,18 +477,18 @@ void GameDataProcess::UpdateOverlayMessage() {
 					++it;
 				}
 			}
+			while (wDOT.getChildCount() > 1)
+				delete wDOT.removeChild(1);
 			if (!buff_sort.empty()) {
-				while (wDOT.getChildCount() > 1)
-					delete wDOT.removeChild(1);
 				int currentTarget = GetTargetId(pTarget.current);
 				int focusTarget = GetTargetId(pTarget.focus);
 				int hoverTarget = GetTargetId(pTarget.hover);
 				std::sort(buff_sort.begin(), buff_sort.end(), [&](const TEMPBUFF & a, const TEMPBUFF & b) {
-					if (a.target == focusTarget ^ b.target == focusTarget)
+					if ((a.target == focusTarget) ^ (b.target == focusTarget))
 						return (a.target == focusTarget ? 1 : 0) > (b.target == focusTarget ? 1 : 0);
-					if (a.target == currentTarget ^ b.target == currentTarget)
+					if ((a.target == currentTarget) ^ (b.target == currentTarget))
 						return (a.target == currentTarget ? 1 : 0) > (b.target == currentTarget ? 1 : 0);
-					if (a.target == hoverTarget ^ b.target == hoverTarget)
+					if ((a.target == hoverTarget) ^ (b.target == hoverTarget))
 						return (a.target == hoverTarget ? 1 : 0) > (b.target == hoverTarget ? 1 : 0);
 					return a.expires < b.expires;
 				});
@@ -533,6 +531,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDPS);
 			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDOT);
 		}
+		wDPS.getChild(1)->setPaddingRecursive(wDPS.padding);
+		wDOT.setPaddingRecursive(wDOT.padding);
 	}
 }
 
@@ -541,7 +541,9 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		if (info->attack[i].swingtype == 0) continue;
 
 		TEMPDMG dmg = { 0 };
+		dmg.isDoT = false;
 		dmg.timestamp = timestamp;
+		dmg.skill = skill;
 		if (mDamageRedir.find(source) != mDamageRedir.end())
 			source = mDamageRedir[source];
 		dmg.source = source;
@@ -579,6 +581,8 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		case 17:
 		case 18: {
 			int buffId = info->attack[i].damage;
+			dmg.buffId = buffId;
+			dmg.isDoT = true;
 
 			if (getDoTPotency(buffId) == 0)
 				continue; // not an attack buff
@@ -666,20 +670,18 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 			if (msg->Combat.Info1.c1 == 23 && msg->Combat.Info1.c2 == 3) {
 				if (msg->Combat.Info1.c5 == 0) {
 					int total = 0;
-					std::map<int, int> portions;
 					for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
-						if (it->target == msg->actor) {
-							portions[it->source] += it->potency;
-						}
 						total += it->potency;
 					}
 					if (total > 0) {
-						for (auto const &ent1 : portions) {
-							int mine = msg->Combat.Info1.c3 * ent1.second / total;
+						for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
+							int mine = msg->Combat.Info1.c3 * it->potency / total;
 							if (mine > 0) {
 								TEMPDMG dmg;
 								dmg.timestamp = timestamp;
-								dmg.source = ent1.first;
+								dmg.source = it->source;
+								dmg.buffId = it->buffid;
+								dmg.isDoT = true;
 								dmg.dmg = mine;
 								if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
 									dmg.source = mDamageRedir[dmg.source];
@@ -695,6 +697,8 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 								TEMPDMG dmg;
 								dmg.timestamp = timestamp;
 								dmg.source = it->source;
+								dmg.buffId = it->buffid;
+								dmg.isDoT = true;
 								dmg.dmg = mine;
 								if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
 									dmg.source = mDamageRedir[dmg.source];

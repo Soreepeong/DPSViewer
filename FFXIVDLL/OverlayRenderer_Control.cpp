@@ -87,6 +87,12 @@ OverlayRenderer::Control::~Control() {
 	removeAllChildren();
 }
 
+void OverlayRenderer::Control::setPaddingRecursive(int p) {
+	padding = p;
+	for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it)
+		(*it)->setPaddingRecursive(p);
+}
+
 int OverlayRenderer::Control::hittest(int x, int y) const {
 	return calcX <= x && x <= calcX + calcWidth && calcY <= y && y <= calcY + calcHeight;
 }
@@ -252,7 +258,7 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 					std::vector<int> colWidth;
 					int baseTop = children[CHILD_TYPE_NORMAL].front()->calcY;
 					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it) {
-						int colIndex = 0;
+						uint32_t colIndex = 0;
 						int colHeight = 0;
 						for (auto it2 = (*it)->children[CHILD_TYPE_NORMAL].begin(); it2 != (*it)->children[CHILD_TYPE_NORMAL].end(); ++it2, ++colIndex) {
 							if (colWidth.size() <= colIndex)
@@ -283,6 +289,7 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 						}
 					}
 					rc.bottom = rc.top + (border + padding + margin)*2 + baseTop - children[CHILD_TYPE_NORMAL].front()->calcY;
+					rc.right = rc.left + (border + padding + margin) * 2 + widthSum;
 				}
 			}
 		}
