@@ -5,8 +5,8 @@
 #include "FFXIVDLL.h"
 
 
-DPSWindowController::DPSWindowController(OverlayRenderer::Control &c, FILE *f) :
-	WindowControllerBase(c, f),
+DPSWindowController::DPSWindowController(FILE *f) :
+	WindowControllerBase(f),
 	mDragging (0)
 {
 }
@@ -26,12 +26,12 @@ int DPSWindowController::callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 	case WM_LBUTTONDOWN:
 		mLastX = x;
 		mLastY = y;
-		if (!mControl.hittest(x, y)) {
+		if (!hittest(x, y)) {
 			return 0; // release capture
 		}
 		mDragging = 1;
-		mControl.requestFront();
-		mControl.statusFlag[CONTROL_STATUS_PRESS] = 1;
+		requestFront();
+		statusFlag[CONTROL_STATUS_PRESS] = 1;
 		return 3; // capture and eat
 	case WM_MOUSEMOVE:
 		if (mDragging == 1) {
@@ -40,20 +40,17 @@ int DPSWindowController::callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 			return 3; // capture and eat
 		} else if (mDragging == 2) {
 
-			mControl.xF = min(1 - mControl.calcWidth / mControl.getParent()->width, max(0, mControl.xF + (float)(x - mLastX) / mControl.getParent()->width));
-			mControl.yF = min(1 - mControl.calcHeight / mControl.getParent()->height, max(0, mControl.yF + (float)(y - mLastY) / mControl.getParent()->height));
+			xF = min(1 - calcWidth / getParent()->width, max(0, xF + (float)(x - mLastX) / getParent()->width));
+			yF = min(1 - calcHeight / getParent()->height, max(0, yF + (float)(y - mLastY) / getParent()->height));
 
 			mLastX = x; mLastY = y;
 			return 3; // capture and eat
 		} else {
-			if (mControl.hittest(x, y))
-				return 2;
-			else
-				return 4; // pass onto ffxiv
+			return 4; // pass onto ffxiv
 		}
 		break;
 	case WM_LBUTTONUP:
-		mControl.statusFlag[CONTROL_STATUS_PRESS] = 0;
+		statusFlag[CONTROL_STATUS_PRESS] = 0;
 		if (mDragging) {
 			mDragging = false;
 			return 3; // capture and eat

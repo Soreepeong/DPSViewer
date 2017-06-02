@@ -1,7 +1,4 @@
 #include "WindowControllerBase.h"
-#include "c:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\WindowControllerBase.h"
-
-
 
 WindowControllerBase::WindowControllerBase(FILE *f) :
 	OverlayRenderer::Control(),
@@ -16,12 +13,8 @@ WindowControllerBase::WindowControllerBase(FILE *f) :
 		xF = min(1, max(0, xF));
 		yF = min(1, max(0, yF));
 	}
+	this->callback = this;
 	setTransparency(tr);
-}
-
-
-WindowControllerBase::WindowControllerBase(OverlayRenderer::Control & mControl, FILE * f)
-{
 }
 
 WindowControllerBase::~WindowControllerBase()

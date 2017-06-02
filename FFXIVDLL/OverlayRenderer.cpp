@@ -259,18 +259,20 @@ void OverlayRenderer::AddWindow(Control* windows) {
 	mWindows.addChild(windows);
 }
 
-OverlayRenderer::Control* OverlayRenderer::GetWindowAt(Control *in, int x, int y) {
+WindowControllerBase* OverlayRenderer::GetWindowAt(Control *in, int x, int y) {
 	std::lock_guard<std::recursive_mutex> lock(in->layoutLock);
 	for(int i = 0; i < _CHILD_TYPE_COUNT; i++)
 		for (auto it = in->children[i].rbegin(); it != in->children[i].rend(); ++it)
 			if ((*it)->hittest(x, y)) {
-				if ((*it)->callback && !(*it)->callback->isLocked())
-					return *it;
+				if ((*it)->hasCallback()){
+					WindowControllerBase *w = (WindowControllerBase*)*it;
+					if(!w->isLocked())
+						return w;
 			}
 	return nullptr;
 }
 
-OverlayRenderer::Control* OverlayRenderer::GetWindowAt(int x, int y) {
+WindowControllerBase* OverlayRenderer::GetWindowAt(int x, int y) {
 	return GetWindowAt(&mWindows, x, y);
 }
 

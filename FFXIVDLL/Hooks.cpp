@@ -13,8 +13,8 @@ FFXIVDLL *Hooks::dll;
 HWND Hooks::ffxivhWnd;
 WNDPROC Hooks::ffxivWndProc;
 int Hooks::ffxivWndPressed = 0;
-OverlayRenderer::Control *Hooks::ffxivHookCaptureControl = 0;
-OverlayRenderer::Control *Hooks::lastHover = 0;
+WindowControllerBase *Hooks::ffxivHookCaptureControl = 0;
+WindowControllerBase *Hooks::lastHover = 0;
 
 void *Hooks::chatObject = 0;
 char *Hooks::chatPtrs[4] = { (char*)0x06, 0, (char*)0x06, 0 };
@@ -104,8 +104,8 @@ SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, DWORD *
 		int t;
 		sscanf((char*)dw2[1], "/o:t %d", &t);
 		t = max(0, min(255, t));
-		dll->process()->mDPSController->setTransparency(t);
-		dll->process()->mDOTController->setTransparency(t);
+		dll->process()->wDPS->setTransparency(t);
+		dll->process()->wDOT->setTransparency(t);
 	} else if (strncmp((char*)dw2[1], "/o:f", 4) == 0) {
 		TCHAR tmp[512];
 		MultiByteToWideChar(CP_UTF8, 0, (char*)dw2[1] + 5, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
@@ -143,7 +143,7 @@ SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, DWORD *
 		if (pOverlayRenderer != nullptr)
 			pOverlayRenderer->SetUseDrawOverlayEveryone(!pOverlayRenderer->GetUseDrawOverlayEveryone());
 	} else if (strncmp((char*)dw2[1], "/o:o", 3) == 0) {
-		dll->process()->mConfigController->toggleVisibility();
+		dll->process()->wConfig->toggleVisibility();
 	} else if (strncmp((char*)dw2[1], "/o", 3) == 0) {
 		if (pOverlayRenderer != nullptr)
 			pOverlayRenderer->SetUseDrawOverlay(!pOverlayRenderer->GetUseDrawOverlay());
@@ -312,8 +312,8 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 			if (ffxivHookCaptureControl != nullptr && ffxivHookCaptureControl->callback && ffxivHookCaptureControl->callback->isLocked())
 				updateLastFocus(nullptr);
 			OverlayRenderer::Control *control = ffxivHookCaptureControl ? ffxivHookCaptureControl : pos;
-			if (control && control->callback && !ffxivWndPressed) {
-				int res = control->callback->callback(hWnd, iMessage, wParam, lParam);
+			if (control && !ffxivWndPressed) {
+				int res = control->callback(hWnd, iMessage, wParam, lParam);
 				switch (res) {
 				case 0: updateLastFocus(nullptr); callDef = true; break;
 				case 1: updateLastFocus(nullptr); callDef = false; break;
@@ -323,7 +323,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 				case 5: callDef = false; break;
 				}
 				if (pos != control && pos != nullptr) {
-					int res = pos->callback->callback(hWnd, iMessage, wParam, lParam);
+					int res = pos->callback(hWnd, iMessage, wParam, lParam);
 					switch (res) {
 					case 0: updateLastFocus(nullptr); callDef = true; break;
 					case 1: updateLastFocus(nullptr); callDef = false; break;
@@ -354,8 +354,8 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 	default:
 		callDef = true;
 		if (ffxivHookCaptureControl) {
-			OverlayRenderer::Control *control = ffxivHookCaptureControl;
-			int res = control->callback->callback(hWnd, iMessage, wParam, lParam);
+			WindowControllerBase *control = ffxivHookCaptureControl;
+			int res = control->callback(hWnd, iMessage, wParam, lParam);
 			switch (res) {
 			case 0: updateLastFocus(nullptr); callDef = true; break;
 			case 1: updateLastFocus(nullptr); callDef = false; break;

@@ -12,10 +12,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	hUnloadEvent(unloadEvent),
 	mSent(1048576 * 8),
 	mRecv(1048576 * 8),
-	mLastIdleTime(0),
-	wDPS(*new OverlayRenderer::Control()),
-	wDOT(*new OverlayRenderer::Control()),
-	wConfig(*new OverlayRenderer::Control()) {
+	mLastIdleTime(0) {
 	mLastAttack.dmg = 0;
 	mLastAttack.timestamp = 0;
 	fwscanf(f, L"%d%d%d%d%d%d",
@@ -37,20 +34,12 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	wsprintf(path + wcslen(path), L"\\ffxiv_overlay_cache_%d.txt", h);
 
 	// default colors
-	wDPS.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
-	wDPS.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
-	wDPS.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
-	wDPS.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
-	wDOT.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
-	wDOT.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
-	wDOT.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
-	wDOT.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
 
 	FILE *f2 = _wfopen(path, L"r");
 	if (f2 != nullptr) {
-		mDPSController = new DPSWindowController(wDPS, f2);
-		mDOTController = new DOTWindowController(wDOT, f2);
-		mConfigController = new ConfigWindowController(dll, wConfig, f2);
+		wDPS = new DPSWindowController(f2);
+		wDOT = new DOTWindowController(f2);
+		wConfig = new ConfigWindowController(dll, f2);
 		mContagionApplyDelayEstimation.load(f2);
 		int cnt = 0;
 		fscanf(f2, "%d", &cnt);
@@ -64,11 +53,19 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 		}
 		fclose(f2);
 	} else {
-		mDPSController = new DPSWindowController(wDPS, nullptr);
-		mDOTController = new DOTWindowController(wDOT, nullptr);
-		mConfigController = new ConfigWindowController(dll, wConfig, nullptr);
+		wDPS = new DPSWindowController(nullptr);
+		wDOT = new DOTWindowController(nullptr);
+		wConfig = new ConfigWindowController(dll, nullptr);
 	}
 
+	wDPS.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
+	wDPS.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
+	wDPS.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
+	wDPS.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
+	wDOT.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
+	wDOT.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
+	wDOT.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
+	wDOT.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
 
 	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_CLASS_COLORDEF), L"TEXT");
 	if (hResource) {

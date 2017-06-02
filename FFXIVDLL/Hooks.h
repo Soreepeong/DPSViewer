@@ -66,8 +66,8 @@ private:
 	static HWND ffxivhWnd;
 	static WNDPROC ffxivWndProc;
 	static int ffxivWndPressed;
-	static OverlayRenderer::Control *lastHover;
-	static OverlayRenderer::Control* ffxivHookCaptureControl;
+	static WindowControllerBase *lastHover;
+	static WindowControllerBase *ffxivHookCaptureControl;
 	static void updateLastFocus(OverlayRenderer::Control *control);
 	static LRESULT CALLBACK hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 

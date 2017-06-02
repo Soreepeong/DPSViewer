@@ -1,5 +1,5 @@
 #pragma once
-#include "WindowController.h"
+#include "WindowControllerBase.h"
 class DPSWindowController : public WindowControllerBase{
 private:
 	int mLastX;
@@ -7,9 +7,12 @@ private:
 	int mDragging;
 
 public:
-	DPSWindowController(OverlayRenderer::Control &mControl, FILE *f);
+	DPSWindowController(FILE *f);
 	~DPSWindowController();
 
+	bool hasCallback() const override {
+		return true;
+	}
 	virtual int callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 };
 

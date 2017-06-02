@@ -272,10 +272,9 @@ private:
 	HANDLE hUnloadEvent;
 
 	bool mWindowsAdded = false;
-	OverlayRenderer::Control &wDPS, &wDOT, &wConfig;
-	DPSWindowController *mDPSController;
-	DOTWindowController *mDOTController;
-	ConfigWindowController *mConfigController;
+	DPSWindowController *wDPS;
+	DOTWindowController *wDOT;
+	ConfigWindowController *wConfig;
 
 	z_stream inflater;
 	unsigned char inflateBuffer[DEFLATE_CHUNK_SIZE];

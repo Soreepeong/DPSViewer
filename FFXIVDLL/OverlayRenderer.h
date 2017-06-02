@@ -46,7 +46,6 @@ public:
 		Control* parent;
 
 	public:
-		typedef bool(*EventCallback)(Control &c, HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 		Control();
 		Control(CONTROL_LAYOUT_DIRECTION direction);
@@ -66,7 +65,9 @@ public:
 
 		CONTROL_LAYOUT_DIRECTION layoutDirection;
 
-		WindowControllerBase *callback;
+		virtual bool hasCallback() const {
+			return false;
+		}
 
 		int visible;
 
@@ -105,8 +106,8 @@ public:
 		int textAlign;
 
 		void measure(OverlayRenderer *target, RECT &area, int widthFixed, int heightFixed, int skipChildren);
-		void draw(OverlayRenderer *target);
-		int hittest(int x, int y);
+		void draw(OverlayRenderer *target) const;
+		int hittest(int x, int y) const;
 		void removeAllChildren();
 		void addChild(OverlayRenderer::Control *c, CONTROL_CHILD_TYPE type);
 		void addChild(OverlayRenderer::Control *c);
@@ -114,11 +115,11 @@ public:
 		OverlayRenderer::Control* getChild(int i);
 		OverlayRenderer::Control* removeChild(int i, CONTROL_CHILD_TYPE type);
 		OverlayRenderer::Control* removeChild(int i);
-		int getChildCount(CONTROL_CHILD_TYPE type);
-		int getChildCount();
-		Control* getParent();
+		int getChildCount(CONTROL_CHILD_TYPE type) const;
+		int getChildCount() const;
+		Control* getParent() const;
 		void requestFront();
-		std::recursive_mutex& getLock();
+		std::recursive_mutex& getLock() const;
 	};
 
 private:
@@ -191,8 +192,8 @@ public:
 
 	void AddWindow(Control *windows);
 	Control* GetRoot();
-	Control* GetWindowAt(int x, int y);
-	Control* GetWindowAt(Control *in, int x, int y);
+	WindowControllerBase* GetWindowAt(int x, int y);
+	WindowControllerBase* GetWindowAt(Control *in, int x, int y);
 
 	class Control;
 };

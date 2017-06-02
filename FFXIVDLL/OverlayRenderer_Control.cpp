@@ -11,7 +11,6 @@ OverlayRenderer::Control::Control() :
 	border(0),
 	relativePosition(0),
 	relativeSize(0),
-	callback(nullptr),
 	parent(0),
 	visible(1),
 	text(L""),
@@ -32,7 +31,6 @@ OverlayRenderer::Control::Control(CONTROL_LAYOUT_DIRECTION dir) :
 	border(0),
 	relativePosition(0),
 	relativeSize(0),
-	callback(nullptr),
 	parent(0),
 	visible(1),
 	text(L""),
@@ -53,7 +51,6 @@ OverlayRenderer::Control::Control(float width, float height, D3DCOLOR bgcolor) :
 	border(0),
 	relativePosition(0),
 	relativeSize(1),
-	callback(nullptr),
 	parent(0),
 	visible(1),
 	textAlign(DT_LEFT),
@@ -76,7 +73,6 @@ OverlayRenderer::Control::Control(std::wstring txt, CONTROL_TEXT_TYPE useIcon, i
 	relativePosition(0),
 	relativeSize(0),
 	parent(0),
-	callback(nullptr),
 	visible(1),
 	layoutDirection(CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_VERTICAL),
 	statusFlag{ 0, 0, 0, 0 },
@@ -91,7 +87,7 @@ OverlayRenderer::Control::~Control() {
 	removeAllChildren();
 }
 
-int OverlayRenderer::Control::hittest(int x, int y) {
+int OverlayRenderer::Control::hittest(int x, int y) const {
 	return calcX <= x && x <= calcX + calcWidth && calcY <= y && y <= calcY + calcHeight;
 }
 
@@ -138,13 +134,13 @@ OverlayRenderer::Control* OverlayRenderer::Control::getChild(int i) {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	return children[CHILD_TYPE_NORMAL][i];
 }
-int OverlayRenderer::Control::getChildCount(CONTROL_CHILD_TYPE type) {
+int OverlayRenderer::Control::getChildCount(CONTROL_CHILD_TYPE type) const {
 	return children[type].size();
 }
-int OverlayRenderer::Control::getChildCount() {
+int OverlayRenderer::Control::getChildCount() const {
 	return children[CHILD_TYPE_NORMAL].size();
 }
-OverlayRenderer::Control* OverlayRenderer::Control::getParent() {
+OverlayRenderer::Control* OverlayRenderer::Control::getParent() const {
 	return parent;
 }
 OverlayRenderer::Control* OverlayRenderer::Control::removeChild(int i, CONTROL_CHILD_TYPE type) {
@@ -160,7 +156,7 @@ OverlayRenderer::Control*  OverlayRenderer::Control::removeChild(int i) {
 	return c;
 }
 
-std::recursive_mutex& OverlayRenderer::Control::getLock() {
+std::recursive_mutex& OverlayRenderer::Control::getLock() const {
 	return layoutLock;
 }
 
@@ -317,7 +313,7 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 		(*it)->measure(target, rc, rc.right - rc.left, rc.bottom - rc.top, skipChildren);
 }
 
-void OverlayRenderer::Control::draw(OverlayRenderer *target) {
+void OverlayRenderer::Control::draw(OverlayRenderer *target) const {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	if (!visible)
 		return;
