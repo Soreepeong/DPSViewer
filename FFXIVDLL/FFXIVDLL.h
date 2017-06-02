@@ -40,7 +40,6 @@ public:
 
 	static DWORD WINAPI SelfUnloaderThread(PVOID p) {
 		HINSTANCE inst = ((FFXIVDLL*)p)->hInstance;
-		delete (FFXIVDLL*)p;
 		FreeLibraryAndExitThread(inst, 0);
 	}
 

@@ -10,6 +10,7 @@
 #define DEFLATE_CHUNK_SIZE (1 << 18)
 
 class Hooks {
+	friend class OverlayRenderer;
 private:
 
 	typedef struct _CHATITEM {
@@ -68,7 +69,7 @@ private:
 	static int ffxivWndPressed;
 	static WindowControllerBase *lastHover;
 	static WindowControllerBase *ffxivHookCaptureControl;
-	static void updateLastFocus(OverlayRenderer::Control *control);
+	static void updateLastFocus(WindowControllerBase *control);
 	static LRESULT CALLBACK hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 	static bool mHookStarted;

@@ -9,6 +9,10 @@ public:
 	WindowControllerBase(FILE *f);
 	~WindowControllerBase();
 
+	bool hasCallback() const override {
+		return true;
+	}
+
 	void save(FILE *f);
 	void lock();
 	void toggleVisibility();

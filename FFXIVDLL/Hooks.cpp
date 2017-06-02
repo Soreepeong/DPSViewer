@@ -1,8 +1,10 @@
 #include "stdafx.h"
 #include "Hooks.h"
 #include "Tools.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_dx9.h"
 #include <Psapi.h>
-#include<windowsx.h>
+#include <windowsx.h>
 
 bool Hooks::mHookStarted = false;
 std::atomic_int Hooks::mHookedFunctionDepth;
@@ -268,22 +270,28 @@ HRESULT APIENTRY Hooks::hook_Present(IDirect3DDevice9 *pDevice, const RECT    *p
 	return res;
 }
 
-void Hooks::updateLastFocus(OverlayRenderer::Control *control) {
+void Hooks::updateLastFocus(WindowControllerBase *control) {
 	if (ffxivHookCaptureControl == control)
 		return;
-	while(ffxivHookCaptureControl != nullptr) {
-		ffxivHookCaptureControl->statusFlag[CONTROL_STATUS_FOCUS] = 0;
-		ffxivHookCaptureControl = ffxivHookCaptureControl->getParent();
+	OverlayRenderer::Control *tmp;
+	tmp = ffxivHookCaptureControl;
+	while(tmp != nullptr) {
+		tmp->statusFlag[CONTROL_STATUS_FOCUS] = 0;
+		tmp = tmp->getParent();
 	}
-	ffxivHookCaptureControl = control;
-	while (control != nullptr) {
-		control->statusFlag[CONTROL_STATUS_FOCUS] = 0;
-		control = control->getParent();
+	tmp = ffxivHookCaptureControl = control;
+	while (tmp != nullptr) {
+		tmp->statusFlag[CONTROL_STATUS_FOCUS] = 1;
+		tmp = tmp->getParent();
 	}
 }
 
+extern LRESULT ImGui_ImplDX9_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	bool callDef = false;
+	ImGuiIO &io = ImGui::GetIO();
+	// if (! || (!io.WantCaptureKeyboard && !io.WantCaptureMouse && !io.WantTextInput))
+	ImGui_ImplDX9_WndProcHandler(hWnd, iMessage, wParam, lParam);
 	switch (iMessage) {
 	case WM_MOUSEMOVE:
 		callDef = true;
@@ -300,18 +308,20 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 	case WM_MOUSEHWHEEL:
 	case WM_MOUSELEAVE:
 	case WM_MOUSEWHEEL:
-		if (pOverlayRenderer != nullptr) {
+		if (io.WantCaptureMouse)
+			return 0;
+		else if (pOverlayRenderer != nullptr) {
 			int xPos = GET_X_LPARAM(lParam);
 			int yPos = GET_Y_LPARAM(lParam);
-			OverlayRenderer::Control *pos = pOverlayRenderer->GetWindowAt(xPos, yPos);
-			if (lastHover != nullptr && lastHover->callback)
+			WindowControllerBase *pos = pOverlayRenderer->GetWindowAt(xPos, yPos);
+			if (lastHover != nullptr)
 				lastHover->statusFlag[CONTROL_STATUS_HOVER] = 0;
 			lastHover = pos;
-			if (lastHover != nullptr && lastHover->callback)
+			if (lastHover != nullptr)
 				lastHover->statusFlag[CONTROL_STATUS_HOVER] = 1;
-			if (ffxivHookCaptureControl != nullptr && ffxivHookCaptureControl->callback && ffxivHookCaptureControl->callback->isLocked())
+			if (ffxivHookCaptureControl != nullptr && ffxivHookCaptureControl->isLocked())
 				updateLastFocus(nullptr);
-			OverlayRenderer::Control *control = ffxivHookCaptureControl ? ffxivHookCaptureControl : pos;
+			WindowControllerBase *control = ffxivHookCaptureControl ? ffxivHookCaptureControl : pos;
 			if (control && !ffxivWndPressed) {
 				int res = control->callback(hWnd, iMessage, wParam, lParam);
 				switch (res) {
@@ -351,9 +361,26 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 		} else
 			callDef = true;
 		break;
+	case WM_KEYDOWN:
+	case WM_KEYUP:
+	case WM_CHAR:
+		if (io.WantCaptureKeyboard || io.WantTextInput)
+			return 0;
+		if (ffxivHookCaptureControl && !ffxivWndPressed) {
+			int res = ffxivHookCaptureControl->callback(hWnd, iMessage, wParam, lParam);
+			switch (res) {
+			case 0: updateLastFocus(nullptr); callDef = true; break;
+			case 1: updateLastFocus(nullptr); callDef = false; break;
+			case 2: updateLastFocus(ffxivHookCaptureControl); callDef = true; break;
+			case 3: updateLastFocus(ffxivHookCaptureControl); callDef = false; break;
+			case 4: callDef = true; break;
+			case 5: callDef = false; break;
+			}
+		}
+		break;
 	default:
 		callDef = true;
-		if (ffxivHookCaptureControl) {
+		if (ffxivHookCaptureControl && !ffxivWndPressed) {
 			WindowControllerBase *control = ffxivHookCaptureControl;
 			int res = control->callback(hWnd, iMessage, wParam, lParam);
 			switch (res) {

@@ -106,7 +106,7 @@ public:
 		int textAlign;
 
 		void measure(OverlayRenderer *target, RECT &area, int widthFixed, int heightFixed, int skipChildren);
-		void draw(OverlayRenderer *target) const;
+		void draw(OverlayRenderer *target);
 		int hittest(int x, int y) const;
 		void removeAllChildren();
 		void addChild(OverlayRenderer::Control *c, CONTROL_CHILD_TYPE type);
@@ -119,7 +119,7 @@ public:
 		int getChildCount() const;
 		Control* getParent() const;
 		void requestFront();
-		std::recursive_mutex& getLock() const;
+		std::recursive_mutex& getLock();
 	};
 
 private:

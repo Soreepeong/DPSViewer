@@ -35,8 +35,8 @@ FFXIVDLL::~FFXIVDLL()
 
 	SetEvent(hUnloadEvent);
 
-	delete pDataProcess;
 	delete pHooks;
+	delete pDataProcess;
 	delete pPipe;
 
 	CloseHandle(hUnloadEvent);

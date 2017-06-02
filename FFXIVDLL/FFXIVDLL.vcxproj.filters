@@ -28,17 +28,29 @@
     <ClCompile Include="OverlayRenderer_Control.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WindowControllerBase.cpp">
+      <Filter>CustomControls</Filter>
+    </ClCompile>
     <ClCompile Include="DPSWindowController.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>CustomControls</Filter>
     </ClCompile>
     <ClCompile Include="DOTWindowController.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>CustomControls</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="ConfigWindowController.cpp">
+      <Filter>CustomControls</Filter>
     </ClCompile>
-    <ClCompile Include="WindowControllerBase.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="imgui\imgui_demo.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_draw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_impl_dx9.cpp">
+      <Filter>ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -87,17 +99,38 @@
     <ClInclude Include="MinHook.h">
       <Filter>Libraries</Filter>
     </ClInclude>
+    <ClInclude Include="WindowControllerBase.h">
+      <Filter>CustomControls</Filter>
+    </ClInclude>
     <ClInclude Include="DPSWindowController.h">
-      <Filter>Header Files</Filter>
+      <Filter>CustomControls</Filter>
     </ClInclude>
     <ClInclude Include="DOTWindowController.h">
-      <Filter>Header Files</Filter>
+      <Filter>CustomControls</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Soreepeong\Documents\Visual Studio 2015\Projects\DPSViewer\FFXIVDLL\ConfigWindowController.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="ConfigWindowController.h">
+      <Filter>CustomControls</Filter>
     </ClInclude>
-    <ClInclude Include="WindowControllerBase.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="imgui\imgui.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_internal.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\stb_rect_pack.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\stb_textedit.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\stb_truetype.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imconfig.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_impl_dx9.h">
+      <Filter>ImGui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -263,6 +296,12 @@
     </Filter>
     <Filter Include="Resources">
       <UniqueIdentifier>{11097885-5fef-460a-a588-6d055c930814}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CustomControls">
+      <UniqueIdentifier>{5dd64c8b-6adb-4448-a412-8bf51098c683}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui">
+      <UniqueIdentifier>{adfd7856-c5c7-4748-bc9b-a5a919a2dc2c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

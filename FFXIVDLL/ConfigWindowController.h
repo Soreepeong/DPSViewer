@@ -24,7 +24,7 @@ private:
 	void buttonify(ORC *btn);
 
 public:
-	ConfigWindowController(FFXIVDLL *dll, OverlayRenderer::Control &mControl, FILE *f);
+	ConfigWindowController(FFXIVDLL *dll, FILE *f);
 	~ConfigWindowController();
 
 	virtual int callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

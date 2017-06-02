@@ -7,6 +7,8 @@
 #include "Tools.h"
 #include "FFXIVDLL.h"
 #pragma comment(lib, "Shlwapi.lib")
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_dx9.h"
 
 OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	pDevice(device),
@@ -55,6 +57,8 @@ OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	mWindows.layoutDirection = LAYOUT_ABSOLUTE;
 
 	ReloadResources();
+	ImGui_ImplDX9_Init(dll->hooks()->ffxivhWnd, pDevice);
+	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", 17, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
 }
 
 OverlayRenderer::~OverlayRenderer() {
@@ -69,6 +73,7 @@ OverlayRenderer::~OverlayRenderer() {
 	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
 		if(it->second != nullptr)
 			it->second->Release();
+	ImGui_ImplDX9_Shutdown();
 
 	if (hSaverThread != INVALID_HANDLE_VALUE)
 		WaitForSingleObject(hSaverThread, -1);
@@ -150,6 +155,8 @@ void OverlayRenderer::ReloadResources() {
 	}
 	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
 		it->second->Release();
+	ImGui_ImplDX9_InvalidateDeviceObjects();
+	ImGui_ImplDX9_CreateDeviceObjects();
 
 	D3DXCreateSprite(pDevice, &mSprite);
 	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, mConfig.fontName, &mFont);
@@ -264,10 +271,11 @@ WindowControllerBase* OverlayRenderer::GetWindowAt(Control *in, int x, int y) {
 	for(int i = 0; i < _CHILD_TYPE_COUNT; i++)
 		for (auto it = in->children[i].rbegin(); it != in->children[i].rend(); ++it)
 			if ((*it)->hittest(x, y)) {
-				if ((*it)->hasCallback()){
+				if ((*it)->hasCallback()) {
 					WindowControllerBase *w = (WindowControllerBase*)*it;
-					if(!w->isLocked())
+					if (!w->isLocked())
 						return w;
+				}
 			}
 	return nullptr;
 }
@@ -299,6 +307,18 @@ void OverlayRenderer::RenderOverlay() {
 			}
 		}
 		mWindows.draw(this);
+
+		ImGui_ImplDX9_NewFrame();
+		ImGui::GetIO().MouseDrawCursor = false;
+		{
+			static float f = 0.0f;
+			ImGui::Begin("Options");
+			if (ImGui::Button("Quit"))
+				dll->spawnSelfUnloader();
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
+		ImGui::Render();
 
 		pDevice->EndScene();
 	}

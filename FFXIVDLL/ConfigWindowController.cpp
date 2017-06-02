@@ -4,23 +4,23 @@
 #include <windowsx.h>
 #include "FFXIVDLL.h"
 
-ConfigWindowController::ConfigWindowController(FFXIVDLL *dll, OverlayRenderer::Control &c, FILE *f) :
-	WindowControllerBase(c, f),
+ConfigWindowController::ConfigWindowController(FFXIVDLL *dll, FILE *f) :
+	WindowControllerBase(f),
 	dll(dll), 
 	mDragging (0)
 {
-	c.layoutDirection = LAYOUT_DIRECTION_VERTICAL;
-	c.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x80000000, 0 };
-	c.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0xC0333333, 0 };
-	c.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0xC0333333, 0 };
-	c.relativePosition = 1;
+	layoutDirection = LAYOUT_DIRECTION_VERTICAL;
+	statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x80000000, 0 };
+	statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0xC0333333, 0 };
+	statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0xC0333333, 0 };
+	relativePosition = 1;
 	title = new ORC(LAYOUT_DIRECTION_HORIZONTAL);
 	main = new ORC(LAYOUT_DIRECTION_VERTICAL);
 	title->statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0xFFFFFFFF, 0x88888888, 0 };
 	title->addChild(btnClose = new ORC(L"[X]", CONTROL_TEXT_TYPE::CONTROL_TEXT_STRING, DT_CENTER));
 	title->addChild(new ORC(L"Config", CONTROL_TEXT_TYPE::CONTROL_TEXT_STRING, DT_LEFT));
-	c.addChild(title);
-	c.addChild(main);
+	addChild(title);
+	addChild(main);
 	
 	main->addChild(new ORC(LAYOUT_DIRECTION_HORIZONTAL));
 	main->getChild(0)->addChild(btnLock = new ORC(L"Lock/Unlock", CONTROL_TEXT_TYPE::CONTROL_TEXT_STRING, DT_CENTER));
@@ -60,50 +60,50 @@ int ConfigWindowController::callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 	case WM_LBUTTONDOWN:
 		mLastX = x;
 		mLastY = y;
-		if (!mControl.hittest(x, y)) {
+		if (!hittest(x, y)) {
 			return 0; // release capture
 		}
 		mDragging = 1;
-		mControl.requestFront();
-		mControl.statusFlag[CONTROL_STATUS_PRESS] = 1;
+		requestFront();
+		statusFlag[CONTROL_STATUS_PRESS] = 1;
 		return 3; // capture and eat
 	case WM_MOUSEMOVE:
 		if (mDragging == 1) {
-			if (mControl.getChild(0)->hittest(mLastX,mLastY) && (abs(x - mLastX) >= 5 || abs(y - mLastY) >= 5))
+			if (getChild(0)->hittest(mLastX,mLastY) && (abs(x - mLastX) >= 5 || abs(y - mLastY) >= 5))
 				mDragging = 2;
 			return 3; // capture and eat
 		} else if (mDragging == 2) {
 
-			mControl.xF = min(1 - mControl.calcWidth / mControl.getParent()->width, max(0, mControl.xF + (float)(x - mLastX) / mControl.getParent()->width));
-			mControl.yF = min(1 - mControl.calcHeight / mControl.getParent()->height, max(0, mControl.yF + (float)(y - mLastY) / mControl.getParent()->height));
+			xF = min(1 - calcWidth / getParent()->width, max(0, xF + (float)(x - mLastX) / getParent()->width));
+			yF = min(1 - calcHeight / getParent()->height, max(0, yF + (float)(y - mLastY) / getParent()->height));
 
 			mLastX = x; mLastY = y;
 			return 3; // capture and eat
 		} else {
-			if (mControl.hittest(x, y))
+			if (hittest(x, y))
 				return 2;
 			else
 				return 4; // pass onto ffxiv
 		}
 		break;
 	case WM_LBUTTONUP:
-		mControl.statusFlag[CONTROL_STATUS_PRESS] = 0;
+		statusFlag[CONTROL_STATUS_PRESS] = 0;
 		if (mDragging) {
 			if (mDragging == 1) {
 				// click
 				if (btnLock->hittest(x, y)) {
-					dll->process()->mDPSController->lock();
-					dll->process()->mDOTController->lock();
+					dll->process()->wDPS->lock();
+					dll->process()->wDOT->lock();
 				} else if (btnClose->hittest(x, y))
-					mControl.visible = false;
+					visible = false;
 				else if (btnHideOthers->hittest(x, y) && dll->hooks()->GetOverlayRenderer())
 					dll->hooks()->GetOverlayRenderer()->GetHideOtherUser();
 				else if (btnResetMeter->hittest(x, y))
 					dll->process()->ResetMeter();
 				else if (btnShowDPS->hittest(x, y))
-					dll->process()->mDPSController->toggleVisibility();
+					dll->process()->wDPS->toggleVisibility();
 				else if (btnShowDOT->hittest(x, y))
-					dll->process()->mDOTController->toggleVisibility();
+					dll->process()->wDOT->toggleVisibility();
 				else if (btnQuit->hittest(x, y))
 					dll->spawnSelfUnloader();
 			}

@@ -58,14 +58,14 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 		wConfig = new ConfigWindowController(dll, nullptr);
 	}
 
-	wDPS.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
-	wDPS.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
-	wDPS.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
-	wDPS.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
-	wDOT.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
-	wDOT.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
-	wDOT.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
-	wDOT.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
+	wDPS->statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
+	wDPS->statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
+	wDPS->statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
+	wDPS->statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
+	wDOT->statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
+	wDOT->statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
+	wDOT->statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
+	wDOT->statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
 
 	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_CLASS_COLORDEF), L"TEXT");
 	if (hResource) {
@@ -94,7 +94,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 		}
 	}
 
-	wDPS.addChild(new OverlayRenderer::Control(L"DPS Table Title", CONTROL_TEXT_STRING, DT_LEFT));
+	wDPS->addChild(new OverlayRenderer::Control(L"DPS Table Title", CONTROL_TEXT_STRING, DT_LEFT));
 
 	OverlayRenderer::Control *mTable = new OverlayRenderer::Control(), *mTableHeaderDef = new OverlayRenderer::Control();
 	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
@@ -109,14 +109,11 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Death", CONTROL_TEXT_STRING, DT_CENTER));
 	mTable->layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
 	mTable->addChild(mTableHeaderDef);
-	wDPS.addChild(mTable);
+	wDPS->addChild(mTable);
 
-	wDPS.layoutDirection = LAYOUT_DIRECTION_VERTICAL;
-	wDPS.relativePosition = 1;
-	wDOT.relativePosition = 1;
-	wDPS.callback = mDPSController;
-	wDOT.callback = mDOTController;
-	wConfig.callback = mConfigController;
+	wDPS->layoutDirection = LAYOUT_DIRECTION_VERTICAL;
+	wDPS->relativePosition = 1;
+	wDOT->relativePosition = 1;
 
 	mTableHeaderDef = new OverlayRenderer::Control();
 	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
@@ -124,8 +121,8 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Name", CONTROL_TEXT_STRING, DT_LEFT));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Skill", CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Time", CONTROL_TEXT_STRING, DT_RIGHT));
-	wDOT.layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
-	wDOT.addChild(mTableHeaderDef);
+	wDOT->layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
+	wDOT->addChild(mTableHeaderDef);
 }
 
 GameDataProcess::~GameDataProcess() {
@@ -143,9 +140,9 @@ GameDataProcess::~GameDataProcess() {
 
 	FILE *f = _wfopen(path, L"w");
 	if (f != nullptr) {
-		mDPSController->save(f);
-		mDOTController->save(f);
-		mConfigController->save(f);
+		wDPS->save(f);
+		wDOT->save(f);
+		wConfig->save(f);
 		mContagionApplyDelayEstimation.save(f);
 		int cnt = 0;
 		fprintf(f, "\n%d", mDotApplyDelayEstimation.size());
@@ -155,7 +152,6 @@ GameDataProcess::~GameDataProcess() {
 		}
 		fclose(f);
 	}
-	delete mDPSController;
 }
 
 int GameDataProcess::getDoTPotency(int dot) {
@@ -433,8 +429,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 					(int)((dur / 60000) % 60), (int)((dur / 1000) % 60), (int)(dur % 1000),
 					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
 			}
-			wDPS.getChild(0, CHILD_TYPE_NORMAL)->text = res;
-			OverlayRenderer::Control &wTable = *wDPS.getChild(1, CHILD_TYPE_NORMAL);
+			wDPS->getChild(0, CHILD_TYPE_NORMAL)->text = res;
+			OverlayRenderer::Control &wTable = *wDPS->getChild(1, CHILD_TYPE_NORMAL);
 			while (wTable.getChildCount() > 1)
 				delete wTable.removeChild(1);
 
@@ -517,8 +513,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 				}
 			}
 			if (!buff_sort.empty()) {
-				while (wDOT.getChildCount() > 1)
-					delete wDOT.removeChild(1);
+				while (wDOT->getChildCount() > 1)
+					delete wDOT->removeChild(1);
 				int currentTarget = GetTargetId(pTarget.current);
 				int focusTarget = GetTargetId(pTarget.focus);
 				int hoverTarget = GetTargetId(pTarget.hover);
@@ -550,7 +546,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 							? L"(x)" :
 							L"(?)") : L"");
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					wDOT.addChild(&wRow);
+					wDOT->addChild(&wRow);
 				}
 				i = buff_sort.size() - i;
 				if (i > 0) {
@@ -561,15 +557,15 @@ void GameDataProcess::UpdateOverlayMessage() {
 					swprintf(tmp, L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
-					wDOT.addChild(&wRow);
+					wDOT->addChild(&wRow);
 				}
 			}
 		}
 		if (!mWindowsAdded) {
 			mWindowsAdded = true;
-			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDPS);
-			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDOT);
-			dll->hooks()->GetOverlayRenderer()->AddWindow(&wConfig);
+			dll->hooks()->GetOverlayRenderer()->AddWindow(wDPS);
+			dll->hooks()->GetOverlayRenderer()->AddWindow(wDOT);
+			dll->hooks()->GetOverlayRenderer()->AddWindow(wConfig);
 		}
 	}
 }

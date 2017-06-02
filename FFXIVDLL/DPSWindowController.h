@@ -10,9 +10,6 @@ public:
 	DPSWindowController(FILE *f);
 	~DPSWindowController();
 
-	bool hasCallback() const override {
-		return true;
-	}
 	virtual int callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 };
 

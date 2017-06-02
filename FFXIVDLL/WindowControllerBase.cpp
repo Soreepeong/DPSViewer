@@ -13,7 +13,6 @@ WindowControllerBase::WindowControllerBase(FILE *f) :
 		xF = min(1, max(0, xF));
 		yF = min(1, max(0, yF));
 	}
-	this->callback = this;
 	setTransparency(tr);
 }
 
