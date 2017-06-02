@@ -5,6 +5,7 @@
 #include "imgui/imgui_impl_dx9.h"
 #include <Psapi.h>
 #include <windowsx.h>
+#include "FFXIVDLL.h"
 
 bool Hooks::mHookStarted = false;
 std::atomic_int Hooks::mHookedFunctionDepth;
@@ -12,11 +13,11 @@ HMODULE Hooks::hGame;
 PVOID *Hooks::pDX9Table;
 OverlayRenderer *Hooks::pOverlayRenderer;
 FFXIVDLL *Hooks::dll;
-HWND Hooks::ffxivhWnd;
 WNDPROC Hooks::ffxivWndProc;
 int Hooks::ffxivWndPressed = 0;
 WindowControllerBase *Hooks::ffxivHookCaptureControl = 0;
 WindowControllerBase *Hooks::lastHover = 0;
+bool Hooks::mLockCursor = false;
 
 void *Hooks::chatObject = 0;
 char *Hooks::chatPtrs[4] = { (char*)0x06, 0, (char*)0x06, 0 };
@@ -35,15 +36,15 @@ Hooks::Hooks(FFXIVDLL *dll, FILE *f) {
 
 	int n1, n2, n3;
 	fwscanf(f, L"%d%d%d", &n1, &n2, &n3);
-	fwscanf(f, L"%d", &ffxivhWnd);
 
-	ffxivWndProc = (WNDPROC)SetWindowLong(ffxivhWnd, GWL_WNDPROC, (LONG)hook_ffxivWndProc);
+	ffxivWndProc = (WNDPROC)SetWindowLong(dll->ffxiv(), GWL_WNDPROC, (LONG)hook_ffxivWndProc);
 
 	applyRelativeHook(n1, &pfnOrig.ProcessWindowMessage, Hooks::hook_ProcessWindowMessage, &pfnBridge.ProcessWindowMessage);
 	applyRelativeHook(n2, &pfnOrig.ProcessNewLine, Hooks::hook_ProcessNewLine, &pfnBridge.ProcessNewLine);
 	applyRelativeHook(n3, &pfnOrig.OnNewChatItem, Hooks::hook_OnNewChatItem, &pfnBridge.OnNewChatItem);
 	MH_CreateHook(recv, hook_socket_recv, NULL);
 	MH_CreateHook(send, hook_socket_send, NULL);
+	MH_CreateHook(SetCursor, hook_SetCursor, (LPVOID*)&pfnBridge.WinApiSetCursor);
 
 	pDX9Table = (PVOID*)*((DWORD*)(2 + Tools::FindPattern((DWORD)GetModuleHandle(L"d3d9.dll"), 0x128000, (PBYTE)"\xC7\x06\x00\x00\x00\x00\x89\x86\x00\x00\x00\x00\x89\x86", "xx????xx????xx")));
 
@@ -54,7 +55,7 @@ Hooks::Hooks(FFXIVDLL *dll, FILE *f) {
 
 Hooks::~Hooks() {
 
-	SetWindowLong(ffxivhWnd, GWL_WNDPROC, (LONG)ffxivWndProc);
+	SetWindowLong(dll->ffxiv(), GWL_WNDPROC, (LONG)ffxivWndProc);
 
 	int mainThread = Tools::GetMainThreadID(GetCurrentProcessId());
 	HANDLE mainThreadHandle = OpenThread(THREAD_SUSPEND_RESUME, false, mainThread);
@@ -73,8 +74,10 @@ Hooks::~Hooks() {
 HRESULT APIENTRY Hooks::hook_Reset(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters) {
 	mHookedFunctionDepth++;
 	if (pOverlayRenderer != nullptr)
-		pOverlayRenderer->ReloadResources();
+		pOverlayRenderer->OnLostDevice();
 	HRESULT res = pfnBridge.Dx9Reset(pDevice, pPresentationParameters);
+	if (pOverlayRenderer != nullptr)
+		pOverlayRenderer->OnResetDevice();
 	mHookedFunctionDepth--;
 	return res;
 }
@@ -96,56 +99,8 @@ SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, DWORD *dw1, char **dw
 SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, DWORD *dw1, char **dw2, int n) {
 #endif
 	mHookedFunctionDepth++;
-	if (strncmp((char*)dw2[1], "/o:s", 4) == 0) {
-		int size;
-		sscanf((char*)dw2[1], "/o:s %d", &size);
-		if (size < 9) size = 9;
-		if (size > 128) size = 128;
-		pOverlayRenderer->SetFontSize(size);
-	} else if (strncmp((char*)dw2[1], "/o:t", 4) == 0) {
-		int t;
-		sscanf((char*)dw2[1], "/o:t %d", &t);
-		t = max(0, min(255, t));
-		dll->process()->wDPS->setTransparency(t);
-		dll->process()->wDOT->setTransparency(t);
-	} else if (strncmp((char*)dw2[1], "/o:f", 4) == 0) {
-		TCHAR tmp[512];
-		MultiByteToWideChar(CP_UTF8, 0, (char*)dw2[1] + 5, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-		pOverlayRenderer->SetFontName(tmp);
-	} else if (strncmp((char*)dw2[1], "/o:b", 4) == 0) {
-		pOverlayRenderer->SetFontWeight();
-	} else if (strncmp((char*)dw2[1], "/o:cp", 5) == 0) {
-		if (strlen((char*)dw2[1]) < 6)
-			pOverlayRenderer->SetCapturePath(L"");
-		else {
-			TCHAR tmp[512];
-			MultiByteToWideChar(CP_UTF8, 0, (char*)dw2[1] + 6, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-			pOverlayRenderer->SetCapturePath(tmp);
-		}
-	} else if (strncmp((char*)dw2[1], "/o:cf", 5) == 0) {
-		if (strlen((char*)dw2[1]) < 6)
-			pOverlayRenderer->GetCaptureFormat(D3DXIFF_BMP);
-		else {
-			if (strncmp((char*)dw2[1] + 6, "b", 1) == 0)
-				pOverlayRenderer->GetCaptureFormat(D3DXIFF_BMP);
-			else if (strncmp((char*)dw2[1] + 6, "j", 1) == 0)
-				pOverlayRenderer->GetCaptureFormat(D3DXIFF_JPG);
-			else if (strncmp((char*)dw2[1] + 6, "p", 1) == 0)
-				pOverlayRenderer->GetCaptureFormat(D3DXIFF_PNG);
-			else
-				dll->pipe()->AddChat("/e supported types: bmp, jpg, png");
-		}
-	} else if (strncmp((char*)dw2[1], "/o:w", 4) == 0) {
-		int size;
-		sscanf((char*)dw2[1], "/o:w %d", &size);
-		if (size < 0) size = 0;
-		if (size > 3) size = 3;
-		pOverlayRenderer->SetBorder(size);
-	} else if (strncmp((char*)dw2[1], "/o:a", 4) == 0) {
-		if (pOverlayRenderer != nullptr)
-			pOverlayRenderer->SetUseDrawOverlayEveryone(!pOverlayRenderer->GetUseDrawOverlayEveryone());
-	} else if (strncmp((char*)dw2[1], "/o:o", 3) == 0) {
-		dll->process()->wConfig->toggleVisibility();
+	if (strncmp((char*)dw2[1], "/o:o", 3) == 0) {
+		dll->hooks()->GetOverlayRenderer()->mConfig.Show();
 	} else if (strncmp((char*)dw2[1], "/o", 3) == 0) {
 		if (pOverlayRenderer != nullptr)
 			pOverlayRenderer->SetUseDrawOverlay(!pOverlayRenderer->GetUseDrawOverlay());
@@ -270,6 +225,13 @@ HRESULT APIENTRY Hooks::hook_Present(IDirect3DDevice9 *pDevice, const RECT    *p
 	return res;
 }
 
+HCURSOR WINAPI Hooks::hook_SetCursor(HCURSOR hCursor) {
+	if (mLockCursor)
+		return hCursor;
+	else
+		return pfnBridge.WinApiSetCursor(hCursor);
+}
+
 void Hooks::updateLastFocus(WindowControllerBase *control) {
 	if (ffxivHookCaptureControl == control)
 		return;
@@ -292,6 +254,8 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 	ImGuiIO &io = ImGui::GetIO();
 	// if (! || (!io.WantCaptureKeyboard && !io.WantCaptureMouse && !io.WantTextInput))
 	ImGui_ImplDX9_WndProcHandler(hWnd, iMessage, wParam, lParam);
+	if (io.WantCaptureMouse)
+		mLockCursor = true;
 	switch (iMessage) {
 	case WM_MOUSEMOVE:
 		callDef = true;
@@ -308,9 +272,9 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 	case WM_MOUSEHWHEEL:
 	case WM_MOUSELEAVE:
 	case WM_MOUSEWHEEL:
-		if (io.WantCaptureMouse)
+		if (io.WantCaptureMouse) {
 			return 0;
-		else if (pOverlayRenderer != nullptr) {
+		} else if (pOverlayRenderer != nullptr) {
 			int xPos = GET_X_LPARAM(lParam);
 			int yPos = GET_Y_LPARAM(lParam);
 			WindowControllerBase *pos = pOverlayRenderer->GetWindowAt(xPos, yPos);
@@ -323,6 +287,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 				updateLastFocus(nullptr);
 			WindowControllerBase *control = ffxivHookCaptureControl ? ffxivHookCaptureControl : pos;
 			if (control && !ffxivWndPressed) {
+				mLockCursor = true;
 				int res = control->callback(hWnd, iMessage, wParam, lParam);
 				switch (res) {
 				case 0: updateLastFocus(nullptr); callDef = true; break;
@@ -344,6 +309,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 					}
 				}
 			} else {
+				mLockCursor = false;
 				callDef = true;
 				switch (iMessage) {
 				case WM_LBUTTONDOWN:

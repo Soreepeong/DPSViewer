@@ -8,6 +8,7 @@
 
 #include "imgui.h"
 #include "imgui_impl_dx9.h"
+#include "../Hooks.h"
 
 // DirectX
 #include <d3d9.h>
@@ -339,7 +340,8 @@ void ImGui_ImplDX9_NewFrame()
     // io.MouseWheel : filled by WM_MOUSEWHEEL events
 
     // Hide OS mouse cursor if ImGui is drawing it
-    // SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+	if(io.WantCaptureMouse)
+		Hooks::pfnBridge.WinApiSetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
 
     // Start the frame
     ImGui::NewFrame();

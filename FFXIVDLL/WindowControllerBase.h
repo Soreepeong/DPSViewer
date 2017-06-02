@@ -6,14 +6,13 @@ protected:
 	int mLocked;
 
 public:
-	WindowControllerBase(FILE *f);
+	WindowControllerBase();
 	~WindowControllerBase();
 
 	bool hasCallback() const override {
 		return true;
 	}
 
-	void save(FILE *f);
 	void lock();
 	void toggleVisibility();
 	int isLocked();

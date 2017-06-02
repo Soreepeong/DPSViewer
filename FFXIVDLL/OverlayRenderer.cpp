@@ -1,4 +1,4 @@
-#include"stdafx.h"
+#include "stdafx.h"
 #include "OverlayRenderer.h"
 #include "WindowControllerBase.h"
 #include <psapi.h>
@@ -15,91 +15,23 @@ OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	mFont(nullptr),
 	mSprite(nullptr),
 	dll (dll),
+	mConfig(dll, this),
 	hSaverThread(INVALID_HANDLE_VALUE) {
-
-	TCHAR path[256];
-	int i = 0, h = 0;
-	GetModuleFileNameEx(GetCurrentProcess(), NULL, path, MAX_PATH);
-	for (i = 0; i < 128 && path[i * 2] && path[i * 2 + 1]; i++)
-		h ^= ((int*)path)[i];
-	ExpandEnvironmentStrings(L"%APPDATA%", path, MAX_PATH);
-	wsprintf(path + wcslen(path), L"\\ffxiv_overlay_config_%d.txt", h);
-
-	FILE *f = _wfopen(path, L"r");
-	if (f != nullptr) {
-		fwscanf(f, L"%d%d%d%d%d%d%d",
-			&mConfig.UseDrawOverlay,
-			&mConfig.UseDrawOverlayEveryone,
-			&mConfig.fontSize, &mConfig.bold,
-			&mConfig.border, &mConfig.hideOtherUser,
-			&mConfig.captureFormat);
-		fwscanf(f, L"\n");
-		fgetws(mConfig.fontName, sizeof(mConfig.fontName) / sizeof(mConfig.fontName[0]), f);
-		fgetws(mConfig.capturePath, sizeof(mConfig.capturePath) / sizeof(mConfig.capturePath[0]), f);
-		while (wcslen(mConfig.fontName) > 0 && mConfig.fontName[wcslen(mConfig.fontName) - 1] == '\n')
-			mConfig.fontName[wcslen(mConfig.fontName) - 1] = 0;
-		while (wcslen(mConfig.capturePath) > 0 && mConfig.capturePath[wcslen(mConfig.capturePath) - 1] == '\n')
-			mConfig.capturePath[wcslen(mConfig.capturePath) - 1] = 0;
-		mConfig.fontSize = max(9, min(128, mConfig.fontSize));
-		mConfig.border = max(0, min(3, mConfig.border));
-		switch (mConfig.captureFormat) {
-		case D3DXIFF_BMP:
-		case D3DXIFF_PNG:
-		case D3DXIFF_JPG:
-			break;
-		default:
-			mConfig.captureFormat = D3DXIFF_BMP;
-		}
-		fclose(f);
-	}
 
 	memset(mWindows.statusMap, 0, sizeof(mWindows.statusMap));
 	mWindows.layoutDirection = LAYOUT_ABSOLUTE;
 
-	ReloadResources();
-	ImGui_ImplDX9_Init(dll->hooks()->ffxivhWnd, pDevice);
-	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", 17, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+	ImGui_ImplDX9_Init(dll->ffxiv(), pDevice);
+	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+	OnResetDevice();
 }
 
 OverlayRenderer::~OverlayRenderer() {
-	if (mFont != nullptr) {
-		mFont->Release();
-		mFont = nullptr;
-	}
-	if (mSprite != nullptr) {
-		mSprite->Release();
-		mSprite = nullptr;
-	}
-	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
-		if(it->second != nullptr)
-			it->second->Release();
+	OnLostDevice();
 	ImGui_ImplDX9_Shutdown();
 
 	if (hSaverThread != INVALID_HANDLE_VALUE)
 		WaitForSingleObject(hSaverThread, -1);
-
-	TCHAR path[256];
-	int i = 0, h = 0;
-	GetModuleFileNameEx(GetCurrentProcess(), NULL, path, MAX_PATH);
-	for (i = 0; i < 128 && path[i * 2] && path[i * 2 + 1]; i++)
-		h ^= ((int*)path)[i];
-	ExpandEnvironmentStrings(L"%APPDATA%", path, MAX_PATH);
-	wsprintf(path + wcslen(path), L"\\ffxiv_overlay_config_%d.txt", h);
-
-	FILE *f = _wfopen(path, L"w");
-	if (f != nullptr) {
-		fwprintf(f, L"%d %d %d %d %d %d %d\n",
-			mConfig.UseDrawOverlay,
-			mConfig.UseDrawOverlayEveryone,
-			mConfig.fontSize, mConfig.bold,
-			mConfig.border, mConfig.hideOtherUser,
-			mConfig.captureFormat);
-		fputws(mConfig.fontName, f);
-		fwprintf(f, L"\n");
-		fputws(mConfig.capturePath, f);
-		fwprintf(f, L"\n");
-		fclose(f);
-	}
 }
 
 LPDIRECT3DTEXTURE9 OverlayRenderer::GetTextureFromResource(TCHAR *resName) {
@@ -120,30 +52,23 @@ LPDIRECT3DTEXTURE9 OverlayRenderer::GetTextureFromFile(TCHAR *resName) {
 	return tex;
 }
 
-void OverlayRenderer::SetCapturePath(TCHAR *chr) {
-	wcsncpy(mConfig.capturePath, chr, sizeof(mConfig.capturePath) / sizeof(mConfig.capturePath[0]));
-	if (mConfig.capturePath[0] == 0) {
-		TCHAR path[MAX_PATH];
-		char path2[MAX_PATH * 4];
-		SHGetFolderPathW(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, path);
-		WideCharToMultiByte(CP_UTF8, 0, path, -1, path2, sizeof(path2), 0, 0);
-		std::string s("/e Saving screenshots in ");
-		s += path2;
-		dll->pipe()->AddChat(s);
-	} else {
-		char path2[MAX_PATH * 4];
-		WideCharToMultiByte(CP_UTF8, 0, chr, -1, path2, sizeof(path2), 0, 0);
-		std::string s("/e Saving screenshots in ");
-		s += path2;
-		dll->pipe()->AddChat(s);
-	}
-}
-
 void OverlayRenderer::GetCaptureFormat(int f) {
 	mConfig.captureFormat = f;
 }
 
-void OverlayRenderer::ReloadResources() {
+void OverlayRenderer::ReloadFromConfig() {
+	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
+	if (mFont != nullptr) {
+		mFont->Release();
+		mFont = nullptr;
+	}
+	TCHAR fn[512];
+	MultiByteToWideChar(CP_UTF8, NULL, mConfig.fontName, -1, fn, sizeof(fn) / sizeof(fn[0]));
+	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fn, &mFont);
+	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+}
+
+void OverlayRenderer::OnLostDevice() {
 	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	if (mFont != nullptr) {
 		mFont->Release();
@@ -156,10 +81,16 @@ void OverlayRenderer::ReloadResources() {
 	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
 		it->second->Release();
 	ImGui_ImplDX9_InvalidateDeviceObjects();
+}
+
+void OverlayRenderer::OnResetDevice() {
+	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	ImGui_ImplDX9_CreateDeviceObjects();
 
 	D3DXCreateSprite(pDevice, &mSprite);
-	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, mConfig.fontName, &mFont);
+	TCHAR fn[512];
+	MultiByteToWideChar(CP_UTF8, NULL, mConfig.fontName, -1, fn, sizeof(fn) / sizeof(fn[0]));
+	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fn, &mFont);
 }
 
 void OverlayRenderer::SetHideOtherUser() {
@@ -167,23 +98,6 @@ void OverlayRenderer::SetHideOtherUser() {
 }
 int OverlayRenderer::GetHideOtherUser() {
 	return mConfig.hideOtherUser;
-}
-
-void OverlayRenderer::SetFontSize(int size) {
-	mConfig.fontSize = size;
-	ReloadResources();
-}
-void OverlayRenderer::SetFontWeight() {
-	mConfig.bold = !mConfig.bold;
-	ReloadResources();
-}
-void OverlayRenderer::SetFontName(TCHAR *c) {
-	wcsncpy(mConfig.fontName, c, sizeof(mConfig.fontName) / sizeof(mConfig.fontName[0]));
-	ReloadResources();
-}
-
-void OverlayRenderer::SetBorder(int n) {
-	mConfig.border = n;
 }
 
 int OverlayRenderer::GetFPS() {
@@ -288,9 +202,7 @@ void OverlayRenderer::RenderOverlay() {
 
 	if (mConfig.UseDrawOverlay && mFont != nullptr) {
 		std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
-		if (mFont == nullptr)
-			D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, mConfig.fontName, &mFont);
-
+		
 		D3DVIEWPORT9 prt;
 		pDevice->GetViewport(&prt);
 		RECT rect = { prt.X, prt.Y, prt.X+prt.Width, prt.Y+prt.Height };
@@ -309,15 +221,7 @@ void OverlayRenderer::RenderOverlay() {
 		mWindows.draw(this);
 
 		ImGui_ImplDX9_NewFrame();
-		ImGui::GetIO().MouseDrawCursor = false;
-		{
-			static float f = 0.0f;
-			ImGui::Begin("Options");
-			if (ImGui::Button("Quit"))
-				dll->spawnSelfUnloader();
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
-		}
+		mConfig.Render();
 		ImGui::Render();
 
 		pDevice->EndScene();
@@ -409,11 +313,14 @@ void OverlayRenderer::CaptureBackgroundSaverThread() {
 		int i = 0;
 		SYSTEMTIME lt;
 		GetLocalTime(&lt);
+
+		TCHAR capturePathW[512];
+		MultiByteToWideChar(CP_UTF8, NULL, mConfig.capturePath, -1, capturePathW, sizeof(capturePathW) / sizeof(capturePathW[0]));
 		do {
-			if (mConfig.capturePath[0] == 0 || !Tools::DirExists(mConfig.capturePath))
+			if (mConfig.capturePath[0] == 0 || !Tools::DirExists(capturePathW))
 				SHGetFolderPathW(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, path);
 			else
-				wcscpy(path, mConfig.capturePath);
+				wcscpy(path, capturePathW);
 			wsprintf(path + wcslen(path), L"\\ffxiv_%04d%02d%02d_%02d%02d%02d_%d.%s",
 				lt.wYear, lt.wMonth, lt.wDay, lt.wHour, lt.wMinute, lt.wSecond,
 				i,

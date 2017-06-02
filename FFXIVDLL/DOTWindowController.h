@@ -7,7 +7,7 @@ private:
 	int mDragging;
 
 public:
-	DOTWindowController(FILE *f);
+	DOTWindowController();
 	~DOTWindowController();
 
 	virtual int callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

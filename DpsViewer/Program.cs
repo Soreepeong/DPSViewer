@@ -141,6 +141,7 @@ namespace DpsViewer {
 
 
 				StreamWriter info = new StreamWriter(AppDomain.CurrentDo‌​main.BaseDirectory + "FFXIVDLLInfo_" + process.Id + ".txt");
+				info.WriteLine(ffxivhWnd.ToInt32());
 				if (version == "KOR") {
 					info.WriteLine(0x1F20);
 					info.WriteLine(0x33B420 - 0x1A0000);
@@ -150,7 +151,6 @@ namespace DpsViewer {
 					info.WriteLine(0x9E4650 - 0x840000); // processNewLine
 					info.WriteLine(0x1E97EB0 - 0x12F0000); // onNewChatItem
 				}
-				info.WriteLine(ffxivhWnd.ToInt32());
 				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt32());
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.ID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Name);

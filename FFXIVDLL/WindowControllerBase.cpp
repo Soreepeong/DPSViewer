@@ -1,6 +1,6 @@
 #include "WindowControllerBase.h"
 
-WindowControllerBase::WindowControllerBase(FILE *f) :
+WindowControllerBase::WindowControllerBase() :
 	OverlayRenderer::Control(),
 	mLocked(0)
 {
@@ -8,22 +8,11 @@ WindowControllerBase::WindowControllerBase(FILE *f) :
 	yF = 0.1;
 	visible = 1;
 	int tr = 0x80;
-	if (f != nullptr) {
-		fscanf(f, "%f%f%d%d%d", &xF, &yF, &visible, &mLocked, &tr);
-		xF = min(1, max(0, xF));
-		yF = min(1, max(0, yF));
-	}
-	setTransparency(tr);
+	setTransparency(0x80);
 }
 
 WindowControllerBase::~WindowControllerBase()
 {
-}
-
-
-void WindowControllerBase::save(FILE *f)
-{
-	fprintf(f, "%f %f %d %d %d\n", xF, yF, visible, mLocked, (statusMap[CONTROL_STATUS_DEFAULT].background & 0xFF000000) >> 24);
 }
 
 int WindowControllerBase::isLocked() {

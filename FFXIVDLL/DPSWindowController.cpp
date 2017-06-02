@@ -5,8 +5,8 @@
 #include "FFXIVDLL.h"
 
 
-DPSWindowController::DPSWindowController(FILE *f) :
-	WindowControllerBase(f),
+DPSWindowController::DPSWindowController() :
+	WindowControllerBase(),
 	mDragging (0)
 {
 }

@@ -169,7 +169,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ConfigWindowController.h" />
+    <ClInclude Include="ImGuiConfigWindow.h" />
     <ClInclude Include="DOTWindowController.h" />
     <ClInclude Include="DPSWindowController.h" />
     <ClInclude Include="dx9hook.h" />
@@ -185,6 +185,7 @@
     <ClInclude Include="imgui\stb_rect_pack.h" />
     <ClInclude Include="imgui\stb_textedit.h" />
     <ClInclude Include="imgui\stb_truetype.h" />
+    <ClInclude Include="Languages.h" />
     <ClInclude Include="MedianCalculator.h" />
     <ClInclude Include="MinHook.h" />
     <ClInclude Include="OverlayRenderer.h" />
@@ -197,7 +198,7 @@
     <ClInclude Include="zlib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConfigWindowController.cpp" />
+    <ClCompile Include="ImGuiConfigWindow.cpp" />
     <ClCompile Include="DOTWindowController.cpp" />
     <ClCompile Include="DPSWindowController.cpp" />
     <ClCompile Include="ExternalPipe.cpp" />
@@ -222,6 +223,7 @@
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_dx9.cpp" />
+    <ClCompile Include="Languages.cpp" />
     <ClCompile Include="MedianCalculator.cpp" />
     <ClCompile Include="OverlayRenderer.cpp" />
     <ClCompile Include="OverlayRenderer_Control.cpp" />

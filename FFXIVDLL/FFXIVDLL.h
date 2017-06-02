@@ -13,6 +13,7 @@ private:
 	ExternalPipe *pPipe;
 	Hooks *pHooks;
 	GameDataProcess *pDataProcess;
+	HWND ffxivHwnd;
 
 public:
 	FFXIVDLL(HMODULE instance);
@@ -20,6 +21,10 @@ public:
 
 	bool isUnloading() {
 		return WAIT_OBJECT_0 == WaitForSingleObject(hUnloadEvent, 0);
+	}
+
+	HWND ffxiv() {
+		return ffxivHwnd;
 	}
 
 	ExternalPipe* pipe() {
@@ -38,12 +43,6 @@ public:
 		return hInstance;
 	}
 
-	static DWORD WINAPI SelfUnloaderThread(PVOID p) {
-		HINSTANCE inst = ((FFXIVDLL*)p)->hInstance;
-		FreeLibraryAndExitThread(inst, 0);
-	}
-
-	void spawnSelfUnloader() {
-		CloseHandle(CreateThread(NULL, NULL, FFXIVDLL::SelfUnloaderThread, this, NULL, NULL));
-	}
+	static DWORD WINAPI SelfUnloaderThread(PVOID p);
+	void spawnSelfUnloader();
 };

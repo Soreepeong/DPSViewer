@@ -5,8 +5,8 @@
 
 
 
-DOTWindowController::DOTWindowController(FILE *f) :
-	WindowControllerBase(f),
+DOTWindowController::DOTWindowController() :
+	WindowControllerBase(),
 	mDragging (0)
 {
 }

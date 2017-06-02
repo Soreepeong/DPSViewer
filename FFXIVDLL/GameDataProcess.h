@@ -5,7 +5,7 @@
 #include "MedianCalculator.h"
 #include "DPSWindowController.h"
 #include "DOTWindowController.h"
-#include "ConfigWindowController.h"
+#include "ImGuiConfigWindow.h"
 
 class FFXIVDLL;
 
@@ -215,7 +215,7 @@ struct GAME_MESSAGE {
 
 class GameDataProcess {
 	friend class Hooks;
-	friend class ConfigWindowController;
+	friend class ImGuiConfigWindow;
 
 private:
 	struct {
@@ -232,7 +232,6 @@ private:
 	}pTarget;
 
 	static int getDoTPotency(int dot);
-	static TCHAR* getDoTName(int skill);
 	int getDoTDuration(int skill);
 
 	std::map<std::wstring, D3DCOLOR> mClassColors;
@@ -272,9 +271,8 @@ private:
 	HANDLE hUnloadEvent;
 
 	bool mWindowsAdded = false;
-	DPSWindowController *wDPS;
-	DOTWindowController *wDOT;
-	ConfigWindowController *wConfig;
+	DPSWindowController &wDPS;
+	DOTWindowController &wDOT;
 
 	z_stream inflater;
 	unsigned char inflateBuffer[DEFLATE_CHUNK_SIZE];
@@ -303,6 +301,7 @@ public:
 	inline TCHAR* GetActorJobString(int id);
 
 	void ResetMeter();
+	void ReloadLocalization();
 
 	void OnRecv(char* buf, int len) {
 		mRecv.write(buf, len);

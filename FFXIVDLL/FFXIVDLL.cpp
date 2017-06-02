@@ -11,13 +11,15 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	FILE *f = _wfopen(fn, L"r");
 	if (f == nullptr)
 		return;
+	fwscanf(f, L"%d", &ffxivHwnd);
+
+	Languages::initialize();
 
 	hUnloadEvent = CreateEvent(NULL, true, false, NULL);
 
 	pPipe = new ExternalPipe(hUnloadEvent);
-	pHooks = new Hooks(this, f);
-
 	pDataProcess = new GameDataProcess(this, f, hUnloadEvent);
+	pHooks = new Hooks(this, f);
 
 	fclose(f);
 	DeleteFile(fn);
@@ -40,4 +42,13 @@ FFXIVDLL::~FFXIVDLL()
 	delete pPipe;
 
 	CloseHandle(hUnloadEvent);
+}
+
+DWORD WINAPI FFXIVDLL::SelfUnloaderThread(PVOID p) {
+	HINSTANCE inst = ((FFXIVDLL*)p)->hInstance;
+	FreeLibraryAndExitThread(inst, 0);
+}
+
+void FFXIVDLL::spawnSelfUnloader() {
+	CloseHandle(CreateThread(NULL, NULL, FFXIVDLL::SelfUnloaderThread, this, NULL, NULL));
 }

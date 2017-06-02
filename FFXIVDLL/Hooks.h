@@ -11,14 +11,14 @@
 
 class Hooks {
 	friend class OverlayRenderer;
-private:
+public:
 
 	typedef struct _CHATITEM {
 		int timestamp;
 		short code;
 		short _u1;
 		char chat;
-	} CHATITEM, *PCHATITEM;
+} CHATITEM, *PCHATITEM;
 
 #ifdef _WIN64
 	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
@@ -37,24 +37,29 @@ private:
 	static int WINAPI hook_socket_recv(SOCKET s, char* buf, int len, int flags);
 	static int WINAPI hook_socket_send(SOCKET s, const char* buf, int len, int flags);
 #endif
-	typedef char (*ProcessWindowMessage)();
+	typedef char(*ProcessWindowMessage)();
 	static char hook_ProcessWindowMessage();
 	typedef HRESULT(APIENTRY *Dx9Reset)(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters);
 	typedef HRESULT(APIENTRY *Dx9EndScene)(IDirect3DDevice9 *pDevice);
 	typedef HRESULT(APIENTRY *Dx9Present)(IDirect3DDevice9 *pDevice, const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const RGNDATA *pDirtyRegion);
 	typedef HRESULT(APIENTRY *Dx9SwapChainPresent)(IDirect3DSwapChain9 *pDevice, const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const RGNDATA *pDirtyRegion, DWORD dwFlags);
+	typedef HCURSOR(WINAPI *WinApiSetCursor)(HCURSOR hCursor);
 
 	static HRESULT APIENTRY hook_Reset(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters);
 	static HRESULT APIENTRY hook_EndScene(IDirect3DDevice9 *pDevice);
 	static HRESULT APIENTRY hook_SwapChain_Present(IDirect3DSwapChain9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion, DWORD dwFlags);
 	static HRESULT APIENTRY hook_Present(IDirect3DDevice9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion);
 
-	static struct HOOKS_ORIG_FN_SET{
+	static HCURSOR WINAPI hook_SetCursor(HCURSOR hCursor);
+
+
+	static struct HOOKS_ORIG_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;
 		ProcessNewLine ProcessNewLine;
 		OnNewChatItem OnNewChatItem;
 	}pfnOrig;
-	static struct HOOKS_BRIDGE_FN_SET{
+
+	static struct HOOKS_BRIDGE_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;
 		ProcessNewLine ProcessNewLine;
 		OnNewChatItem OnNewChatItem;
@@ -62,9 +67,10 @@ private:
 		Dx9Reset Dx9Reset;
 		Dx9Present Dx9Present;
 		Dx9SwapChainPresent Dx9SwapChainPresent;
+		WinApiSetCursor WinApiSetCursor;
 	}pfnBridge;
+private:
 
-	static HWND ffxivhWnd;
 	static WNDPROC ffxivWndProc;
 	static int ffxivWndPressed;
 	static WindowControllerBase *lastHover;
@@ -72,6 +78,7 @@ private:
 	static void updateLastFocus(WindowControllerBase *control);
 	static LRESULT CALLBACK hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
+	static bool mLockCursor;
 	static bool mHookStarted;
 	static std::atomic_int mHookedFunctionDepth;
 	static HMODULE hGame;

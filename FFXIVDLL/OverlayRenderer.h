@@ -5,6 +5,7 @@
 #include <map>
 #include "dx9hook.h"
 #include "dx9table.h"
+#include "ImGuiConfigWindow.h"
 
 enum CONTROL_STATUS_ID : uint32_t{
 	CONTROL_STATUS_DEFAULT,
@@ -36,6 +37,7 @@ class WindowControllerBase;
 
 class OverlayRenderer {
 	friend class Hooks;
+	friend class ImGuiConfigWindow;
 public:
 
 	class Control {
@@ -137,19 +139,8 @@ private:
 	LPDIRECT3DTEXTURE9 GetTextureFromResource(TCHAR *resName);
 	LPDIRECT3DTEXTURE9 GetTextureFromFile(TCHAR *resName);
 
-	struct {
-		int UseDrawOverlay = true;
-		int UseDrawOverlayEveryone = true;
-		int fontSize = 17;
-		int bold = true;
-		int border = 2;
-		int hideOtherUser = 0;
-		TCHAR capturePath[512] = L"";
-		int captureFormat = D3DXIFF_BMP;
-		TCHAR fontName[512] = L"Segoe UI";
-	}mConfig;
-
 	Control mWindows;
+	ImGuiConfigWindow mConfig;
 
 	void DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9 tex);
 	void DrawBox(int x, int y, int w, int h, D3DCOLOR Color);
@@ -172,7 +163,10 @@ public:
 	int GetFPS();
 
 	void CaptureScreen();
-	void ReloadResources();
+
+	void ReloadFromConfig();
+	void OnLostDevice();
+	void OnResetDevice();
 
 	void DrawOverlay();
 	void CheckCapture();
@@ -181,14 +175,9 @@ public:
 	int GetUseDrawOverlay();
 	void SetUseDrawOverlayEveryone(bool use);
 	int GetUseDrawOverlayEveryone();
-	void SetCapturePath(TCHAR *c);
 	void GetCaptureFormat(int format);
 	int GetHideOtherUser();
 	void SetHideOtherUser();
-	void SetFontSize(int size);
-	void SetFontWeight();
-	void SetFontName(TCHAR *c);
-	void SetBorder(int border);
 
 	void AddWindow(Control *windows);
 	Control* GetRoot();

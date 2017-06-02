@@ -7,7 +7,7 @@ private:
 	int mDragging;
 
 public:
-	DPSWindowController(FILE *f);
+	DPSWindowController();
 	~DPSWindowController();
 
 	virtual int callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
