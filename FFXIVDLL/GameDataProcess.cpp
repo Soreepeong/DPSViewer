@@ -3,7 +3,6 @@
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <psapi.h>
 #include "resource.h"
 #include "Languages.h"
 #include "FFXIVDLL.h"
@@ -15,8 +14,6 @@
 #include "OverlayRenderer.h"
 #include "Hooks.h"
 #include "ExternalPipe.h"
-
-#pragma comment(lib, "psapi.lib")
 
 GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	dll(dll), 
@@ -41,31 +38,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	hUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
 	hUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::UpdateInfoThreadExternal, this, NULL, NULL);
 
-	TCHAR path[256];
-	int i = 0, h = 0;
-	GetModuleFileNameEx(GetCurrentProcess(), NULL, path, MAX_PATH);
-	for (i = 0; i < 128 && path[i*2] && path[i*2+1]; i++)
-		h ^= ((int*)path)[i];
-	ExpandEnvironmentStrings(L"%APPDATA%", path, MAX_PATH);
-	wsprintf(path + wcslen(path), L"\\ffxiv_overlay_cache_%d.txt", h);
-
 	// default colors
-
-	FILE *f2 = _wfopen(path, L"r");
-	if (f2 != nullptr) {
-		mContagionApplyDelayEstimation.load(f2);
-		int cnt = 0;
-		fscanf(f2, "%d", &cnt);
-		cnt = max(0, min(256, cnt));
-		while (cnt-- > 0) {
-			int buff = 0;
-			fscanf(f2, "%d", &buff);
-			if (buff == 0)
-				break;
-			mDotApplyDelayEstimation[buff].load(f2);
-		}
-		fclose(f2);
-	}
 
 	wDPS.statusMap[CONTROL_STATUS_DEFAULT] = { 0, 0, 0x40000000, 0 };
 	wDPS.statusMap[CONTROL_STATUS_HOVER] = { 0, 0, 0x70555555, 0 };
@@ -148,26 +121,6 @@ GameDataProcess::~GameDataProcess() {
 	WaitForSingleObject(hUpdateInfoThread, -1);
 	CloseHandle(hUpdateInfoThread);
 	CloseHandle(hUpdateInfoThreadLock);
-
-	TCHAR path[256];
-	int i = 0, h = 0;
-	GetModuleFileNameEx(GetCurrentProcess(), NULL, path, MAX_PATH);
-	for (i = 0; i < 128 && path[i * 2] && path[i * 2 + 1]; i++)
-		h ^= ((int*)path)[i];
-	ExpandEnvironmentStrings(L"%APPDATA%", path, MAX_PATH);
-	wsprintf(path + wcslen(path), L"\\ffxiv_overlay_cache_%d.txt", h);
-
-	FILE *f = _wfopen(path, L"w");
-	if (f != nullptr) {
-		mContagionApplyDelayEstimation.save(f);
-		int cnt = 0;
-		fprintf(f, "\n%d", mDotApplyDelayEstimation.size());
-		for(auto it = mDotApplyDelayEstimation.begin(); it != mDotApplyDelayEstimation.end(); ++it){
-			fprintf(f, "\n%d ", it->first);
-			it->second.save(f);
-		}
-		fclose(f);
-	}
 }
 
 int GameDataProcess::getDoTPotency(int dot) {
@@ -362,9 +315,13 @@ void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 
 		if (mLastAttack.timestamp < dmg.timestamp - mCombatResetTime) {
 			mDpsInfo.clear();
+			mActorInfo.clear ();
 			mLastIdleTime = dmg.timestamp - 1000;
 		}
 		mLastAttack = dmg;
+
+		mActorInfo[dmg.source].name = GetActorName (dmg.source);
+		mActorInfo[dmg.source].job = GetActorJobString (dmg.source);
 
 		if (direct) {
 			mDpsInfo[dmg.source].totalDamage.def += dmg.dmg;
@@ -445,7 +402,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 
-					wRow.addChild(new OverlayRenderer::Control(GetActorJobString(it->first), CONTROL_TEXT_RESNAME, DT_CENTER));
+					wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, (mClassColors[GetActorJobString(it->first)] & 0xFFFFFF) | 0x80000000), CHILD_TYPE_BACKGROUND);
 
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
@@ -454,8 +411,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUser() && it->first != mSelfId)
 						wcscpy(tmp, L"...");
 					else {
-						char *name = GetActorName(it->first);
-						MultiByteToWideChar(CP_UTF8, 0, name, -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+						MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 					}
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f", curDps);
@@ -507,20 +463,27 @@ void GameDataProcess::UpdateOverlayMessage() {
 					if (i > 9 && it->target != currentTarget && it->target != hoverTarget && it->target != focusTarget)
 						break;
 					OverlayRenderer::Control &wRow = *(new OverlayRenderer::Control());
+					OverlayRenderer::Control *col;
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
-					wRow.addChild(new OverlayRenderer::Control(currentTarget == it->target ? L"T" :
+					wRow.addChild(col = new OverlayRenderer::Control(currentTarget == it->target ? L"T" :
 						hoverTarget == it->target ? L"M" :
 						focusTarget == it->target ? L"F" : L"", CONTROL_TEXT_STRING, DT_CENTER));
 					MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					wRow.addChild(new OverlayRenderer::Control(Languages::getDoTName(it->buffid), CONTROL_TEXT_STRING, DT_CENTER));
+					wRow.addChild(col = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					wRow.addChild(col = new OverlayRenderer::Control(Languages::getDoTName(it->buffid), CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.1fs%s",
 						(it->expires - timestamp) / 1000.f,
 						it->simulated ? (
 						(getDoTDuration(it->buffid) + (it->contagioned ? 15000 : 0)) < it->expires - timestamp
 							? L"(x)" :
 							L"(?)") : L"");
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					wRow.addChild(col = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					if (it->expires - timestamp < 8000) {
+						int v = 0xB0 - (0xB0 * (it->expires - timestamp) / 8000);
+						v = 255 - max(0, min(255, v));
+						wRow.getChild(wRow.getChildCount() - 1)->statusMap[0].foreground =
+							D3DCOLOR_ARGB(0xff, 0xff, v, v);
+					}
 					wDOT.addChild(&wRow);
 				}
 				i = buff_sort.size() - i;
@@ -596,9 +559,9 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 
 			if (getDoTPotency(buffId) == 0)
 				continue; // not an attack buff
-			auto it = mActiveDoT.begin();
+			
 			bool add = true;
-			while (it != mActiveDoT.end()) {
+			for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
 				if (it->source == source && it->target == target && it->buffid == buffId) {
 					it->applied = timestamp;
 					it->expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[it->buffid].get();
@@ -617,7 +580,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				b.source = source;
 				b.target = target;
 				b.applied = timestamp;
-				b.expires = timestamp + getDoTDuration(buffId);
+				b.expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[buffId].get();
 				b.potency = getDoTPotency(b.buffid);
 				b.simulated = 1;
 				b.contagioned = 0;

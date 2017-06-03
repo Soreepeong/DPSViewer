@@ -7,6 +7,8 @@
 #include "DPSWindowController.h"
 #include "DOTWindowController.h"
 
+#pragma comment(lib, "psapi.lib")
+
 ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll(dll),
 	mRenderer(renderer),
@@ -58,6 +60,18 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	UseDrawOverlayEveryone = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
 	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
 
+	char buf[8192];
+	readIni(L"DOT", L"Contagion", "", buf, sizeof(buf));
+	dll->process()->mContagionApplyDelayEstimation.load(buf);
+	for (int dotCount = readIni(L"DOT", L"Count", 0, 0, 256), i = 0; i < dotCount; i++) {
+		TCHAR key[64];
+		swprintf(key, 64, L"DOT%d.Id", i);
+		int dotId = readIni(L"DOT", key, 0);
+		swprintf(key, 64, L"DOT%d.Data", i);
+		readIni(L"DOT", key, "", buf, sizeof(buf));
+		dll->process()->mDotApplyDelayEstimation[dotId].load(buf);
+	}
+
 	dll->process()->ReloadLocalization();
 
 	char *ptr = mLanguageChoice;
@@ -98,6 +112,16 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"ShowEveryone", UseDrawOverlayEveryone);
 	writeIni(L"DPSMeter", L"CombatResetTime", combatResetTime);
 
+	writeIni(L"DOT", L"Contagion", dll->process()->mContagionApplyDelayEstimation.save().c_str());
+	writeIni(L"DOT", L"Count", (int) dll->process()->mDotApplyDelayEstimation.size());
+	int i = 0;
+	for(auto it = dll->process()->mDotApplyDelayEstimation.begin(); it != dll->process()->mDotApplyDelayEstimation.end(); ++it, ++i) {
+		TCHAR key[64];
+		swprintf(key, 64, L"DOT%d.Id", i);
+		writeIni(L"DOT", key, it->first);
+		swprintf(key, 64, L"DOT%d.Data", i);
+		writeIni(L"DOT", key, it->second.save().c_str());
+	}
 }
 
 int ImGuiConfigWindow::readIni(TCHAR *k1, TCHAR *k2, int def, int min, int max) {
@@ -131,7 +155,7 @@ void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, float val) {
 	swprintf(str, sizeof(str) / sizeof(TCHAR), L"%f", val);
 	WritePrivateProfileString(k1, k2, str, mSettingFilePath);
 }
-void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, char* val) {
+void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, const char* val) {
 	TCHAR buf[512] = { 0 };
 	MultiByteToWideChar(CP_UTF8, NULL, val, -1, buf, sizeof(buf) / sizeof(TCHAR));
 	WritePrivateProfileString(k1, k2, buf, mSettingFilePath);
@@ -146,6 +170,8 @@ void ImGuiConfigWindow::Render() {
 		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, transparency/255.f);
 		ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiSetCond_FirstUseEver);
 		ImGui::Begin(Languages::get("OPTION_WINDOW_TITLE"), &mConfigVisibility);
+
+		ImGui::Text(Languages::get("OPTION_HOWTO_OPEN"));
 
 		ImGui::Combo(Languages::get("OPTION_LANGUAGE"), &Languages::language, mLanguageChoice);
 

@@ -156,7 +156,7 @@ void OverlayRenderer::DrawText(int x, int y, TCHAR *text, D3DCOLOR Color) {
 					mFont->DrawTextW(NULL, text, -1, &rc4, DT_NOCLIP, (~Color & 0xFFFFFF) | 0xFF000000);
 				}
 	RECT rc = { x, y , 10000, 10000 };
-	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP, D3DCOLOR_ARGB(255, 255, 255, 255));
+	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP, Color);
 }
 
 void OverlayRenderer::DrawText(int x, int y, int width, int height, TCHAR *text, D3DCOLOR Color, int align) {
@@ -168,7 +168,7 @@ void OverlayRenderer::DrawText(int x, int y, int width, int height, TCHAR *text,
 					mFont->DrawTextW(NULL, text, -1, &rc4, DT_NOCLIP | align, (~Color & 0xFFFFFF) | 0xFF000000);
 				}
 	RECT rc = { x, y , x + width, y + height };
-	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP | align, D3DCOLOR_ARGB(255, 255, 255, 255));
+	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP | align, Color);
 }
 
 void OverlayRenderer::DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9 tex) {

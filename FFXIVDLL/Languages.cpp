@@ -30,6 +30,7 @@ namespace Languages {
 
 	void initialize() {
 		loc[LANGUAGE_ENGLISH]["OPTION_WINDOW_TITLE"] = "Options###IDOptionWindow";
+		loc[LANGUAGE_ENGLISH]["OPTION_HOWTO_OPEN"] = "Type /o:o into the chat box to open this window.";
 		loc[LANGUAGE_ENGLISH]["OPTION_LANGUAGE"] = "Language";
 		loc[LANGUAGE_ENGLISH]["OPTION_UNLOCK"] = "Unlock";
 		loc[LANGUAGE_ENGLISH]["OPTION_LOCK"] = "Lock";
@@ -62,6 +63,7 @@ namespace Languages {
 		loc2[LANGUAGE_ENGLISH][L"DOTTABLE_TIME"] = L"Time";
 
 		loc[LANGUAGE_KOREAN]["OPTION_WINDOW_TITLE"] = u8"설정###IDOptionWindow";
+		loc[LANGUAGE_KOREAN]["OPTION_HOWTO_OPEN"] = u8"채팅창에 /o:o라고 입력하시면 이 창을 다시 열 수 있습니다.";
 		loc[LANGUAGE_KOREAN]["OPTION_LANGUAGE"] = u8"언어";
 		loc[LANGUAGE_KOREAN]["OPTION_UNLOCK"] = u8"잠금 해제";
 		loc[LANGUAGE_KOREAN]["OPTION_LOCK"] = u8"잠그기";

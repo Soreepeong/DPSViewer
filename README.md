@@ -34,11 +34,10 @@ DPSViewer는 파이널 판타지 14를 위한 가벼운 DPS 미터 프로그램�
 
 설치
 ----
-1. zlib1.dll을 FFXIV 설치 경로 또는 C:\Windows에 복사합니다.
-2. Visual C++ 2015 Redist 또는 .NET 4.5.2가 없다면 다음을 설치합니다.
-Redist https://www.microsoft.com/en-us/download/details.aspx?id=481453
+1. Visual C++ 2017 Redist x86 또는 .NET 4.5.2가 없다면 다음을 설치합니다.
+Redist https://go.microsoft.com/fwlink/?LinkId=746572
 .NET https://www.microsoft.com/en-us/download/details.aspx?id=42643
-3. 관리자 권한으로 (한국어 버전일 경우 런처로) 파이널 판타지를 켰을 경우, 이 프로그램도 관리자 권한으로 실행하셔야 합니다.
+2. 관리자 권한으로 (한국어 버전일 경우 런처로) 파이널 판타지를 켰을 경우, 이 프로그램도 관리자 권한으로 실행하셔야 합니다.
 
 License / 라이선스
 ----
@@ -46,8 +45,7 @@ GPLv3
 
 Referenced projects / 참조 프로젝트
 ----
-- FFXIV.Memory
-  NOTE: Some internal functions are edited to public
+- FFXIV.Memory (NOTE: Some internal functions are edited to public)
 - MinHook
 - zlib
-- 
+- imgui

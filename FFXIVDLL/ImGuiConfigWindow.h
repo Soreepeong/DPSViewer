@@ -20,7 +20,7 @@ private:
 
 	void writeIni(TCHAR *k1, TCHAR *k2, int val);
 	void writeIni(TCHAR *k1, TCHAR *k2, float val);
-	void writeIni(TCHAR *k1, TCHAR *k2, char* val);
+	void writeIni(TCHAR *k1, TCHAR *k2, const char* val);
 
 public:
 

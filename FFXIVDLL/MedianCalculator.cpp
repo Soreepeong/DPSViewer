@@ -1,5 +1,7 @@
 #include "MedianCalculator.h"
 #include <Windows.h>
+#include <sstream>
+#include <istream>
 
 
 MedianCalculator::MedianCalculator() :
@@ -44,18 +46,16 @@ void MedianCalculator::add(int val) {
 }
 
 
-void MedianCalculator::save(FILE *f) {
-	fprintf(f, "%d ", values.size());
-	for (auto it = values.begin(); it != values.end(); ++it)
-		fprintf(f, "%d ", *it);
+std::string MedianCalculator::save() {
+	std::stringstream str;
+	for (auto it = values.begin (); it != values.end (); ++it)
+		str << *it << " ";
+	return str.str ();
 }
-void MedianCalculator::load(FILE *f) {
-	int sz = 0, n;
-	fscanf_s(f, "%d", &sz);
-	sz = max(0, min(64, sz));
-	while (sz-- > 0) {
-		n = 0;
-		fscanf_s(f, "%d", &n);
+void MedianCalculator::load(char *inp) {
+	std::istringstream in_stream(inp);
+	int n;
+	while (in_stream >> n) {
 		values.insert(n);
 	}
 	median = calcMedian();

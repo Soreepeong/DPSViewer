@@ -18,7 +18,7 @@ public:
 		return median;
 	}
 
-	void save(FILE *f);
-	void load(FILE *f);
+	std::string save();
+	void load(char *inp);
 };
 

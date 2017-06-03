@@ -46,7 +46,7 @@ namespace DpsViewer {
 		static Process process;
 
 		static IntPtr injectedProcess;
-		static IntPtr injectedDll, zlib;
+		static IntPtr injectedDll;
 
 		public static void quit() {
 			try {
@@ -54,7 +54,6 @@ namespace DpsViewer {
 				writer.Close();
 			} catch (Exception) { }
 			ejectDll(injectedProcess, injectedDll);
-			ejectDll(injectedProcess, zlib);
 			ExitProcess(0);
 		}
 
@@ -163,8 +162,6 @@ namespace DpsViewer {
 				}
 				info.Close();
 				ejectDll(MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
-				ejectDll(MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + "zlib1.dll");
-				zlib = InjectDLL(injectedProcess = MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + "zlib1.dll");
 				injectedDll = InjectDLL(injectedProcess = MemoryHandler.Instance.ProcessHandle,
 					AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
 

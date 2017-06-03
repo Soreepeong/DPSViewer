@@ -60,6 +60,11 @@ struct ATTACK_INFO {
 	int _u4[8];
 };
 
+struct TEMPUSERINFO {
+	std::string name;
+	std::wstring job;
+};
+
 struct TEMPBUFF {
 	int source;
 	int target;
@@ -263,6 +268,7 @@ private:
 		int missHits;
 	};
 	std::map<int, DPS_METER_TEMP_INFO> mDpsInfo;
+	std::map<int, TEMPUSERINFO> mActorInfo;
 
 
 	std::vector<std::pair<int, int>> mCalculatedDamages;
