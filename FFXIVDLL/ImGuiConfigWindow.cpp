@@ -166,6 +166,12 @@ void ImGuiConfigWindow::Show() {
 }
 
 void ImGuiConfigWindow::Render() {
+	if (mConfigVisibilityPrev && !mConfigVisibility) {
+		std::string inj("/e ");
+		inj += Languages::get("OPTION_HOWTO_OPEN");
+		dll->pipe()->AddChat(inj);
+	}
+	mConfigVisibilityPrev = mConfigVisibility;
 	if (mConfigVisibility) {
 		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, transparency/255.f);
 		ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiSetCond_FirstUseEver);

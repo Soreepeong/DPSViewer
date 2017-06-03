@@ -30,7 +30,7 @@ namespace Languages {
 
 	void initialize() {
 		loc[LANGUAGE_ENGLISH]["OPTION_WINDOW_TITLE"] = "Options###IDOptionWindow";
-		loc[LANGUAGE_ENGLISH]["OPTION_HOWTO_OPEN"] = "Type /o:o into the chat box to open this window.";
+		loc[LANGUAGE_ENGLISH]["OPTION_HOWTO_OPEN"] = "Type /o:o into the chat box to open this window.\nType /o to show or hide the overlays.\nPlease use Quit button before you exit FFXIV.";
 		loc[LANGUAGE_ENGLISH]["OPTION_LANGUAGE"] = "Language";
 		loc[LANGUAGE_ENGLISH]["OPTION_UNLOCK"] = "Unlock";
 		loc[LANGUAGE_ENGLISH]["OPTION_LOCK"] = "Lock";
@@ -63,7 +63,7 @@ namespace Languages {
 		loc2[LANGUAGE_ENGLISH][L"DOTTABLE_TIME"] = L"Time";
 
 		loc[LANGUAGE_KOREAN]["OPTION_WINDOW_TITLE"] = u8"설정###IDOptionWindow";
-		loc[LANGUAGE_KOREAN]["OPTION_HOWTO_OPEN"] = u8"채팅창에 /o:o라고 입력하시면 이 창을 다시 열 수 있습니다.";
+		loc[LANGUAGE_KOREAN]["OPTION_HOWTO_OPEN"] = u8"채팅창에 /o:o라고 입력하시면 이 창을 다시 열 수 있습니다.\n/o라고 입력하시면 모든 오버레이를 숨기고 보일 수 있습니다.\n게임을 종료할 때는 반드시 아래 종료 버튼을 클릭해 주세요.";
 		loc[LANGUAGE_KOREAN]["OPTION_LANGUAGE"] = u8"언어";
 		loc[LANGUAGE_KOREAN]["OPTION_UNLOCK"] = u8"잠금 해제";
 		loc[LANGUAGE_KOREAN]["OPTION_LOCK"] = u8"잠그기";

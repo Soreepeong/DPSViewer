@@ -479,7 +479,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 							L"(?)") : L"");
 					wRow.addChild(col = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					if (it->expires - timestamp < 8000) {
-						int v = 0xB0 - (0xB0 * (it->expires - timestamp) / 8000);
+						int v = 0xB0 - (0xB0 * (int) (it->expires - timestamp) / 8000);
 						v = 255 - max(0, min(255, v));
 						wRow.getChild(wRow.getChildCount() - 1)->statusMap[0].foreground =
 							D3DCOLOR_ARGB(0xff, 0xff, v, v);
@@ -846,6 +846,12 @@ void GameDataProcess::PacketErrorMessage(int signature, int length) {
 	sprintf(t, "cmsgError: packet error %08X / %08X", signature, length);
 	dll->pipe()->SendInfo(t);
 }
+int tryInflate(z_stream *inf, int flags) {
+	__try {
+		return inflate(inf, Z_NO_FLUSH);
+	} __except (EXCEPTION_EXECUTE_HANDLER) {}
+	return -1;
+}
 
 void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 
@@ -885,7 +891,7 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 			inflater.avail_in = packet.length - 40;
 
 			if (inflateInit(&inflater) == Z_OK) {
-				int res = inflate(&inflater, Z_NO_FLUSH);
+				int res = tryInflate(&inflater, Z_NO_FLUSH);
 				if (Z_STREAM_END != res) {
 					inflateEnd(&inflater);
 					p.waste(1);

@@ -43,12 +43,12 @@ public:
 	typedef HRESULT(APIENTRY *Dx9SwapChainPresent)(IDirect3DSwapChain9 *pDevice, const RECT *pSourceRect, const RECT *pDestRect, HWND hDestWindowOverride, const RGNDATA *pDirtyRegion, DWORD dwFlags);
 	typedef HCURSOR(WINAPI *WinApiSetCursor)(HCURSOR hCursor);
 
-	static HRESULT APIENTRY hook_Reset(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters);
-	static HRESULT APIENTRY hook_EndScene(IDirect3DDevice9 *pDevice);
-	static HRESULT APIENTRY hook_SwapChain_Present(IDirect3DSwapChain9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion, DWORD dwFlags);
-	static HRESULT APIENTRY hook_Present(IDirect3DDevice9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion);
+	static HRESULT APIENTRY hook_Dx9Reset(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters);
+	static HRESULT APIENTRY hook_Dx9EndScene(IDirect3DDevice9 *pDevice);
+	static HRESULT APIENTRY hook_Dx9SwapChain_Present(IDirect3DSwapChain9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion, DWORD dwFlags);
+	static HRESULT APIENTRY hook_Dx9Present(IDirect3DDevice9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion);
 
-	static HCURSOR WINAPI hook_SetCursor(HCURSOR hCursor);
+	static HCURSOR WINAPI hook_WinApiSetCursor(HCURSOR hCursor);
 
 
 	static struct HOOKS_ORIG_FN_SET {

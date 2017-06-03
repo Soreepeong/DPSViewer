@@ -11,6 +11,7 @@ private:
 	FFXIVDLL *dll;
 	OverlayRenderer *mRenderer;
 	bool mConfigVisibility;
+	bool mConfigVisibilityPrev;
 	TCHAR mSettingFilePath[1024];
 	char mLanguageChoice[8192];
 
