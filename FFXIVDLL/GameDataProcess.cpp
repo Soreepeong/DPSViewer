@@ -408,7 +408,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 
-					if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUser() && it->first != mSelfId)
+					if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUserName() && it->first != mSelfId)
 						wcscpy(tmp, L"...");
 					else {
 						MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));

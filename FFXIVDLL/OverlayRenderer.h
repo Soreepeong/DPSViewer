@@ -181,8 +181,8 @@ public:
 	void SetUseDrawOverlayEveryone(bool use);
 	int GetUseDrawOverlayEveryone();
 	void GetCaptureFormat(int format);
-	int GetHideOtherUser();
-	void SetHideOtherUser();
+	int GetHideOtherUserName();
+	void SetHideOtherUserName();
 
 	void AddWindow(Control *windows);
 	Control* GetRoot();

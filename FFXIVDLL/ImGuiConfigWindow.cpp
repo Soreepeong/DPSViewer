@@ -57,7 +57,8 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDPS.visible = readIni(L"DPSMeter", L"Visible", 1, 0, 1);
 	dll->process()->wDPS.xF = readIni(L"DPSMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDPS.yF = readIni(L"DPSMeter", L"y", 0.1f, 0.f, 1.f);
-	UseDrawOverlayEveryone = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
+	ShowEveryDPS = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
+	hideOtherUserName = readIni(L"DPSMeter", L"HideOtherUserName", 0, 0, 1);
 	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
 
 	char buf[8192];
@@ -109,7 +110,8 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"Visible", dll->process()->wDPS.visible);
 	writeIni(L"DPSMeter", L"x", dll->process()->wDPS.xF);
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
-	writeIni(L"DPSMeter", L"ShowEveryone", UseDrawOverlayEveryone);
+	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);
+	writeIni(L"DPSMeter", L"HideOtherUserName", hideOtherUserName);
 	writeIni(L"DPSMeter", L"CombatResetTime", combatResetTime);
 
 	writeIni(L"DOT", L"Contagion", dll->process()->mContagionApplyDelayEstimation.save().c_str());
@@ -175,7 +177,7 @@ void ImGuiConfigWindow::Render() {
 	if (mConfigVisibility) {
 		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, transparency/255.f);
 		ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiSetCond_FirstUseEver);
-		ImGui::Begin(Languages::get("OPTION_WINDOW_TITLE"), &mConfigVisibility);
+		ImGui::Begin(Languages::get("OPTION_WINDOW_TITLE"), &mConfigVisibility, ImGuiWindowFlags_AlwaysAutoResize);
 
 		ImGui::Text(Languages::get("OPTION_HOWTO_OPEN"));
 
@@ -193,9 +195,12 @@ void ImGuiConfigWindow::Render() {
 		if (ImGui::Button(dll->process()->wDOT.visible ? Languages::get("OPTION_DOT_HIDE") : Languages::get("OPTION_DOT_SHOW"))) {
 			dll->process()->wDOT.toggleVisibility();
 		} ImGui::SameLine();
-		if (ImGui::Button(hideOtherUser ? Languages::get("OPTION_OTHERS_SHOW") : Languages::get("OPTION_OTHERS_HIDE"))) {
-			hideOtherUser = !hideOtherUser;
+		if (ImGui::Button(Languages::get("OPTION_DPS_RESET"))) {
+			dll->process()->ResetMeter();
 		}
+		ImGui::Checkbox(Languages::get("OPTION_OTHERS_SHOW"), &ShowEveryDPS); ImGui::SameLine();
+		ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName);
+
 		ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
 		ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
 		ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
@@ -203,7 +208,14 @@ void ImGuiConfigWindow::Render() {
 		ImGui::InputText(Languages::get("OPTION_FONT_NAME"), fontName, sizeof(fontName));
 		ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
 		ImGui::SliderInt(Languages::get("OPTION_METER_PADDING"), &padding, 0, 32);
-		if (ImGui::Button(Languages::get("OPTION_APPLY"))) {
+		ImGui::InputText(Languages::get("OPTION_CAPTURE_PATH"), capturePath, sizeof(capturePath));
+		ImGui::RadioButton("BMP", &captureFormat, D3DXIFF_BMP);
+		ImGui::SameLine();
+		ImGui::RadioButton("PNG", &captureFormat, D3DXIFF_PNG);
+		ImGui::SameLine();
+		ImGui::RadioButton("JPG", &captureFormat, D3DXIFF_JPG);
+		ImGui::PushItemWidth(-1);
+		if (ImGui::Button(Languages::get("OPTION_APPLY"), ImVec2(90, 30))) {
 			dll->process()->wDPS.setTransparency(transparency);
 			dll->process()->wDOT.setTransparency(transparency);
 			dll->process()->wDPS.setPaddingRecursive(padding);
@@ -215,19 +227,11 @@ void ImGuiConfigWindow::Render() {
 			}
 			mRenderer->ReloadFromConfig();
 			dll->process()->ReloadLocalization();
-		}
-		ImGui::InputText(Languages::get("OPTION_CAPTURE_PATH"), capturePath, sizeof(capturePath));
-		ImGui::RadioButton("BMP", &captureFormat, D3DXIFF_BMP);
-		ImGui::SameLine();
-		ImGui::RadioButton("PNG", &captureFormat, D3DXIFF_PNG);
-		ImGui::SameLine();
-		ImGui::RadioButton("JPG", &captureFormat, D3DXIFF_JPG);
-		if (ImGui::Button(Languages::get("OPTION_DPS_RESET"))) {
-			dll->process()->ResetMeter();
-		}
-		if (ImGui::Button(Languages::get("OPTION_QUIT"))) {
+		}ImGui::SameLine();
+		if (ImGui::Button(Languages::get("OPTION_QUIT"), ImVec2(90,30))) {
 			dll->spawnSelfUnloader();
 		}
+		ImGui::PopItemWidth();
 		ImGui::End();
 	}
 }

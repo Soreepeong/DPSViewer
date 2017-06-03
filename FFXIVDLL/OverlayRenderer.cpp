@@ -97,11 +97,11 @@ void OverlayRenderer::OnResetDevice() {
 	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fn, &mFont);
 }
 
-void OverlayRenderer::SetHideOtherUser() {
-	mConfig.hideOtherUser = !mConfig.hideOtherUser;
+void OverlayRenderer::SetHideOtherUserName() {
+	mConfig.hideOtherUserName = !mConfig.hideOtherUserName;
 }
-int OverlayRenderer::GetHideOtherUser() {
-	return mConfig.hideOtherUser;
+int OverlayRenderer::GetHideOtherUserName() {
+	return mConfig.hideOtherUserName;
 }
 
 int OverlayRenderer::GetFPS() {
@@ -115,10 +115,10 @@ int OverlayRenderer::GetUseDrawOverlay() {
 }
 
 void OverlayRenderer::SetUseDrawOverlayEveryone(bool b) {
-	mConfig.UseDrawOverlayEveryone = b;
+	mConfig.ShowEveryDPS = b;
 }
 int OverlayRenderer::GetUseDrawOverlayEveryone() {
-	return mConfig.UseDrawOverlayEveryone;
+	return mConfig.ShowEveryDPS;
 }
 
 OverlayRenderer::Control* OverlayRenderer::GetRoot() {

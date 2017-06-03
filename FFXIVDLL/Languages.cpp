@@ -38,8 +38,8 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_SHOW"] = "Show DPS";
 		loc[LANGUAGE_ENGLISH]["OPTION_DOT_HIDE"] = "Hide DOT";
 		loc[LANGUAGE_ENGLISH]["OPTION_DOT_SHOW"] = "Show DOT";
-		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_HIDE"] = "Hide others";
-		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_SHOW"] = "Show others";
+		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_HIDE_NAME"] = "Hide other names";
+		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_SHOW"] = "Show everyone";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_BOLD"] = "Bold text";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_SIZE"] = "Text size";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_NAME"] = "Font name";
@@ -71,8 +71,8 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_SHOW"] = u8"DPS 보이기";
 		loc[LANGUAGE_KOREAN]["OPTION_DOT_HIDE"] = u8"DOT 숨기기";
 		loc[LANGUAGE_KOREAN]["OPTION_DOT_SHOW"] = u8"DOT 보이기";
-		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_HIDE"] = u8"타인 숨기기";
-		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_SHOW"] = u8"타인 보이기";
+		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_HIDE_NAME"] = u8"다른 이름 숨기기";
+		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_SHOW"] = u8"모두 보이기";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_BOLD"] = u8"굵은 글자";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_SIZE"] = u8"글자 크기";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_NAME"] = u8"서체 이름";

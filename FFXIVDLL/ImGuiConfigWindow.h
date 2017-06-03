@@ -26,14 +26,14 @@ private:
 public:
 
 	int UseDrawOverlay = true;
-	int UseDrawOverlayEveryone = true;
+	bool ShowEveryDPS = true;
 	int fontSize = 17;
 	int fontSize_old = 17;
 	bool bold = true;
 	int border = 2;
 	int transparency = 100;
 	int padding = 4;
-	int hideOtherUser = 0;
+	bool hideOtherUserName = 0;
 	char capturePath[512] = "";
 	int captureFormat = D3DXIFF_BMP;
 	char fontName[512] = "Segoe UI";
