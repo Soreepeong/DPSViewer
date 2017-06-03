@@ -102,12 +102,12 @@ namespace Languages {
 			switch (skill) {
 			case 0xf8: return L"파멸의 진";
 			case 0xf4: return L"골절";
-			case 0x77: return L"phlebotomize";
-			case 0x76: return L"chaos thrust";
-			case 0x6a: return L"touch of death";
-			case 0xf6: return L"demolish";
-			case 0x7c: return L"venomous bite";
-			case 0x81: return L"windbite";
+			case 0x77: return L"이단 찌르기";
+			case 0x76: return L"꽃잎 폭풍";
+			case 0x6a: return L"혈도 찌르기";
+			case 0xf6: return L"파쇄권";
+			case 0x7c: return L"독화살";
+			case 0x81: return L"바람 화살";
 			case 0x8f: return L"에어로";
 			case 0x90: return L"에어로라";
 			case 0xa1: return L"선더";
@@ -117,16 +117,16 @@ namespace Languages {
 			case 0xb4: return L"미아즈마";
 			case 0xbd: return L"바이오라";
 			case 0xbc: return L"미아즈라";
-			case 0x13a: return L"inferno";
-			case 0x12: return L"poison";
-			case 0xec: return L"choco beak";
-			case 0x1ec: return L"mutilation";
-			case 0x1fc: return L"shadow fang";
-			case 0x356: return L"lead shot";
-			case 0x2e5: return L"scourge";
-			case 0x346: return L"combust";
-			case 0x34b: return L"combust ii";
-			case 0x2d5: return L"goring blade";
+			case 0x13a: return L"지옥의 화염";
+			case 0x12: return L"독";
+			case 0xec: return L"초코 찌르기";
+			case 0x1ec: return L"무쌍베기";
+			case 0x1fc: return L"그림자 송곳니";
+			case 0x356: return L"산탄 사격";
+			case 0x2e5: return L"재앙";
+			case 0x346: return L"컴버스";
+			case 0x34b: return L"컴버라";
+			case 0x2d5: return L"꿰뚫는 검격";
 			case 0x31e: return L"에어로가";
 			}
 			return L"(알 수 없음)";
