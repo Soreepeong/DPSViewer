@@ -1,7 +1,7 @@
 ﻿# DPSViewer
 
-![English](https://raw.githubusercontent.com/soreepeong/DPSViewer/master/readme-images/img-eng.png)
-![Korean](https://raw.githubusercontent.com/soreepeong/DPSViewer/master/readme-images/img-kor.png)
+![English](https://raw.githubusercontent.com/Soreepeong/DPSViewer/master/readme-images/img-eng.png)
+![Korean](https://raw.githubusercontent.com/Soreepeong/DPSViewer/master/readme-images/img-kor.png)
 
 
 DPSViewer is a lightweight DPS meter for FFXIV (v3.57 for Global version and v3.3 for Korean version).
