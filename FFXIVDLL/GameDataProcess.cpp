@@ -49,7 +49,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	wDOT.statusMap[CONTROL_STATUS_FOCUS] = { 0, 0, 0x70333333, 0 };
 	wDOT.statusMap[CONTROL_STATUS_PRESS] = { 0, 0, 0x70000000, 0 };
 
-	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_CLASS_COLORDEF), L"TEXT");
+	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_TEXT_COLORDEF), L"TEXT");
 	if (hResource) {
 		HGLOBAL hLoadedResource = LoadResource(dll->instance(), hResource);
 		if (hLoadedResource) {
@@ -355,18 +355,21 @@ void GameDataProcess::UpdateOverlayMessage() {
 			SYSTEMTIME s1, s2;
 			Tools::MillisToLocalTime(timestamp, &s1);
 			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
-			pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d",
-				dll->hooks()->GetOverlayRenderer()->GetFPS(),
-				(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
-				(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
+			if(mShowTimeInfo)
+				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
+					dll->hooks()->GetOverlayRenderer()->GetFPS(),
+					(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
+					(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
 			if (!mDpsInfo.empty()) {
 				uint64_t dur = mLastAttack.timestamp - mLastIdleTime;
 				int total = 0;
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
 					total += it->second;
-				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0])-pos, L" / %02d:%02d.%03d / %.2f (%d)",
+				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0])-pos, L"%02d:%02d.%03d / %.2f (%d)",
 					(int)((dur / 60000) % 60), (int)((dur / 1000) % 60), (int)(dur % 1000),
 					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
+			} else {
+				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"00:00:000 / 0 (0)");
 			}
 			wDPS.getChild(0, CHILD_TYPE_NORMAL)->text = res;
 			OverlayRenderer::Control &wTable = *wDPS.getChild(1, CHILD_TYPE_NORMAL);

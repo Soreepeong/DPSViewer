@@ -6,6 +6,7 @@
 #include "FFXIVDLL.h"
 #include "DPSWindowController.h"
 #include "DOTWindowController.h"
+#include "resource.h"
 
 #pragma comment(lib, "psapi.lib")
 
@@ -23,7 +24,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 
 	Languages::language = (Languages::LANGUAGE)readIni(L"UI", L"Language", 0, 0, Languages::_LANGUAGE_COUNT);
 	UseDrawOverlay = readIni(L"UI", L"UseOverlay", 1, 0, 1);
-	fontSize_old = fontSize = readIni(L"UI", L"FontSize", 17, 9, 36);
+	fontSize = readIni(L"UI", L"FontSize", 17, 9, 36);
 	bold = readIni(L"UI", L"FontBold", 1, 0, 1)?true:false;
 	border = readIni(L"UI", L"FontBorder", 0, 0, 3);
 	readIni(L"UI", L"FontName", "Segoe UI", fontName, sizeof(fontName));
@@ -60,6 +61,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	ShowEveryDPS = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
 	hideOtherUserName = readIni(L"DPSMeter", L"HideOtherUserName", 0, 0, 1);
 	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
+	showTimes = readIni(L"DPSMeter", L"ShowTimes", 1, 0, 1);
 
 	char buf[8192];
 	readIni(L"DOT", L"Contagion", "", buf, sizeof(buf));
@@ -73,6 +75,8 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 		dll->process()->mDotApplyDelayEstimation[dotId].load(buf);
 	}
 
+	dll->process()->mCombatResetTime = combatResetTime * 1000;
+	dll->process()->mShowTimeInfo = showTimes;
 	dll->process()->ReloadLocalization();
 
 	char *ptr = mLanguageChoice;
@@ -86,6 +90,21 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 		*(ptr++) = 0;
 	}
 	*(ptr++) = 0;
+
+
+	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_TEXT_ABOUT), L"TEXT");
+	if (hResource) {
+		HGLOBAL hLoadedResource = LoadResource(dll->instance(), hResource);
+		if (hLoadedResource) {
+			LPVOID pLockedResource = LockResource(hLoadedResource);
+			if (pLockedResource) {
+				DWORD dwResourceSize = SizeofResource(dll->instance(), hResource);
+				if (0 != dwResourceSize) {
+					mAboutText = std::string((char*) pLockedResource, dwResourceSize);
+				}
+			}
+		}
+	}
 }
 
 ImGuiConfigWindow::~ImGuiConfigWindow() {
@@ -113,6 +132,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);
 	writeIni(L"DPSMeter", L"HideOtherUserName", hideOtherUserName);
 	writeIni(L"DPSMeter", L"CombatResetTime", combatResetTime);
+	writeIni(L"DPSMeter", L"ShowTimes", (int) showTimes);
 
 	writeIni(L"DOT", L"Contagion", dll->process()->mContagionApplyDelayEstimation.save().c_str());
 	writeIni(L"DOT", L"Count", (int) dll->process()->mDotApplyDelayEstimation.size());
@@ -201,37 +221,44 @@ void ImGuiConfigWindow::Render() {
 		ImGui::Checkbox(Languages::get("OPTION_OTHERS_SHOW"), &ShowEveryDPS); ImGui::SameLine();
 		ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName);
 
-		ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
-		ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
-		ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
-		ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);
-		ImGui::InputText(Languages::get("OPTION_FONT_NAME"), fontName, sizeof(fontName));
 		ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
-		ImGui::SliderInt(Languages::get("OPTION_METER_PADDING"), &padding, 0, 32);
-		ImGui::InputText(Languages::get("OPTION_CAPTURE_PATH"), capturePath, sizeof(capturePath));
-		ImGui::RadioButton("BMP", &captureFormat, D3DXIFF_BMP);
-		ImGui::SameLine();
-		ImGui::RadioButton("PNG", &captureFormat, D3DXIFF_PNG);
-		ImGui::SameLine();
-		ImGui::RadioButton("JPG", &captureFormat, D3DXIFF_JPG);
-		ImGui::PushItemWidth(-1);
+
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
+			ImGui::Checkbox(Languages::get("OPTION_SHOW_TIMES"), &showTimes);
+			ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
+			ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
+			ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
+			ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);
+			ImGui::InputText(Languages::get("OPTION_FONT_NAME"), fontName, sizeof(fontName));
+			ImGui::SliderInt(Languages::get("OPTION_METER_PADDING"), &padding, 0, 32);
+		}
+
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_CAPTURE"))) {
+			ImGui::InputText(Languages::get("OPTION_CAPTURE_PATH"), capturePath, sizeof(capturePath));
+			ImGui::RadioButton("BMP", &captureFormat, D3DXIFF_BMP);
+			ImGui::SameLine();
+			ImGui::RadioButton("PNG", &captureFormat, D3DXIFF_PNG);
+			ImGui::SameLine();
+			ImGui::RadioButton("JPG", &captureFormat, D3DXIFF_JPG);
+		}
+
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_ABOUT"))) {
+			ImGui::InputTextMultiline("##aboutText", (char*) mAboutText.c_str(), mAboutText.length(), ImVec2(-1.0f, ImGui::GetTextLineHeight() * 16), ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_ReadOnly);
+		}
+
 		if (ImGui::Button(Languages::get("OPTION_APPLY"), ImVec2(90, 30))) {
 			dll->process()->wDPS.setTransparency(transparency);
 			dll->process()->wDOT.setTransparency(transparency);
 			dll->process()->wDPS.setPaddingRecursive(padding);
 			dll->process()->wDOT.setPaddingRecursive(padding);
 			dll->process()->mCombatResetTime = combatResetTime * 1000;
-			if (fontSize_old != fontSize) {
-				mRenderer->ReloadImGuiFromConfig();
-				fontSize_old = fontSize;
-			}
+			dll->process()->mShowTimeInfo = showTimes;
 			mRenderer->ReloadFromConfig();
 			dll->process()->ReloadLocalization();
 		}ImGui::SameLine();
 		if (ImGui::Button(Languages::get("OPTION_QUIT"), ImVec2(90,30))) {
 			dll->spawnSelfUnloader();
 		}
-		ImGui::PopItemWidth();
 		ImGui::End();
 	}
 }

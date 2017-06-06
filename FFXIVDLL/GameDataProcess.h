@@ -274,6 +274,7 @@ private:
 	std::vector<std::pair<int, int>> mCalculatedDamages;
 	uint64_t mLastIdleTime = 0;
 	uint64_t mCombatResetTime = 10000;
+	bool mShowTimeInfo = true;
 
 	std::map<int, MedianCalculator> mDotApplyDelayEstimation;
 	MedianCalculator mContagionApplyDelayEstimation;

@@ -150,9 +150,6 @@ private:
 	void DrawText(int x, int y, int width, int height, TCHAR *text, D3DCOLOR Color, int align);
 	void RenderOverlay();
 
-	void ReloadImGuiFromConfig();
-	bool mRecreateImGuiObjects;
-
 	std::deque<IDirect3DSurface9*> mCaptureBuffers;
 	std::recursive_mutex mCaptureMutex;
 	bool mDoCapture = false;

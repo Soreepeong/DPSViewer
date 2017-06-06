@@ -20,6 +20,11 @@ private:
 	GameDataProcess *pDataProcess;
 	HWND ffxivHwnd;
 
+	BOOL WINAPI FindFFXIVWindow(HWND h);
+	static BOOL WINAPI FindFFXIVWindow(HWND h, LPARAM l) {
+		return ((FFXIVDLL*)l)->FindFFXIVWindow(h);
+	}
+
 public:
 	FFXIVDLL(HMODULE instance);
 	~FFXIVDLL();

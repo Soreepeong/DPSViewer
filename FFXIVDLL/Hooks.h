@@ -96,7 +96,7 @@ private:
 
 
 public:
-	Hooks(FFXIVDLL *dll, FILE *f);
+	Hooks(FFXIVDLL *dll);
 	~Hooks();
 	void Activate();
 

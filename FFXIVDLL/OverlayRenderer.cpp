@@ -9,6 +9,7 @@
 #pragma comment(lib, "Shlwapi.lib")
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx9.h"
+#include "resource.h"
 
 OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	pDevice(device),
@@ -16,14 +17,29 @@ OverlayRenderer::OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device) :
 	mSprite(nullptr),
 	dll (dll),
 	mConfig(dll, this),
-	mRecreateImGuiObjects(true),
 	hSaverThread(INVALID_HANDLE_VALUE) {
 
 	memset(mWindows.statusMap, 0, sizeof(mWindows.statusMap));
 	mWindows.layoutDirection = LAYOUT_ABSOLUTE;
 
 	ImGui_ImplDX9_Init(dll->ffxiv(), pDevice);
-	ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", (float) mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+	// IDR_FONT_NANUMGOTHIC
+
+	HRSRC hResource = FindResource(dll->instance(), MAKEINTRESOURCE(IDR_FONT_NANUMGOTHIC), L"TTFFONT");
+	if (hResource) {
+		HGLOBAL hLoadedResource = LoadResource(dll->instance(), hResource);
+		if (hLoadedResource) {
+			LPVOID pLockedResource = LockResource(hLoadedResource);
+			if (pLockedResource) {
+				DWORD dwResourceSize = SizeofResource(dll->instance(), hResource);
+				if (0 != dwResourceSize) {
+					void * res = ImGui::GetIO().MemAllocFn(dwResourceSize);
+					memcpy(res, pLockedResource, dwResourceSize);
+					ImGui::GetIO().Fonts->AddFontFromMemoryTTF(res, dwResourceSize, 17, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+				}
+			}
+		}
+	}
 	OnResetDevice();
 }
 
@@ -66,10 +82,6 @@ void OverlayRenderer::ReloadFromConfig() {
 	TCHAR fn[512];
 	MultiByteToWideChar(CP_UTF8, NULL, mConfig.fontName, -1, fn, sizeof(fn) / sizeof(fn[0]));
 	D3DXCreateFont(pDevice, mConfig.fontSize, 0, (mConfig.bold ? FW_BOLD : 0), 0, FALSE, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH | FF_DONTCARE, fn, &mFont);
-}
-
-void OverlayRenderer::ReloadImGuiFromConfig() {
-	mRecreateImGuiObjects = true;
 }
 
 void OverlayRenderer::OnLostDevice() {
@@ -230,14 +242,6 @@ void OverlayRenderer::RenderOverlay() {
 			}
 		}
 		mWindows.draw(this);
-
-		if (mRecreateImGuiObjects) {
-			ImGui_ImplDX9_InvalidateDeviceObjects();
-			ImGui::GetIO().Fonts->Clear();
-			ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\fonts\\malgunbd.ttf", (float)mConfig.fontSize, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
-			ImGui_ImplDX9_CreateDeviceObjects();
-			mRecreateImGuiObjects = false;
-		}
 
 		ImGui_ImplDX9_NewFrame();
 		mConfig.Render();

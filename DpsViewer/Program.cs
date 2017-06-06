@@ -140,7 +140,6 @@ namespace DpsViewer {
 
 
 				StreamWriter info = new StreamWriter(AppDomain.CurrentDo‌​main.BaseDirectory + "FFXIVDLLInfo_" + process.Id + ".txt");
-				info.WriteLine(ffxivhWnd.ToInt32());
 				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt32());
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.ID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Name);
@@ -151,15 +150,6 @@ namespace DpsViewer {
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Current);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.MouseOver);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Focus);
-				if (version == "KOR") {
-					info.WriteLine(0x1F20);
-					info.WriteLine(0x33B420 - 0x1A0000);
-					info.WriteLine(0xF19DD0 - 0x400000);
-				} else {
-					info.WriteLine(0x2910); // ProcessWindowMessage
-					info.WriteLine(0x9E4650 - 0x840000); // processNewLine
-					info.WriteLine(0x1E97EB0 - 0x12F0000); // onNewChatItem
-				}
 				info.Close();
 				ejectDll(MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
 				injectedDll = InjectDLL(injectedProcess = MemoryHandler.Instance.ProcessHandle,

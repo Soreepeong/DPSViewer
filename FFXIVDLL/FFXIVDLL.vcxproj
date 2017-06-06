@@ -151,6 +151,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalDependencies>vcruntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -237,62 +238,7 @@
     <ClCompile Include="WindowControllerBase.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="img\acn.png" />
-    <Image Include="img\alc.png" />
-    <Image Include="img\arc.png" />
-    <Image Include="img\arm.png" />
-    <Image Include="img\ast.png" />
-    <Image Include="img\bishop.png" />
-    <Image Include="img\blm.png" />
-    <Image Include="img\brd.png" />
-    <Image Include="img\bsm.png" />
-    <Image Include="img\btn.png" />
-    <Image Include="img\chocobo.png" />
-    <Image Include="img\cnj.png" />
-    <Image Include="img\crp.png" />
-    <Image Include="img\cul.png" />
-    <Image Include="img\drg.png" />
-    <Image Include="img\drk.png" />
-    <Image Include="img\emerald.png" />
-    <Image Include="img\empty.png" />
-    <Image Include="img\eos.png" />
-    <Image Include="img\error.png" />
-    <Image Include="img\fsh.png" />
-    <Image Include="img\garuda.png" />
-    <Image Include="img\gld.png" />
-    <Image Include="img\gsm.png" />
-    <Image Include="img\ifrit.png" />
-    <Image Include="img\limit break.png" />
-    <Image Include="img\lnc.png" />
-    <Image Include="img\ltw.png" />
-    <Image Include="img\mch.png" />
-    <Image Include="img\min.png" />
-    <Image Include="img\mnk.png" />
-    <Image Include="img\mrd.png" />
-    <Image Include="img\nin.png" />
-    <Image Include="img\pgl.png" />
-    <Image Include="img\pld.png" />
-    <Image Include="img\pug.png" />
-    <Image Include="img\rog.png" />
-    <Image Include="img\rook.png" />
-    <Image Include="img\sch.png" />
-    <Image Include="img\selene.png" />
-    <Image Include="img\smn.png" />
-    <Image Include="img\thm.png" />
-    <Image Include="img\titan.png" />
-    <Image Include="img\topaz.png" />
-    <Image Include="img\war.png" />
-    <Image Include="img\whm.png" />
-    <Image Include="img\wvr.png" />
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="FFXIVDLL.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="rcdata1.bin" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ColorDef.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\madler-zlib\contrib\vstudio\vc14\zlibstat.vcxproj">
@@ -301,6 +247,62 @@
     <ProjectReference Include="..\TsudaKageyu-minhook\build\VC14\libMinHook.vcxproj">
       <Project>{f142a341-5ee0-442d-a15f-98ae9b48dbae}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Resources\About.txt" />
+    <Text Include="Resources\ColorDef.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Resources\NanumGothic.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\img\acn.png" />
+    <Image Include="Resources\img\alc.png" />
+    <Image Include="Resources\img\arc.png" />
+    <Image Include="Resources\img\arm.png" />
+    <Image Include="Resources\img\ast.png" />
+    <Image Include="Resources\img\bishop.png" />
+    <Image Include="Resources\img\blm.png" />
+    <Image Include="Resources\img\brd.png" />
+    <Image Include="Resources\img\bsm.png" />
+    <Image Include="Resources\img\btn.png" />
+    <Image Include="Resources\img\chocobo.png" />
+    <Image Include="Resources\img\cnj.png" />
+    <Image Include="Resources\img\crp.png" />
+    <Image Include="Resources\img\cul.png" />
+    <Image Include="Resources\img\drg.png" />
+    <Image Include="Resources\img\drk.png" />
+    <Image Include="Resources\img\emerald.png" />
+    <Image Include="Resources\img\empty.png" />
+    <Image Include="Resources\img\eos.png" />
+    <Image Include="Resources\img\error.png" />
+    <Image Include="Resources\img\fsh.png" />
+    <Image Include="Resources\img\garuda.png" />
+    <Image Include="Resources\img\gld.png" />
+    <Image Include="Resources\img\gsm.png" />
+    <Image Include="Resources\img\ifrit.png" />
+    <Image Include="Resources\img\limit break.png" />
+    <Image Include="Resources\img\lnc.png" />
+    <Image Include="Resources\img\ltw.png" />
+    <Image Include="Resources\img\mch.png" />
+    <Image Include="Resources\img\min.png" />
+    <Image Include="Resources\img\mnk.png" />
+    <Image Include="Resources\img\mrd.png" />
+    <Image Include="Resources\img\nin.png" />
+    <Image Include="Resources\img\pgl.png" />
+    <Image Include="Resources\img\pld.png" />
+    <Image Include="Resources\img\pug.png" />
+    <Image Include="Resources\img\rog.png" />
+    <Image Include="Resources\img\rook.png" />
+    <Image Include="Resources\img\sch.png" />
+    <Image Include="Resources\img\selene.png" />
+    <Image Include="Resources\img\smn.png" />
+    <Image Include="Resources\img\thm.png" />
+    <Image Include="Resources\img\titan.png" />
+    <Image Include="Resources\img\topaz.png" />
+    <Image Include="Resources\img\war.png" />
+    <Image Include="Resources\img\whm.png" />
+    <Image Include="Resources\img\wvr.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -128,149 +128,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="img\cul.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\acn.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\alc.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\arc.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\arm.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\ast.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\bishop.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\blm.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\brd.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\bsm.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\btn.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\chocobo.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\cnj.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\crp.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\drg.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\drk.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\emerald.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\empty.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\eos.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\error.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\fsh.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\gsm.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\gld.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\garuda.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\titan.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\thm.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\smn.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\selene.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\rook.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\rog.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\sch.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\pug.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\pld.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\pgl.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\nin.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\mrd.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\mnk.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\min.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\mch.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\ltw.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\lnc.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\limit break.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\ifrit.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\wvr.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\whm.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\war.png">
-      <Filter>Resources</Filter>
-    </Image>
-    <Image Include="img\topaz.png">
-      <Filter>Resources</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{5f645bcc-fc00-4004-bca6-97c42d2722c6}</UniqueIdentifier>
     </Filter>
@@ -286,20 +143,169 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{adfd7856-c5c7-4748-bc9b-a5a919a2dc2c}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ColorDef.txt">
-      <Filter>Resources</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="rcdata1.bin">
-      <Filter>Resources</Filter>
-    </None>
+    <Filter Include="Resources\Job Images">
+      <UniqueIdentifier>{7e6169bb-0954-491a-92c0-bcd783f60ad7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="FFXIVDLL.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Resources\ColorDef.txt">
+      <Filter>Resources</Filter>
+    </Text>
+    <Text Include="Resources\About.txt">
+      <Filter>Resources</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Resources\NanumGothic.ttf">
+      <Filter>Resources</Filter>
+    </Font>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\img\acn.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\alc.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\arc.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\arm.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\ast.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\bishop.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\blm.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\brd.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\bsm.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\btn.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\chocobo.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\cnj.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\crp.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\cul.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\drg.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\drk.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\emerald.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\empty.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\eos.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\error.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\fsh.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\garuda.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\gld.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\gsm.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\ifrit.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\limit break.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\lnc.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\ltw.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\mch.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\min.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\mnk.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\mrd.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\nin.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\pgl.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\pld.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\pug.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\rog.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\rook.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\sch.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\selene.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\smn.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\thm.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\titan.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\topaz.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\war.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\whm.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
+    <Image Include="Resources\img\wvr.png">
+      <Filter>Resources\Job Images</Filter>
+    </Image>
   </ItemGroup>
 </Project>

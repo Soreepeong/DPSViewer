@@ -25,7 +25,7 @@ char *Hooks::chatPtrs[4] = { (char*) 0x06, 0, (char*) 0x06, 0 };
 Hooks::HOOKS_ORIG_FN_SET Hooks::pfnOrig = { 0 };
 Hooks::HOOKS_BRIDGE_FN_SET Hooks::pfnBridge = { 0 };
 
-Hooks::Hooks(FFXIVDLL *dll, FILE *f) {
+Hooks::Hooks(FFXIVDLL *dll) {
 	if (MH_OK != MH_Initialize())
 		return;
 
@@ -34,14 +34,37 @@ Hooks::Hooks(FFXIVDLL *dll, FILE *f) {
 	DWORD cbNeeded;
 	EnumProcessModulesEx(GetCurrentProcess(), &hGame, sizeof(hGame), &cbNeeded, LIST_MODULES_32BIT | LIST_MODULES_64BIT);
 
-	int n1, n2, n3;
-	fwscanf(f, L"%d%d%d", &n1, &n2, &n3);
+	IMAGE_NT_HEADERS *peHeader = (IMAGE_NT_HEADERS*) ((DWORD) hGame + (DWORD) ((PIMAGE_DOS_HEADER) hGame)->e_lfanew);
+	IMAGE_SECTION_HEADER *sectionHeaders = (IMAGE_SECTION_HEADER*) &(peHeader[1]);
+	for (int i = 0; i < peHeader->FileHeader.NumberOfSections; i++, sectionHeaders++)
+		if (0 == strncmp((char*) sectionHeaders->Name, ".text", 5))
+			goto textSectionFound;
+	return;
+textSectionFound:
+
+	pfnOrig.ProcessWindowMessage = (ProcessWindowMessage)Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x83\xEC\x1C\x53\x8B\x1D\x00\x00\x00\x00\x57\x6A\x00", "xxxxxxxxx????xxx");
+	pfnOrig.ProcessNewLine = (ProcessNewLine) (hGame + sectionHeaders->VirtualAddress - 1);
+	do {
+		pfnOrig.ProcessNewLine = (ProcessNewLine) Tools::FindPattern((DWORD) pfnOrig.ProcessNewLine + 1, 
+			sectionHeaders->Misc.VirtualSize - (DWORD) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress),
+			(PBYTE) "\x55\x8B\xEC\x81\xEC\xAC\x00\x00\x00\xA1\x00\x00\x00\x00\x33\xC5\x89\x45\xFC\x53\x8B\x5D", "xxxxxxxxxx????xxxxxxxx");
+		if (pfnOrig.ProcessNewLine && 0 != Tools::FindPattern((DWORD) pfnOrig.ProcessNewLine, 0x300,
+			(PBYTE) "\xFF\x83\x7D\x10\x02\x7F\x16\x8D\x85\x54\xFF\xFF\xFF\x50\x8D\x4D\xA8\x51\x8D", 
+			"xxxxxxxxxxxxxxxxxxx"))
+			break;
+	} while (pfnOrig.ProcessNewLine && (int)(sectionHeaders->Misc.VirtualSize - (DWORD) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress)) > 0);
+	/*
+	\x8D\x4D\xA8\xE8\x00\x00\x00\xFF\x83\x7D\x10\x02\x7F\x16\x8D\x85\x54\xFF\xFF\xFF\x50\x8D\x4D\xA8\x51\x8D\x00\x00\x00\x00\x00\xE8\xD7\xA2\xED\xFF
+	xxxx???xxxxxxxxxxxxxxxxxxx???xxxxxxx
+	*/
+	pfnOrig.OnNewChatItem = (OnNewChatItem) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x51\x8B\x45\x0C\x53\x56\x8B\xD9\x57\x8B\x7B\x4C\x2B\x7B\x48\x8D\x4B\x48\x03\xC7\x50\x89\x45\xFC\xE8\x60\x1F\x00\x00\x8B\x4D\x0C\x8B\x55\x08\x8B\x43\x48\x51\x52\x03\xC7\x50\xE8", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+	MH_CreateHook(pfnOrig.ProcessWindowMessage, hook_ProcessWindowMessage, (PVOID*)&pfnBridge.ProcessWindowMessage);
+	MH_CreateHook(pfnOrig.ProcessNewLine, hook_ProcessNewLine, (PVOID*) &pfnBridge.ProcessNewLine);
+	MH_CreateHook(pfnOrig.OnNewChatItem, hook_OnNewChatItem, (PVOID*) &pfnBridge.OnNewChatItem);
 
 	ffxivWndProc = (WNDPROC) SetWindowLong(dll->ffxiv(), GWL_WNDPROC, (LONG) hook_ffxivWndProc);
 
-	applyRelativeHook(n1, &pfnOrig.ProcessWindowMessage, Hooks::hook_ProcessWindowMessage, &pfnBridge.ProcessWindowMessage);
-	applyRelativeHook(n2, &pfnOrig.ProcessNewLine, Hooks::hook_ProcessNewLine, &pfnBridge.ProcessNewLine);
-	applyRelativeHook(n3, &pfnOrig.OnNewChatItem, Hooks::hook_OnNewChatItem, &pfnBridge.OnNewChatItem);
 	MH_CreateHook(recv, hook_socket_recv, NULL);
 	MH_CreateHook(send, hook_socket_send, NULL);
 	MH_CreateHook(SetCursor, hook_WinApiSetCursor, (LPVOID*) &pfnBridge.WinApiSetCursor);

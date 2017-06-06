@@ -5,6 +5,20 @@
 #include "OverlayRenderer.h"
 #include "Tools.h"
 
+BOOL WINAPI FFXIVDLL::FindFFXIVWindow(HWND handle) {
+	DWORD pid = 0;
+	GetWindowThreadProcessId(handle, &pid);
+	if (pid == GetCurrentProcessId()) {
+		TCHAR title[512];
+		GetWindowText(handle, title, 512);
+		if (wcscmp(title, L"FINAL FANTASY XIV") == 0 && IsWindowVisible(handle)) {
+			ffxivHwnd = handle;
+			return false;
+		}
+	}
+	return true;
+}
+
 FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	hInstance(instance)
 {
@@ -14,9 +28,7 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	FILE *f = _wfopen(fn, L"r");
 	if (f == nullptr)
 		return;
-	int n;
-	fscanf_s(f, "%d", &n);
-	ffxivHwnd = (HWND)n;
+	EnumWindows(FFXIVDLL::FindFFXIVWindow, (LPARAM) this);
 
 	Languages::initialize();
 
@@ -24,7 +36,7 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 
 	pPipe = new ExternalPipe(hUnloadEvent);
 	pDataProcess = new GameDataProcess(this, f, hUnloadEvent);
-	pHooks = new Hooks(this, f);
+	pHooks = new Hooks(this);
 
 	fclose(f);
 	DeleteFile(fn);
