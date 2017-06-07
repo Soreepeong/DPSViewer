@@ -1,6 +1,5 @@
 #include "OverlayRenderer.h"
 #include "WindowControllerBase.h"
-#include "ExternalPipe.h"
 #include <psapi.h>
 #include "Tools.h"
 #include "FFXIVDLL.h"

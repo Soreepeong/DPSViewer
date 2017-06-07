@@ -91,11 +91,11 @@ bool Tools::BinaryCompare(const BYTE* pData, const BYTE* bMask, const char* szMa
 
 	return (*szMask) == NULL;
 }
-DWORD Tools::FindPattern(DWORD dwAddress, DWORD dwLen, BYTE *bMask, char * szMask)
+DWORD_PTR Tools::FindPattern(DWORD_PTR dwAddress, DWORD_PTR dwLen, BYTE *bMask, char * szMask)
 {
-	for (DWORD i = 0; i < dwLen; i++)
+	for (DWORD_PTR i = 0; i < dwLen; i++)
 		if (BinaryCompare((BYTE*)(dwAddress + i), bMask, szMask))
-			return (DWORD)(dwAddress + i);
+			return (DWORD_PTR)(dwAddress + i);
 
 	return 0;
 }

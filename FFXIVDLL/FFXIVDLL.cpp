@@ -1,5 +1,4 @@
 #include "FFXIVDLL.h"
-#include "ExternalPipe.h"
 #include "Hooks.h"
 #include "GameDataProcess.h"
 #include "OverlayRenderer.h"
@@ -34,14 +33,13 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 
 	hUnloadEvent = CreateEvent(NULL, true, false, NULL);
 
-	pPipe = new ExternalPipe(hUnloadEvent);
 	pDataProcess = new GameDataProcess(this, f, hUnloadEvent);
 	pHooks = new Hooks(this);
 
 	fclose(f);
 	DeleteFile(fn);
 
-	pPipe->AddChat("/e Initialized");
+	addChat("/e Initialized");
 	pHooks->Activate();
 }
 
@@ -49,14 +47,13 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 FFXIVDLL::~FFXIVDLL()
 {
 
-	pPipe->AddChat("/e Unloading");
+	addChat("/e Unloading");
 	Sleep(100);
 
 	SetEvent(hUnloadEvent);
 
 	delete pHooks;
 	delete pDataProcess;
-	delete pPipe;
 
 	CloseHandle(hUnloadEvent);
 }

@@ -256,6 +256,7 @@ FW1_RECTF STDMETHODCALLTYPE CFW1FontWrapper::MeasureString(
 	IDWriteTextLayout *pTextLayout = createTextLayout(pszString, pszFontFamily, FontSize, pLayoutRect, Flags);
 	if(pTextLayout != NULL) {
 		// Get measurements
+		/*
 		DWRITE_OVERHANG_METRICS overhangMetrics;
 		HRESULT hResult = pTextLayout->GetOverhangMetrics(&overhangMetrics);
 		if(SUCCEEDED(hResult)) {
@@ -264,6 +265,16 @@ FW1_RECTF STDMETHODCALLTYPE CFW1FontWrapper::MeasureString(
 			stringRect.Right = ceil(pLayoutRect->Left + overhangMetrics.right);
 			stringRect.Bottom = ceil(pLayoutRect->Top + overhangMetrics.bottom);
 		}
+		//*/
+		DWRITE_TEXT_METRICS metrics;
+		HRESULT hResult = pTextLayout->GetMetrics(&metrics);
+		if (SUCCEEDED(hResult)) {
+			stringRect.Left = pLayoutRect->Left;
+			stringRect.Top = pLayoutRect->Top;
+			stringRect.Right = ceil(pLayoutRect->Left + metrics.widthIncludingTrailingWhitespace);
+			stringRect.Bottom = ceil(pLayoutRect->Top + metrics.height);
+		}
+
 		
 		pTextLayout->Release();
 	}

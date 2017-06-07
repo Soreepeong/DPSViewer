@@ -191,7 +191,7 @@ void ImGuiConfigWindow::Render() {
 	if (mConfigVisibilityPrev && !mConfigVisibility) {
 		std::string inj("/e ");
 		inj += Languages::get("OPTION_HOWTO_OPEN");
-		dll->pipe()->AddChat(inj);
+		dll->addChat(inj);
 	}
 	mConfigVisibilityPrev = mConfigVisibility;
 	if (mConfigVisibility) {

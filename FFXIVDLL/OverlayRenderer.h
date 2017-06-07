@@ -35,7 +35,7 @@ class FFXIVDLL;
 class WindowControllerBase;
 
 #ifdef _WIN64
-typedef ID3D11Texture2D* PDXTEXTURETYPE;
+typedef ID3D11ShaderResourceView* PDXTEXTURETYPE;
 #else
 typedef LPDIRECT3DTEXTURE9 PDXTEXTURETYPE;
 #endif

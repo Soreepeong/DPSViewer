@@ -129,7 +129,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxguid.lib;D3DCompiler.lib;Windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -176,7 +176,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d11.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;dxguid.lib;D3DCompiler.lib;Windowscodecs.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -189,7 +189,6 @@
     <ClInclude Include="DPSWindowController.h" />
     <ClInclude Include="dx9hook.h" />
     <ClInclude Include="dx9table.h" />
-    <ClInclude Include="ExternalPipe.h" />
     <ClInclude Include="FFXIVDLL.h" />
     <ClInclude Include="GameDataProcess.h" />
     <ClInclude Include="Hooks.h" />
@@ -221,7 +220,6 @@
     <ClCompile Include="ImGuiConfigWindow.cpp" />
     <ClCompile Include="DOTWindowController.cpp" />
     <ClCompile Include="DPSWindowController.cpp" />
-    <ClCompile Include="ExternalPipe.cpp" />
     <ClCompile Include="FFXIVDLL.cpp" />
     <ClCompile Include="GameDataProcess.cpp" />
     <ClCompile Include="dllmain.cpp">

@@ -34,10 +34,8 @@ public:
 
 #ifdef _WIN64
 	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
-	typedef int(__thiscall *OnNewChatItem)(void*, PCHATITEM, size_t);
 
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, DWORD*, char**, int);
-	static int __fastcall hook_OnNewChatItem(void*, PCHATITEM, size_t);
 
 	typedef HRESULT(APIENTRY *Dx11SwapChain_Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
@@ -45,10 +43,8 @@ public:
 
 #else
 	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
-	typedef int(__thiscall *OnNewChatItem)(void*, PCHATITEM, size_t);
 
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, void*, SIZE_T*, char**, int);
-	static int __fastcall hook_OnNewChatItem(void*, void*, PCHATITEM, size_t);
 
 	typedef HRESULT(APIENTRY *Dx9Reset)(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters);
 	typedef HRESULT(APIENTRY *Dx9EndScene)(IDirect3DDevice9 *pDevice);
@@ -77,13 +73,11 @@ public:
 	static struct HOOKS_ORIG_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;
 		ProcessNewLine ProcessNewLine;
-		OnNewChatItem OnNewChatItem;
 	}pfnOrig;
 
 	static struct HOOKS_BRIDGE_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;
 		ProcessNewLine ProcessNewLine;
-		OnNewChatItem OnNewChatItem;
 #ifdef _WIN64
 		Dx11SwapChain_Present Dx11SwapChainPresent;
 #else

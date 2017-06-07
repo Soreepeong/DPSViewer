@@ -146,7 +146,7 @@ namespace DpsViewer
 				if (process.MainModule.FileVersionInfo.FileName.Contains("KOREA"))
 					version = "KOR";
 				processModel.IsWin64 = dx11;
-				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, "latest");
+				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, "3.4");
 				// MemoryHandler.Instance.Structures.ActorEntity.GatheringInvisible = 248;
 
 				/*
@@ -159,7 +159,6 @@ namespace DpsViewer
 
 
 				StreamWriter info = new StreamWriter(AppDomain.CurrentDo‌​main.BaseDirectory + "FFXIVDLLInfo_" + process.Id + ".txt");
-				/*
 				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt32());
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.ID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Name);
@@ -170,7 +169,6 @@ namespace DpsViewer
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Current);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.MouseOver);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Focus);
-				//*/
 				info.Close();
 				if (ejectDll(MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN))
 					return;

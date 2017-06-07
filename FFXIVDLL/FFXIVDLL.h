@@ -1,11 +1,10 @@
 #pragma once
 #include<Windows.h>
-#include "ExternalPipe.h"
 #include "Hooks.h"
 #include "GameDataProcess.h"
 #include "OverlayRenderer.h"
+#include "Tools.h"
 
-class ExternalPipe;
 class Hooks;
 class GameDataProcess;
 class OverlayRenderer;
@@ -15,10 +14,10 @@ class FFXIVDLL
 private:
 	HMODULE hInstance;
 	HANDLE hUnloadEvent = INVALID_HANDLE_VALUE;
-	ExternalPipe *pPipe;
 	Hooks *pHooks;
 	GameDataProcess *pDataProcess;
 	HWND ffxivHwnd;
+
 
 	BOOL WINAPI FindFFXIVWindow(HWND h);
 	static BOOL WINAPI FindFFXIVWindow(HWND h, LPARAM l) {
@@ -29,6 +28,8 @@ public:
 	FFXIVDLL(HMODULE instance);
 	~FFXIVDLL();
 
+	Tools::bqueue<std::string> injectQueue;
+
 	bool isUnloading() {
 		return WAIT_OBJECT_0 == WaitForSingleObject(hUnloadEvent, 0);
 	}
@@ -37,8 +38,8 @@ public:
 		return ffxivHwnd;
 	}
 
-	ExternalPipe* pipe() {
-		return pPipe;
+	void addChat(std::string s) {
+		injectQueue.push(s);
 	}
 
 	Hooks* hooks() {

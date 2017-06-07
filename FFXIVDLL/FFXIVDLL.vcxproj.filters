@@ -4,9 +4,6 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ExternalPipe.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="FFXIVDLL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -70,9 +67,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="dx9table.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ExternalPipe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FFXIVDLL.h">

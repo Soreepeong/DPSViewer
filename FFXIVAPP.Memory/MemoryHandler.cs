@@ -69,7 +69,7 @@ namespace FFXIVAPP.Memory
             }
             Constants.ProcessHandle = ProcessHandle;
 
-			/*
+			//*
             SetStructures(processModel, patchVersion);
             SetEnumerations(processModel, patchVersion);
 

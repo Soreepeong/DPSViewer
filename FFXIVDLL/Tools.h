@@ -2,6 +2,9 @@
 #include<Windows.h>
 #include<stdint.h>
 #include<string>
+#include<condition_variable>
+#include<deque>
+#include<mutex>
 
 namespace Tools {
 	void MillisToSystemTime(UINT64 millis, SYSTEMTIME *st);
@@ -9,7 +12,7 @@ namespace Tools {
 	uint64_t GetLocalTimestamp();
 	DWORD GetMainThreadID(DWORD dwProcID);
 	bool BinaryCompare(const BYTE* pData, const BYTE* bMask, const char* szMask);
-	DWORD FindPattern(DWORD dwAddress, DWORD dwLen, BYTE *bMask, char * szMask);
+	DWORD_PTR FindPattern(DWORD_PTR dwAddress, DWORD_PTR dwLen, BYTE *bMask, char * szMask);
 	bool TestValidString(char* p);
 	bool DirExists(const std::wstring& dirName_in);
 	class ByteQueue {
@@ -75,6 +78,44 @@ namespace Tools {
 		void updateIndex(size_t& index, size_t bytes)
 		{
 			index = (index + bytes) % _capacity;
+		}
+	};
+	template <typename T>
+	class bqueue {
+	private:
+		std::recursive_mutex              d_mutex;
+		std::condition_variable d_condition;
+		std::deque<T>           d_queue;
+	public:
+		void push(T const& value) {
+			{
+				std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+				d_queue.push_front(value);
+				if (d_queue.size() > 400) {
+					d_queue.pop_back();
+				}
+			}
+			this->d_condition.notify_one();
+		};
+		T pop() {
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			this->d_condition.wait(lock, [=] { return !this->d_queue.empty(); });
+			T rc(std::move(this->d_queue.back()));
+			this->d_queue.pop_back();
+			return rc;
+		};
+		bool tryPop(T *res) {
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			if (this->d_queue.empty())
+				return 0;
+			T rc(std::move(this->d_queue.back()));
+			this->d_queue.pop_back();
+			*res = rc;
+			return 1;
+		};
+		void clear() {
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			this->d_queue.clear();
 		}
 	};
 }

@@ -13,7 +13,6 @@
 #include "ImGuiConfigWindow.h"
 #include "OverlayRenderer.h"
 #include "Hooks.h"
-#include "ExternalPipe.h"
 
 GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	dll(dll), 
@@ -367,7 +366,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					total += it->second;
 				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0])-pos, L"%02d:%02d.%03d / %.2f (%d)",
 					(int)((dur / 60000) % 60), (int)((dur / 1000) % 60), (int)(dur % 1000),
-					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), mCalculatedDamages.size());
+					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), (int) mCalculatedDamages.size());
 			} else {
 				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"00:00:000 / 0 (0)");
 			}
@@ -845,9 +844,10 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 }
 
 void GameDataProcess::PacketErrorMessage(int signature, int length) {
+	/*
 	char t[1024];
 	sprintf(t, "cmsgError: packet error %08X / %08X", signature, length);
-	dll->pipe()->SendInfo(t);
+	//*/
 }
 int tryInflate(z_stream *inf, int flags) {
 	__try {
@@ -898,13 +898,11 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 				if (Z_STREAM_END != res) {
 					inflateEnd(&inflater);
 					p.waste(1);
-					dll->pipe()->SendInfo("zlib error");
 					continue;
 				}
 				inflateEnd(&inflater);
 				if (inflater.avail_out == 0) {
 					p.waste(1);
-					dll->pipe()->SendInfo("zlib error");
 					continue;
 				}
 				buf = inflateBuffer;
