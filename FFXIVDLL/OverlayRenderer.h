@@ -3,8 +3,7 @@
 #include <deque>
 #include <mutex>
 #include <map>
-#include "dx9hook.h"
-#include "dx9table.h"
+#include <vector>
 #include "ImGuiConfigWindow.h"
 
 enum CONTROL_STATUS_ID : uint32_t{
@@ -35,6 +34,12 @@ enum CONTROL_CHILD_TYPE : uint32_t {
 class FFXIVDLL;
 class WindowControllerBase;
 
+#ifdef _WIN64
+typedef ID3D11Texture2D* PDXTEXTURETYPE;
+#else
+typedef LPDIRECT3DTEXTURE9 PDXTEXTURETYPE;
+#endif
+
 class OverlayRenderer {
 	friend class Hooks;
 	friend class ImGuiConfigWindow;
@@ -42,6 +47,8 @@ public:
 
 	class Control {
 		friend class OverlayRenderer;
+		friend class OverlayRendererDX9;
+		friend class OverlayRendererDX11;
 
 		std::recursive_mutex layoutLock;
 		std::vector<Control*> children[_CHILD_TYPE_COUNT];
@@ -52,15 +59,15 @@ public:
 		Control();
 		Control(CONTROL_LAYOUT_DIRECTION direction);
 		Control(std::wstring txt, CONTROL_TEXT_TYPE useIcon, int align);
-		Control(float width, float height, D3DCOLOR background);
+		Control(float width, float height, DWORD background);
 		~Control();
 
 		class Status {
 		public:
 			int useDefault;
-			D3DCOLOR foreground;
-			D3DCOLOR background;
-			D3DCOLOR border;
+			DWORD foreground;
+			DWORD background;
+			DWORD border;
 		};
 		const int SIZE_WRAP = -1;
 		const int SIZE_FILL = -2;
@@ -126,52 +133,47 @@ public:
 		std::recursive_mutex& getLock();
 	};
 
-private:
+protected:
 
 	FFXIVDLL *dll;
 
-	LPD3DXFONT mFont;
 	std::deque<uint64_t> mFpsMeter;
-	IDirect3DDevice9* pDevice;
-	LPD3DXSPRITE mSprite;
 
-	std::map<std::wstring, LPDIRECT3DTEXTURE9> mResourceTextures;
-	std::map<std::wstring, LPDIRECT3DTEXTURE9> mFileTextures;
+	std::map<std::wstring, PDXTEXTURETYPE> mResourceTextures;
+	std::map<std::wstring, PDXTEXTURETYPE> mFileTextures;
 
-	LPDIRECT3DTEXTURE9 GetTextureFromResource(TCHAR *resName);
-	LPDIRECT3DTEXTURE9 GetTextureFromFile(TCHAR *resName);
+	virtual PDXTEXTURETYPE GetTextureFromResource(TCHAR *resName) = 0;
+	virtual PDXTEXTURETYPE GetTextureFromFile(TCHAR *resName) = 0;
 
 	Control mWindows;
 	ImGuiConfigWindow mConfig;
 
-	void DrawTexture(int x, int y, int w, int h, LPDIRECT3DTEXTURE9 tex);
-	void DrawBox(int x, int y, int w, int h, D3DCOLOR Color);
-	void DrawText(int x, int y, TCHAR *text, D3DCOLOR Color);
-	void DrawText(int x, int y, int width, int height, TCHAR *text, D3DCOLOR Color, int align);
-	void RenderOverlay();
+	virtual void DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex) = 0;
+	virtual void DrawBox(int x, int y, int w, int h, DWORD Color) = 0;
+	virtual void MeasureText(RECT &rc, TCHAR *text, int flags) = 0;
+	virtual void DrawText(int x, int y, TCHAR *text, DWORD Color) = 0;
+	virtual void DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align) = 0;
+	virtual void RenderOverlay() = 0;
 
-	std::deque<IDirect3DSurface9*> mCaptureBuffers;
+	virtual void CheckCapture() = 0;
+
 	std::recursive_mutex mCaptureMutex;
 	bool mDoCapture = false;
-	void CaptureBackgroundSave(IDirect3DSurface9 *buf);
-	void CaptureBackgroundSaverThread();
 	HANDLE hSaverThread;
-	static DWORD WINAPI CaptureBackgroundSaverExternal(PVOID p) { ((OverlayRenderer*)p)->CaptureBackgroundSaverThread(); return 0; }
 
 public:
-	OverlayRenderer(FFXIVDLL *dll, IDirect3DDevice9* device);
-	~OverlayRenderer();
+	OverlayRenderer(FFXIVDLL *dll);
+	virtual ~OverlayRenderer();
 
 	int GetFPS();
 
 	void CaptureScreen();
 
-	void ReloadFromConfig();
-	void OnLostDevice();
-	void OnResetDevice();
+	virtual void ReloadFromConfig() = 0;
+	virtual void OnLostDevice() = 0;
+	virtual void OnResetDevice() = 0;
 
 	void DrawOverlay();
-	void CheckCapture();
 
 	void SetUseDrawOverlay(bool use);
 	int GetUseDrawOverlay();
@@ -189,3 +191,10 @@ public:
 	class Control;
 };
 
+
+
+#ifdef _WIN64
+#include "OverlayRenderer_DX11.h"
+#else
+#include "OverlayRenderer_DX9.h"
+#endif

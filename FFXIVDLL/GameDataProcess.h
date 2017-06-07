@@ -1,5 +1,6 @@
 #pragma once
 #include<Windows.h>
+#include<vector>
 #include"Tools.h"
 #define ZLIB_WINAPI
 #include"../madler-zlib/zlib.h"
@@ -246,7 +247,7 @@ private:
 	static int getDoTPotency(int dot);
 	int getDoTDuration(int skill);
 
-	std::map<std::wstring, D3DCOLOR> mClassColors;
+	std::map<std::wstring, DWORD> mClassColors;
 
 	PVOID pTargetMap;
 	PVOID **pActorMap;

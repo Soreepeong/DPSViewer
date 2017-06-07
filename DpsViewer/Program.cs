@@ -13,8 +13,10 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace DpsViewer {
-	partial class Program {
+namespace DpsViewer
+{
+	partial class Program
+	{
 		protected delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
 		protected static extern int GetWindowText(IntPtr hWnd, StringBuilder strText, int maxCount);
@@ -41,14 +43,15 @@ namespace DpsViewer {
 		const uint WM_KEYUP = 0x101;
 
 		public static string version;
-		
+
 		static IntPtr ffxivhWnd;
 		static Process process;
 
 		static IntPtr injectedProcess;
 		static IntPtr injectedDll;
 
-		public static void quit() {
+		public static void quit()
+		{
 			try {
 				pipeChatReader.Close();
 				writer.Close();
@@ -61,7 +64,8 @@ namespace DpsViewer {
 		static NamedPipeClientStream pipeChatReader;
 		static StreamWriter writer;
 
-		static void readAsync() {
+		static void readAsync()
+		{
 			byte[] readBuf = new byte[1024];
 			pipeChatReader.ReadAsync(readBuf, 0, readBuf.Length).ContinueWith(t => {
 				if (!t.IsCompleted)
@@ -69,8 +73,9 @@ namespace DpsViewer {
 				readAsync();
 			});
 		}
-		
-		protected static bool EnumTheWindows(IntPtr hWnd, IntPtr lParam) {
+
+		protected static bool EnumTheWindows(IntPtr hWnd, IntPtr lParam)
+		{
 			int size = GetWindowTextLength(hWnd);
 			if (size++ > 0 && IsWindowVisible(hWnd)) {
 				StringBuilder sb = new StringBuilder(size);
@@ -88,7 +93,8 @@ namespace DpsViewer {
 		}
 
 		[STAThread]
-		static void Main(string[] args) {
+		static void Main(string[] args)
+		{
 			Application.EnableVisualStyles();
 			bool dx11 = false;
 			List<Process> processes = new List<Process>(Process.GetProcessesByName("ffxiv"));
@@ -99,9 +105,20 @@ namespace DpsViewer {
 					return true;
 				}
 			});
+			if (processes.Count == 0) {
+				dx11 = true;
+				processes = new List<Process>(Process.GetProcessesByName("ffxiv_dx11"));
+				processes.RemoveAll((item) => {
+					try {
+						return item.HasExited;
+					} catch (Exception) {
+						return true;
+					}
+				});
+			}
 			if (processes.Count > 0) {
 				string gameLanguage = "English";
-				
+
 				if (processes.Count > 1 && args.Length == 0) {
 					string k = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
 					foreach (var p in processes)
@@ -109,9 +126,9 @@ namespace DpsViewer {
 					return;
 				}
 				process = processes[0];
-				if(processes.Count > 1 && args.Length > 0)
+				if (processes.Count > 1 && args.Length > 0)
 					foreach (var p in processes)
-						if(p.Id.ToString() == args[0])
+						if (p.Id.ToString() == args[0])
 							process = p;
 				if (process == null) {
 					MessageBox.Show("FFXIV process not found");
@@ -129,17 +146,20 @@ namespace DpsViewer {
 				if (process.MainModule.FileVersionInfo.FileName.Contains("KOREA"))
 					version = "KOR";
 				processModel.IsWin64 = dx11;
-				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, version);
-				MemoryHandler.Instance.Structures.ActorEntity.GatheringInvisible = 248;
+				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, "latest");
+				// MemoryHandler.Instance.Structures.ActorEntity.GatheringInvisible = 248;
 
+				/*
 				while (!Scanner.Instance.Locations.ContainsKey("CHARMAP") ||
 					!Scanner.Instance.Locations.ContainsKey("TARGET"))
 					Thread.Sleep(100);
+					//*/
 
 				string dllFN = "FFXIVDLL_" + (dx11 ? "x64" : "x86") + ".dll";
 
 
 				StreamWriter info = new StreamWriter(AppDomain.CurrentDo‌​main.BaseDirectory + "FFXIVDLLInfo_" + process.Id + ".txt");
+				/*
 				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt32());
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.ID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Name);
@@ -150,8 +170,10 @@ namespace DpsViewer {
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Current);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.MouseOver);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Focus);
+				//*/
 				info.Close();
-				ejectDll(MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
+				if (ejectDll(MemoryHandler.Instance.ProcessHandle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN))
+					return;
 				injectedDll = InjectDLL(injectedProcess = MemoryHandler.Instance.ProcessHandle,
 					AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
 

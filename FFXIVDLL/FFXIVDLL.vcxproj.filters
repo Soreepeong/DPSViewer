@@ -55,6 +55,15 @@
     <ClCompile Include="Languages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OverlayRenderer_DX9.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_impl_dx11.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="OverlayRenderer_DX11.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dx9hook.h">
@@ -124,6 +133,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ImGuiConfigWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayRenderer_DX9.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui\imgui_impl_dx11.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayRenderer_DX11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

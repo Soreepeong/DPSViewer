@@ -69,11 +69,13 @@ namespace FFXIVAPP.Memory
             }
             Constants.ProcessHandle = ProcessHandle;
 
+			/*
             SetStructures(processModel, patchVersion);
             SetEnumerations(processModel, patchVersion);
 
             Scanner.Instance.Locations.Clear();
             Scanner.Instance.LoadOffsets(Signatures.Resolve(processModel, patchVersion));
+			//*/
         }
 
         public void SetStructures(ProcessModel processModel, string patchVersion = "latest")

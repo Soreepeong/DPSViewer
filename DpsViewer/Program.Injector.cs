@@ -22,7 +22,7 @@ namespace DpsViewer
           out IntPtr lpThreadId
         );
 
-        [DllImport("kernel32")]
+        [DllImport("kernel32", SetLastError = true)]
         public static extern IntPtr CreateRemoteThread(
           IntPtr hProcess,
           IntPtr lpThreadAttributes,
@@ -259,12 +259,15 @@ namespace DpsViewer
             }
         }
 
-		public static void ejectDll(IntPtr hProcess, string strDLLName) {
+		public static bool ejectDll(IntPtr hProcess, string strDLLName) {
 			IntPtr ptr = GetModulePtr(hProcess, strDLLName);
+			if (ptr == IntPtr.Zero)
+				return false;
 			while (ptr != IntPtr.Zero) {
 				ejectDll(hProcess, ptr);
 				ptr = GetModulePtr(hProcess, strDLLName);
 			}
+			return true;
 		}
 
         public static IntPtr ejectDll(IntPtr hProcess, IntPtr baseAddr)

@@ -41,7 +41,7 @@ OverlayRenderer::Control::Control(CONTROL_LAYOUT_DIRECTION dir) :
 	memset(statusMap, 0, sizeof(statusMap));
 }
 
-OverlayRenderer::Control::Control(float width, float height, D3DCOLOR bgcolor) :
+OverlayRenderer::Control::Control(float width, float height, DWORD bgcolor) :
 	x(0),
 	y(0),
 	widthF(width),
@@ -295,17 +295,17 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 		}
 	} else if (!relativeSize && width == SIZE_WRAP) {
 		if (text.empty() || useIcon != CONTROL_TEXT_STRING) {
-			target->mFont->DrawTextW(NULL, L"DUMMY", -1, &rc, DT_CALCRECT, 0);
+			target->MeasureText(rc, L"DUMMY", DT_NOCLIP);
 			rc.right = rc.left + rc.bottom - rc.top;
 		} else
-			target->mFont->DrawTextW(NULL, text.c_str(), -1, &rc, DT_CALCRECT, 0);
+			target->MeasureText(rc, (TCHAR*) text.c_str(), DT_NOCLIP);
 		rc.right += 2 * (border + padding + margin);
 		rc.bottom += 2 * (border + padding + margin);
 	} else if (!relativeSize && height == SIZE_WRAP) {
 		if (text.empty() || useIcon != CONTROL_TEXT_STRING) {
-			target->mFont->DrawTextW(NULL, L"DUMMY", -1, &rc, DT_CALCRECT, 0);
+			target->MeasureText(rc, L"DUMMY", DT_NOCLIP);
 		} else
-			target->mFont->DrawTextW(NULL, text.c_str(), -1, &rc, DT_CALCRECT | DT_WORDBREAK, 0);
+			target->MeasureText(rc, (TCHAR*) text.c_str(), DT_WORDBREAK);
 		rc.right += 2 * (border + padding + margin);
 		rc.bottom += 2 * (border + padding + margin);
 	}
@@ -357,7 +357,7 @@ void OverlayRenderer::Control::draw(OverlayRenderer *target) {
 					(TCHAR*)text.c_str(), current.foreground, textAlign);
 				break;
 			case CONTROL_TEXT_RESNAME: {
-				LPDIRECT3DTEXTURE9 tex = target->GetTextureFromResource((TCHAR*)text.c_str());
+				PDXTEXTURETYPE tex = target->GetTextureFromResource((TCHAR*)text.c_str());
 				if (tex != nullptr)
 					target->DrawTexture(calcX + margin + border + padding,
 						calcY + margin + border + padding,
@@ -367,7 +367,7 @@ void OverlayRenderer::Control::draw(OverlayRenderer *target) {
 				break;
 			}
 			case CONTROL_TEXT_FILENAME: {
-				LPDIRECT3DTEXTURE9 tex = target->GetTextureFromFile((TCHAR*)text.c_str());
+				PDXTEXTURETYPE tex = target->GetTextureFromFile((TCHAR*)text.c_str());
 				if (tex != nullptr)
 					target->DrawTexture(calcX + margin + border + padding,
 						calcY + margin + border + padding,
