@@ -61,6 +61,7 @@
     <ClCompile Include="OverlayRenderer_DX11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MemoryScanner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dx9hook.h">
@@ -138,6 +139,7 @@
     <ClInclude Include="OverlayRenderer_DX11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MemoryScanner.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">

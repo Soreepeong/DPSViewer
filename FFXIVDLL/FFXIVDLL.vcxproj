@@ -208,8 +208,12 @@
     <ClInclude Include="imgui\stb_truetype.h" />
     <ClInclude Include="Languages.h" />
     <ClInclude Include="MedianCalculator.h" />
+    <ClInclude Include="MemoryScanner.h" />
     <ClInclude Include="OverlayRenderer.h" />
-    <ClInclude Include="OverlayRenderer_DX11.h" />
+    <ClInclude Include="OverlayRenderer_DX11.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="OverlayRenderer_DX9.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
@@ -250,9 +254,13 @@
     </ClCompile>
     <ClCompile Include="Languages.cpp" />
     <ClCompile Include="MedianCalculator.cpp" />
+    <ClCompile Include="MemoryScanner.cpp" />
     <ClCompile Include="OverlayRenderer.cpp" />
     <ClCompile Include="OverlayRenderer_Control.cpp" />
-    <ClCompile Include="OverlayRenderer_DX11.cpp" />
+    <ClCompile Include="OverlayRenderer_DX11.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="OverlayRenderer_DX9.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

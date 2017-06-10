@@ -75,11 +75,11 @@ void OverlayRenderer::AddWindow(Control* windows) {
 
 WindowControllerBase* OverlayRenderer::GetWindowAt(Control *in, int x, int y) {
 	std::lock_guard<std::recursive_mutex> lock(in->layoutLock);
-	for(int i = 0; i < _CHILD_TYPE_COUNT; i++)
+	for (int i = 0; i < _CHILD_TYPE_COUNT; i++)
 		for (auto it = in->children[i].rbegin(); it != in->children[i].rend(); ++it)
 			if ((*it)->hittest(x, y)) {
 				if ((*it)->hasCallback()) {
-					WindowControllerBase *w = (WindowControllerBase*)*it;
+					WindowControllerBase *w = (WindowControllerBase*) *it;
 					if (!w->isLocked())
 						return w;
 				}
@@ -101,9 +101,9 @@ void OverlayRenderer::DrawOverlay() {
 
 	CheckCapture();
 
-	// __try {
-	RenderOverlay();
-	// } __except (EXCEPTION_EXECUTE_HANDLER) {}
+	__try {
+		RenderOverlay();
+	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 
 
 }

@@ -83,16 +83,18 @@ DWORD Tools::GetMainThreadID(DWORD dwProcID)
 	return dwMainThreadID;
 }
 
-bool Tools::BinaryCompare(const BYTE* pData, const BYTE* bMask, const char* szMask)
-{
-	for (; *szMask; ++szMask, ++pData, ++bMask)
-		if (*szMask == 'x' && *pData != *bMask)
-			return false;
+bool Tools::BinaryCompare(const BYTE* pData, const BYTE* bMask, const char* szMask) {
+	__try {
+		for (; *szMask; ++szMask, ++pData, ++bMask)
+			if (*szMask == 'x' && *pData != *bMask)
+				return false;
 
-	return (*szMask) == NULL;
+		return (*szMask) == NULL;
+	} __except(EXCEPTION_EXECUTE_HANDLER) {
+		return false;
+	}
 }
-DWORD_PTR Tools::FindPattern(DWORD_PTR dwAddress, DWORD_PTR dwLen, BYTE *bMask, char * szMask)
-{
+DWORD_PTR Tools::FindPattern(DWORD_PTR dwAddress, DWORD_PTR dwLen, BYTE *bMask, char * szMask) {
 	for (DWORD_PTR i = 0; i < dwLen; i++)
 		if (BinaryCompare((BYTE*)(dwAddress + i), bMask, szMask))
 			return (DWORD_PTR)(dwAddress + i);

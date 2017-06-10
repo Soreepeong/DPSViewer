@@ -218,21 +218,23 @@ void OverlayRendererDX11::RenderOverlay() {
 		ImGui_ImplDX11_NewFrame();
 		textRenderList.clear();
 
-		mWindows.width = rect.right - rect.left;
-		mWindows.height = rect.bottom - rect.top;
-		mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
-		for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
-			if ((*it)->relativeSize) {
-				(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
-				(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+		if (!Hooks::isFFXIVChatWindowOpen || *Hooks::isFFXIVChatWindowOpen) {
+			mWindows.width = rect.right - rect.left;
+			mWindows.height = rect.bottom - rect.top;
+			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
+			for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
+				if ((*it)->relativeSize) {
+					(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
+					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+				}
 			}
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			ImGui::SetNextWindowSizeConstraints(ImVec2(rect.right - rect.left, rect.bottom - rect.top), ImVec2(rect.right - rect.left, rect.bottom - rect.top));
+			bool open = true;
+			ImGui::Begin("CustomWindowOverlay", &open, ImVec2(0, 0), 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+			mWindows.draw(this);
+			ImGui::End();
 		}
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
-		ImGui::SetNextWindowSizeConstraints(ImVec2(rect.right - rect.left, rect.bottom - rect.top), ImVec2(rect.right - rect.left, rect.bottom - rect.top));
-		bool open = true;
-		ImGui::Begin("CustomWindowOverlay", &open, ImVec2(0, 0), 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
-		mWindows.draw(this);
-		ImGui::End();
 		mConfig.Render();
 		ImGui::Render();
 		pFW->Flush(pContext);

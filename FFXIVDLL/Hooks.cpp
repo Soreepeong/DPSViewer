@@ -21,6 +21,7 @@ void *Hooks::chatObject = 0;
 char *Hooks::chatPtrs[4] = { (char*) 0x06, 0, (char*) 0x06, 0 };
 Hooks::HOOKS_ORIG_FN_SET Hooks::pfnOrig = { 0 };
 Hooks::HOOKS_BRIDGE_FN_SET Hooks::pfnBridge = { 0 };
+bool Hooks::isFFXIVChatWindowOpen = true;
 
 #ifdef _WIN64
 PVOID *Hooks::pDX11SwapChainTable;
@@ -75,9 +76,13 @@ textSectionFound:
 			"xxxxxxxxxxxxxxxxxxx"))
 			break;
 	} while (pfnOrig.ProcessNewLine && (int) (sectionHeaders->Misc.VirtualSize - (DWORD) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress)) > 0);
+	pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x10\x01\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x75\x7a", "xxxxxxxxxxxx?????xxxxxxxxxxxxxx");
+	pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x10\x01\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x0f\x85", "xxxxxxxxxxxx?????xxxxxxxxxxxxxx");
 #endif
 	MH_CreateHook(pfnOrig.ProcessWindowMessage, hook_ProcessWindowMessage, (PVOID*) &pfnBridge.ProcessWindowMessage);
 	MH_CreateHook(pfnOrig.ProcessNewLine, hook_ProcessNewLine, (PVOID*) &pfnBridge.ProcessNewLine);
+	MH_CreateHook(pfnOrig.HideFFXIVWindow, hook_HideFFXIVWindow, (PVOID*) &pfnBridge.HideFFXIVWindow);
+	MH_CreateHook(pfnOrig.ShowFFXIVWindow, hook_ShowFFXIVWindow, (PVOID*) &pfnBridge.ShowFFXIVWindow);
 
 	ffxivWndProc = (WNDPROC) SetWindowLongPtr(dll->ffxiv(), GWLP_WNDPROC, (LONG_PTR) hook_ffxivWndProc);
 
@@ -232,6 +237,25 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 	mHookedFunctionDepth--;
 	return alen;
+}
+
+char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis, void *_u) {
+	if(strncmp((char*)pthis+4, "_Status", 7) == 0)
+		isFFXIVChatWindowOpen = false;
+	return pfnBridge.HideFFXIVWindow(pthis);
+}
+
+char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis, void *_u) {
+	if (strncmp((char*) pthis + 4, "_Status", 7) == 0)
+		isFFXIVChatWindowOpen = true;
+	else if(strncmp((char*) pthis + 4, "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
+		FlashWindow(dll->ffxiv(), true);
+	/*
+	char test[256];
+	sprintf(test, "/e Show: %s at %08x", (char*) pthis + 4, pthis);
+	dll->addChat(test);
+	//*/
+	return pfnBridge.ShowFFXIVWindow(pthis);
 }
 
 char Hooks::hook_ProcessWindowMessage() {

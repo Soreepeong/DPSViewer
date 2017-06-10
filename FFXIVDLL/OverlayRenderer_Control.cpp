@@ -173,8 +173,8 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 		return;
 	}
 	RECT rc = { 0, 0,
-		relativeSize ? (int)((area.right - area.left) * widthF) : widthFixed != -1 ? widthFixed : (width == SIZE_FILL ? area.right - area.left : width) - (border + padding + margin) * 2,
-		relativeSize ? (int)((area.bottom - area.top) * heightF) : heightFixed != -1 ? heightFixed : (height == SIZE_FILL ? area.bottom - area.top : height) - (border + padding + margin) * 2
+		relativeSize ? (int)((area.right - area.left) * widthF) : (widthFixed != -1 ? widthFixed : (width == SIZE_FILL ? area.right - area.left : width) - (border + padding + margin) * 2),
+		relativeSize ? (int)((area.bottom - area.top) * heightF) : (heightFixed != -1 ? heightFixed : (height == SIZE_FILL ? area.bottom - area.top : height) - (border + padding + margin) * 2)
 	};
 	if (relativePosition) {
 		calcX = area.left + (int)(xF * (area.right - area.left));
@@ -309,8 +309,8 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 		rc.right += 2 * (border + padding + margin);
 		rc.bottom += 2 * (border + padding + margin);
 	}
-	calcWidth = widthFixed != -1 ? widthFixed : min(rc.right, area.right - area.left);
-	calcHeight = heightFixed != -1 ? heightFixed : min(rc.bottom, area.bottom - area.top);
+	calcWidth = widthFixed != -1 ? (int) (widthFixed * (relativeSize ? widthF : 1.f)) : min(rc.right, area.right - area.left);
+	calcHeight = heightFixed != -1 ? (int)(heightFixed * (relativeSize ? heightF : 1.f)) : min(rc.bottom, area.bottom - area.top);
 	rc = { calcX + margin + border, calcY + margin + border,
 		calcWidth - 2 * (margin + border), calcHeight - 2 * (margin + border) };
 	rc.right += rc.left; rc.bottom += rc.top;

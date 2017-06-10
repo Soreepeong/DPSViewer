@@ -27,7 +27,9 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	fontSize = readIni(L"UI", L"FontSize", 17, 9, 36);
 	bold = readIni(L"UI", L"FontBold", 1, 0, 1)?true:false;
 	border = readIni(L"UI", L"FontBorder", 0, 0, 3);
+	ShowOnlyWhenChatWindowOpen = readIni(L"UI", L"ShowOnlyWhenChatWindowOpen", 1, 0, 1) ? true : false;
 	readIni(L"UI", L"FontName", "Segoe UI", fontName, sizeof(fontName));
+
 	
 	readIni(L"Capture", L"Path", "", capturePath, sizeof(capturePath));
 	captureFormat = readIni(L"Capture", L"Format", D3DXIFF_BMP);
@@ -114,6 +116,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"UI", L"FontBold", (int)bold);
 	writeIni(L"UI", L"FontBorder", border);
 	writeIni(L"UI", L"FontName", fontName);
+	writeIni(L"UI", L"ShowOnlyWhenChatWindowOpen", (int) ShowOnlyWhenChatWindowOpen);
 
 	writeIni(L"Capture", L"Path", capturePath);
 	writeIni(L"Capture", L"Format", captureFormat);
@@ -226,6 +229,7 @@ void ImGuiConfigWindow::Render() {
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
 			ImGui::Checkbox(Languages::get("OPTION_SHOW_TIMES"), &showTimes);
 			ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
+			ImGui::Checkbox(Languages::get("OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"), &ShowOnlyWhenChatWindowOpen);
 			ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
 			ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
 			ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);

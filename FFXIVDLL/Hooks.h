@@ -25,6 +25,8 @@ class Hooks {
 	friend class OverlayRenderer;
 public:
 
+	static bool isFFXIVChatWindowOpen;
+
 	typedef struct _CHATITEM {
 		int timestamp;
 		short code;
@@ -43,8 +45,11 @@ public:
 
 #else
 	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
-
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, void*, SIZE_T*, char**, int);
+
+	typedef char (__thiscall *ShowHideFFXIVWindow)(void*);
+	static char __fastcall hook_ShowFFXIVWindow(void*, void*);
+	static char __fastcall hook_HideFFXIVWindow(void*, void*);
 
 	typedef HRESULT(APIENTRY *Dx9Reset)(IDirect3DDevice9 *pDevice, D3DPRESENT_PARAMETERS *pPresentationParameters);
 	typedef HRESULT(APIENTRY *Dx9EndScene)(IDirect3DDevice9 *pDevice);
@@ -73,11 +78,15 @@ public:
 	static struct HOOKS_ORIG_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;
 		ProcessNewLine ProcessNewLine;
+		ShowHideFFXIVWindow ShowFFXIVWindow;
+		ShowHideFFXIVWindow HideFFXIVWindow;
 	}pfnOrig;
 
 	static struct HOOKS_BRIDGE_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;
 		ProcessNewLine ProcessNewLine;
+		ShowHideFFXIVWindow ShowFFXIVWindow;
+		ShowHideFFXIVWindow HideFFXIVWindow;
 #ifdef _WIN64
 		Dx11SwapChain_Present Dx11SwapChainPresent;
 #else

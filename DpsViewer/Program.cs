@@ -140,32 +140,37 @@ namespace DpsViewer
 					return;
 				}
 				ProcessModel processModel = new ProcessModel {
-					Process = process
+					Process = process,
+					IsWin64 = dx11
 				};
 				version = "latest";
 				if (process.MainModule.FileVersionInfo.FileName.Contains("KOREA"))
 					version = "KOR";
-				processModel.IsWin64 = dx11;
-				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, "3.4");
+				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, version);
 				// MemoryHandler.Instance.Structures.ActorEntity.GatheringInvisible = 248;
 
-				/*
 				while (!Scanner.Instance.Locations.ContainsKey("CHARMAP") ||
 					!Scanner.Instance.Locations.ContainsKey("TARGET"))
 					Thread.Sleep(100);
-					//*/
+
+				// Scanner.Instance.Locations["CHARMAP"].SigScanAddress = new IntPtr(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt64() + process.MainModule.BaseAddress.ToInt64());
+				foreach(var a in Reader.GetActors().MonsterEntities) {
+					Debug.Print(a.Value.Name + ": " + a.Value.ID.ToString("X8") + " / " + a.Value.Pointer.ToString("X16"));
+				}
+				Reader.GetPartyMembers();
+				Reader.GetTargetInfo();
 
 				string dllFN = "FFXIVDLL_" + (dx11 ? "x64" : "x86") + ".dll";
 
 
 				StreamWriter info = new StreamWriter(AppDomain.CurrentDo‌​main.BaseDirectory + "FFXIVDLLInfo_" + process.Id + ".txt");
-				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt32());
+				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt64());
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.ID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Name);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.OwnerID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Type);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Job);
-				info.WriteLine(((IntPtr)Scanner.Instance.Locations["TARGET"]).ToInt32());
+				info.WriteLine(((IntPtr)Scanner.Instance.Locations["TARGET"]).ToInt64());
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Current);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.MouseOver);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Focus);

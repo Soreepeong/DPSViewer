@@ -152,16 +152,18 @@ void OverlayRendererDX9::RenderOverlay() {
 
 		pDevice->BeginScene();
 
-		mWindows.width = prt.Width;
-		mWindows.height = prt.Height;
-		mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
-		for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
-			if ((*it)->relativeSize) {
-				(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
-				(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+		if (Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) {
+			mWindows.width = prt.Width;
+			mWindows.height = prt.Height;
+			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
+			for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
+				if ((*it)->relativeSize) {
+					(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
+					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+				}
 			}
+			mWindows.draw(this);
 		}
-		mWindows.draw(this);
 
 		ImGui_ImplDX9_NewFrame();
 		mConfig.Render();
@@ -215,7 +217,7 @@ void OverlayRendererDX9::CaptureBackgroundSave(IDirect3DSurface9 *buf) {
 	if (hSaverThread == INVALID_HANDLE_VALUE)
 		hSaverThread = CreateThread(NULL, NULL, OverlayRendererDX9::CaptureBackgroundSaverExternal, this, NULL, NULL);
 
-	dll->pipe()->AddChat("/e Saving screenshot...");
+	dll->addChat("/e Saving screenshot...");
 }
 
 void OverlayRendererDX9::CaptureBackgroundSaverThread() {
@@ -266,7 +268,7 @@ void OverlayRendererDX9::CaptureBackgroundSaverThread() {
 				message = "/e Capture error: " + message + " (";
 				message += err;
 				message += ")";
-				dll->pipe()->AddChat(message);
+				dll->addChat(message);
 			} else {
 				DWORD wr;
 				WriteFile(h, buf->GetBufferPointer(), buf->GetBufferSize(), &wr, NULL);
@@ -275,7 +277,7 @@ void OverlayRendererDX9::CaptureBackgroundSaverThread() {
 				char path2[MAX_PATH * 4];
 				WideCharToMultiByte(CP_UTF8, 0, path, -1, path2, sizeof(path2), 0, 0);
 				message += path2;
-				dll->pipe()->AddChat(message);
+				dll->addChat(message);
 			}
 		}
 		buf->Release();

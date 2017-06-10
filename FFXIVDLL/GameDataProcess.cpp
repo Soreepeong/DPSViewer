@@ -15,7 +15,7 @@
 #include "Hooks.h"
 
 GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
-	dll(dll), 
+	dll(dll),
 	hUnloadEvent(unloadEvent),
 	mSent(1048576 * 8),
 	mRecv(1048576 * 8),
@@ -26,10 +26,17 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	mLastAttack.timestamp = 0;
 #pragma warning( push )
 #pragma warning( disable : 4477)
+#ifdef _WIN64
+	fwscanf(f, L"%lld%d%d%d%d%d",
+		&pActorMap, &pActor.id, &pActor.name, &pActor.owner, &pActor.type, &pActor.job);
+	fwscanf(f, L"%lld%d%d%d",
+		&pTargetMap, &pTarget.current, &pTarget.hover, &pTarget.focus);
+#else
 	fwscanf(f, L"%d%d%d%d%d%d",
 		&pActorMap, &pActor.id, &pActor.name, &pActor.owner, &pActor.type, &pActor.job);
 	fwscanf(f, L"%d%d%d%d",
 		&pTargetMap, &pTarget.current, &pTarget.hover, &pTarget.focus);
+#endif
 #pragma warning( pop )
 
 	mLocalTimestamp = mServerTimestamp = Tools::GetLocalTimestamp();
@@ -60,7 +67,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 						membuf(char* base, std::ptrdiff_t n) {
 							this->setg(base, base, base + n);
 						}
-					} sbuf((char*)pLockedResource, dwResourceSize);
+					} sbuf((char*) pLockedResource, dwResourceSize);
 					std::istream in(&sbuf);
 					std::string job;
 					TCHAR buf[64];
@@ -89,7 +96,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	ReloadLocalization();
 }
 
-void GameDataProcess::ReloadLocalization(){
+void GameDataProcess::ReloadLocalization() {
 	wDPS.getChild(1)->removeAllChildren();
 	wDOT.removeAllChildren();
 
@@ -124,66 +131,66 @@ GameDataProcess::~GameDataProcess() {
 
 int GameDataProcess::getDoTPotency(int dot) {
 	switch (dot) {
-	case 0xf8: return 30;
-	case 0xf4: return 20;
-	case 0x77: return 30;
-	case 0x76: return 35;
-	case 0x6a: return 25;
-	case 0xf6: return 50;
-	case 0x7c: return 40;
-	case 0x81: return 50;
-	case 0x8f: return 25;
-	case 0x90: return 50;
-	case 0xa1: return 40;
-	case 0xa2: return 40;
-	case 0xa3: return 40;
-	case 0xb3: return 40;
-	case 0xb4: return 35;
-	case 0xbd: return 35;
-	case 0xbc: return 10;
-	case 0x13a: return 20;
-	case 0x12: return 50;
-	case 0xec: return 20;
-	case 0x1ec: return 30;
-	case 0x1fc: return 40;
-	case 0x356: return 44;
-	case 0x2e5: return 40;
-	case 0x346: return 40;
-	case 0x34b: return 45;
-	case 0x2d5: return 50;
-	case 0x31e: return 40;
+		case 0xf8: return 30;
+		case 0xf4: return 20;
+		case 0x77: return 30;
+		case 0x76: return 35;
+		case 0x6a: return 25;
+		case 0xf6: return 50;
+		case 0x7c: return 40;
+		case 0x81: return 50;
+		case 0x8f: return 25;
+		case 0x90: return 50;
+		case 0xa1: return 40;
+		case 0xa2: return 40;
+		case 0xa3: return 40;
+		case 0xb3: return 40;
+		case 0xb4: return 35;
+		case 0xbd: return 35;
+		case 0xbc: return 10;
+		case 0x13a: return 20;
+		case 0x12: return 50;
+		case 0xec: return 20;
+		case 0x1ec: return 30;
+		case 0x1fc: return 40;
+		case 0x356: return 44;
+		case 0x2e5: return 40;
+		case 0x346: return 40;
+		case 0x34b: return 45;
+		case 0x2d5: return 50;
+		case 0x31e: return 40;
 	}
 	return 0;
 }
 
 int GameDataProcess::getDoTDuration(int skill) {
 	switch (skill) {
-	case 0xf8: return 15000;
-	case 0xf4: return 30000;
-	case 0x77: return 24000;
-	case 0x76: return 30000;
-	case 0x6a: return 30000;
-	case 0xf6: return 21000;
-	case 0x7c: return 18000;
-	case 0x81: return 18000;
-	case 0x8f: return 18000;
-	case 0x90: return 12000;
-	case 0xa1: return 18000;
-	case 0xa2: return 21000;
-	case 0xa3: return 24000;
-	case 0xb3: return 18000;
-	case 0xb4: return 24000;
-	case 0xbd: return 30000;
-	case 0xbc: return 15000;
-	case 0x13a: return 15000;
-	case 0x12: return 15000;
-	case 0xec: return 18000;
-	case 0x1ec: return 30000;
-	case 0x356: return 30000;
-	case 0x2e5: return 30000;
-	case 0x346: return 18000;
-	case 0x34b: return 30000;
-	case 0x31e: return 24000;
+		case 0xf8: return 15000;
+		case 0xf4: return 30000;
+		case 0x77: return 24000;
+		case 0x76: return 30000;
+		case 0x6a: return 30000;
+		case 0xf6: return 21000;
+		case 0x7c: return 18000;
+		case 0x81: return 18000;
+		case 0x8f: return 18000;
+		case 0x90: return 12000;
+		case 0xa1: return 18000;
+		case 0xa2: return 21000;
+		case 0xa3: return 24000;
+		case 0xb3: return 18000;
+		case 0xb4: return 24000;
+		case 0xbd: return 30000;
+		case 0xbc: return 15000;
+		case 0x13a: return 15000;
+		case 0x12: return 15000;
+		case 0xec: return 18000;
+		case 0x1ec: return 30000;
+		case 0x356: return 30000;
+		case 0x2e5: return 30000;
+		case 0x346: return 18000;
+		case 0x34b: return 30000;
+		case 0x31e: return 24000;
 	}
 	return 0;
 }
@@ -192,19 +199,19 @@ int GameDataProcess::getDoTDuration(int skill) {
 inline int GameDataProcess::GetActorType(int id) {
 	if (mActorPointers.find(id) == mActorPointers.end())
 		return -1;
-	char *c = (char*)(mActorPointers[id]);
+	char *c = (char*) (mActorPointers[id]);
 	c += pActor.type;
 	return *c;
 }
 
 inline int GameDataProcess::GetTargetId(int type) {
-	char *c = (char*)((int)pTargetMap + type);
+	char *c = ((char*) pTargetMap + type);
 	if (c == 0)
 		return NULL_ACTOR;
-	int ptr = *(int*)c;
+	int ptr = *(int*) c;
 	if (ptr == 0)
 		return NULL_ACTOR;
-	return *(int*)(ptr + pActor.id);
+	return *(int*) (ptr + pActor.id);
 }
 
 inline char* GameDataProcess::GetActorName(int id) {
@@ -212,7 +219,7 @@ inline char* GameDataProcess::GetActorName(int id) {
 		return "(Limit Break)";
 	if (mActorPointers.find(id) == mActorPointers.end())
 		return "(unknown)";
-	char *c = (char*)(mActorPointers[id]);
+	char *c = (char*) (mActorPointers[id]);
 	c += pActor.name;
 	if (!Tools::TestValidString(c))
 		return "(error)";
@@ -226,59 +233,59 @@ inline TCHAR* GameDataProcess::GetActorJobString(int id) {
 		return L"LB";
 	if (mActorPointers.find(id) == mActorPointers.end())
 		return L"(?)";
-	char *c = (char*)(mActorPointers[id]);
+	char *c = (char*) (mActorPointers[id]);
 	c += pActor.job;
 	if (!Tools::TestValidString(c))
 		return L"(??)";
 	switch (*c) {
-	case 1: return L"GLD";
-	case 2: return L"PGL";
-	case 3: return L"MRD";
-	case 4: return L"LNC";
-	case 5: return L"ARC";
-	case 6: return L"CNJ";
-	case 7: return L"THM";
-	case 8: return L"CPT";
-	case 9: return L"BSM";
-	case 10: return L"ARM";
-	case 11: return L"GSM";
-	case 12: return L"LTW";
-	case 13: return L"WVR";
-	case 14: return L"ALC";
-	case 15: return L"CUL";
-	case 16: return L"MIN";
-	case 17: return L"BTN";
-	case 18: return L"FSH";
-	case 19: return L"PLD";
-	case 20: return L"MNK";
-	case 21: return L"WAR";
-	case 22: return L"DRG";
-	case 23: return L"BRD";
-	case 24: return L"WHM";
-	case 25: return L"BLM";
-	case 26: return L"ACN";
-	case 27: return L"SMN";
-	case 28: return L"SCH";
-	case 29: return L"ROG";
-	case 30: return L"NIN";
-	case 31: return L"MCH";
-	case 32: return L"DRK";
-	case 33: return L"AST";
+		case 1: return L"GLD";
+		case 2: return L"PGL";
+		case 3: return L"MRD";
+		case 4: return L"LNC";
+		case 5: return L"ARC";
+		case 6: return L"CNJ";
+		case 7: return L"THM";
+		case 8: return L"CPT";
+		case 9: return L"BSM";
+		case 10: return L"ARM";
+		case 11: return L"GSM";
+		case 12: return L"LTW";
+		case 13: return L"WVR";
+		case 14: return L"ALC";
+		case 15: return L"CUL";
+		case 16: return L"MIN";
+		case 17: return L"BTN";
+		case 18: return L"FSH";
+		case 19: return L"PLD";
+		case 20: return L"MNK";
+		case 21: return L"WAR";
+		case 22: return L"DRG";
+		case 23: return L"BRD";
+		case 24: return L"WHM";
+		case 25: return L"BLM";
+		case 26: return L"ACN";
+		case 27: return L"SMN";
+		case 28: return L"SCH";
+		case 29: return L"ROG";
+		case 30: return L"NIN";
+		case 31: return L"MCH";
+		case 32: return L"DRK";
+		case 33: return L"AST";
 	}
 	return L"(???)";
 }
 
 void GameDataProcess::ResolveUsers() {
-	int limit = 1372;
+	int limit = 344;
 	mSelfId = 0;
 	mDamageRedir.clear();
 	mActorPointers.clear();
-	__try {
-		for (int i = 0; i < limit; i++) {
+	for (int i = 0; i < limit; i++) {
+		__try {
 			PVOID ptr = (*pActorMap)[i];
 			if (ptr == 0) continue;
-			int id = *(int*)(char*)((int)ptr + pActor.id);
-			int owner = *(int*)(char*)((int)ptr + pActor.owner);
+			int id = *(int*) ((char*) ptr + pActor.id);
+			int owner = *(int*) ((char*) ptr + pActor.owner);
 			if (mSelfId == 0)
 				mSelfId = id;
 			if (owner != NULL_ACTOR)
@@ -286,8 +293,8 @@ void GameDataProcess::ResolveUsers() {
 			else
 				mDamageRedir[id] = id;
 			mActorPointers[id] = ptr;
+		} __except (EXCEPTION_EXECUTE_HANDLER) {
 		}
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	}
 }
 
@@ -354,18 +361,18 @@ void GameDataProcess::UpdateOverlayMessage() {
 			SYSTEMTIME s1, s2;
 			Tools::MillisToLocalTime(timestamp, &s1);
 			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
-			if(mShowTimeInfo)
+			if (mShowTimeInfo)
 				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
 					dll->hooks()->GetOverlayRenderer()->GetFPS(),
-					(int)s1.wHour, (int)s1.wMinute, (int)s1.wSecond,
-					(int)s2.wHour, (int)s2.wMinute, (int)s2.wSecond);
+					(int) s1.wHour, (int) s1.wMinute, (int) s1.wSecond,
+					(int) s2.wHour, (int) s2.wMinute, (int) s2.wSecond);
 			if (!mDpsInfo.empty()) {
 				uint64_t dur = mLastAttack.timestamp - mLastIdleTime;
 				int total = 0;
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
 					total += it->second;
-				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0])-pos, L"%02d:%02d.%03d / %.2f (%d)",
-					(int)((dur / 60000) % 60), (int)((dur / 1000) % 60), (int)(dur % 1000),
+				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"%02d:%02d.%03d / %.2f (%d)",
+					(int) ((dur / 60000) % 60), (int) ((dur / 1000) % 60), (int) (dur % 1000),
 					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), (int) mCalculatedDamages.size());
 			} else {
 				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"00:00:000 / 0 (0)");
@@ -387,7 +394,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					mypos = max(4, mypos);
 					mypos = min(mCalculatedDamages.size() - 4, mypos);
 				}
-				float maxDps = (float)(mCalculatedDamages.begin()->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
+				float maxDps = (float) (mCalculatedDamages.begin()->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
 				int displayed = 0;
 
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
@@ -400,12 +407,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 						break;
 					OverlayRenderer::Control &wRow = *(new OverlayRenderer::Control());
 					TEMPDMG &max = mDpsInfo[it->first].maxDamage;
-					float curDps = (float)(it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
+					float curDps = (float) (it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
 
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 
 					wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
-					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, (mClassColors[GetActorJobString(it->first)] & 0xFFFFFF) | 0x80000000), CHILD_TYPE_BACKGROUND);
+					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, (mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x80000000), CHILD_TYPE_BACKGROUND);
 
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
@@ -424,7 +431,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, sizeof(tmp)/sizeof(tmp[0]), L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
+					swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", mDpsInfo[it->first].deaths);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
@@ -523,92 +530,94 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			source = mDamageRedir[source];
 		dmg.source = source;
 		switch (skill) {
-		case 0xc8:
-		case 0xc9:
-		case 0xca:
-		case 0xcb:
-		case 0xcc:
-		case 0xcd:
-		case 0x1092:
-		case 0x1093:
-		case 0x108f:
-		case 0x108e:
-		case 0x1095:
-		case 0x1094:
-		case 0x1096:
-			source = SOURCE_LIMIT_BREAK;
-			break;
+			case 0xc8:
+			case 0xc9:
+			case 0xca:
+			case 0xcb:
+			case 0xcc:
+			case 0xcd:
+			case 0x1092:
+			case 0x1093:
+			case 0x108f:
+			case 0x108e:
+			case 0x1095:
+			case 0x1094:
+			case 0x1096:
+				source = SOURCE_LIMIT_BREAK;
+				break;
 		}
-		switch(info->attack[i].swingtype){
-		case 1:
-		case 10:
-			if (info->attack[i].damage == 0) {
-				dmg.dmg = 0;
+		switch (info->attack[i].swingtype) {
+			case 1:
+			case 10:
+				if (info->attack[i].damage == 0) {
+					dmg.dmg = 0;
+					AddDamageInfo(dmg, true);
+				}
+				break;
+			case 5:
+				dmg.isCrit = true;
+			case 3:
+				dmg.dmg = info->attack[i].damage;
 				AddDamageInfo(dmg, true);
-			}
-			break;
-		case 5:
-			dmg.isCrit = true;
-		case 3:
-			dmg.dmg = info->attack[i].damage;
-			AddDamageInfo(dmg, true);
-			break;
-		case 17:
-		case 18: {
-			int buffId = info->attack[i].damage;
-			dmg.buffId = buffId;
-			dmg.isDoT = true;
+				break;
+			case 17:
+			case 18:
+			{
+				int buffId = info->attack[i].damage;
+				dmg.buffId = buffId;
+				dmg.isDoT = true;
 
-			if (getDoTPotency(buffId) == 0)
-				continue; // not an attack buff
-			
-			bool add = true;
-			for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
-				if (it->source == source && it->target == target && it->buffid == buffId) {
-					it->applied = timestamp;
-					it->expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[it->buffid].get();
-					it->simulated = 1;
-					it->contagioned = 0;
-					add = false;
-					break;
-				} else if (it->expires < timestamp) {
-					it = mActiveDoT.erase(it);
-				} else
-					++it;
-			}
-			if (add) {
-				TEMPBUFF b;
-				b.buffid = buffId;
-				b.source = source;
-				b.target = target;
-				b.applied = timestamp;
-				b.expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[buffId].get();
-				b.potency = getDoTPotency(b.buffid);
-				b.simulated = 1;
-				b.contagioned = 0;
-				mActiveDoT.push_back(b);
-			}
+				if (getDoTPotency(buffId) == 0)
+					continue; // not an attack buff
 
-			break;
-		}
-		case 41: { // Probably contagion
-			if (skill == 795) { // it is contagion
-				auto it = mActiveDoT.begin();
-				while (it != mActiveDoT.end()) {
-					if (it->expires - mContagionApplyDelayEstimation.get() < timestamp) {
-						it = mActiveDoT.erase(it);
-					} else if (it->source == source && it->target == target) {
+				bool add = true;
+				for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
+					if (it->source == source && it->target == target && it->buffid == buffId) {
 						it->applied = timestamp;
-						it->expires += 15000;
+						it->expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[it->buffid].get();
 						it->simulated = 1;
-						it->contagioned = 1;
-						++it;
-					} else 
+						it->contagioned = 0;
+						add = false;
+						break;
+					} else if (it->expires < timestamp) {
+						it = mActiveDoT.erase(it);
+					} else
 						++it;
 				}
+				if (add) {
+					TEMPBUFF b;
+					b.buffid = buffId;
+					b.source = source;
+					b.target = target;
+					b.applied = timestamp;
+					b.expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[buffId].get();
+					b.potency = getDoTPotency(b.buffid);
+					b.simulated = 1;
+					b.contagioned = 0;
+					mActiveDoT.push_back(b);
+				}
+
+				break;
 			}
-			break;
-		}
+			case 41:
+			{ // Probably contagion
+				if (skill == 795) { // it is contagion
+					auto it = mActiveDoT.begin();
+					while (it != mActiveDoT.end()) {
+						if (it->expires - mContagionApplyDelayEstimation.get() < timestamp) {
+							it = mActiveDoT.erase(it);
+						} else if (it->source == source && it->target == target) {
+							it->applied = timestamp;
+							it->expires += 15000;
+							it->simulated = 1;
+							it->contagioned = 1;
+							++it;
+						} else
+							++it;
+					}
+				}
+				break;
+			}
 		}
 		/*
 		char tss[512];
@@ -633,213 +642,214 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 	} else
 		timestamp = mServerTimestamp;
 
-	GAME_MESSAGE *msg = (GAME_MESSAGE*)data;
+	GAME_MESSAGE *msg = (GAME_MESSAGE*) data;
 	// std::string ts; char tss[512];
 	switch (msg->message_cat1) {
-	case GAME_MESSAGE::C1_Combat: {
-		switch (msg->message_cat2) {
-		case 0x0143:
-		case GAME_MESSAGE::C2_ActorInfo:
-			break;
-		case GAME_MESSAGE::C2_Info1:
-			if (msg->Combat.Info1.c1 == 23 && msg->Combat.Info1.c2 == 3) {
-				if (msg->Combat.Info1.c5 == 0) {
-					int total = 0;
-					for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
-						total += it->potency;
-					}
-					if (total > 0) {
-						for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
-							int mine = msg->Combat.Info1.c3 * it->potency / total;
-							if (mine > 0) {
-								TEMPDMG dmg;
-								dmg.timestamp = timestamp;
-								dmg.source = it->source;
-								dmg.buffId = it->buffid;
-								dmg.isDoT = true;
-								dmg.dmg = mine;
-								if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
-									dmg.source = mDamageRedir[dmg.source];
-								AddDamageInfo(dmg, false);
+		case GAME_MESSAGE::C1_Combat:
+		{
+			switch (msg->message_cat2) {
+				case 0x0143:
+				case GAME_MESSAGE::C2_ActorInfo:
+					break;
+				case GAME_MESSAGE::C2_Info1:
+					if (msg->Combat.Info1.c1 == 23 && msg->Combat.Info1.c2 == 3) {
+						if (msg->Combat.Info1.c5 == 0) {
+							int total = 0;
+							for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
+								total += it->potency;
 							}
-						}
-					}
-				} else {
-					for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
-						if (it->source == it->target && it->buffid == msg->Combat.Info1.c5) {
-							int mine = msg->Combat.Info1.c3;
-							if (mine > 0) {
-								TEMPDMG dmg;
-								dmg.timestamp = timestamp;
-								dmg.source = it->source;
-								dmg.buffId = it->buffid;
-								dmg.isDoT = true;
-								dmg.dmg = mine;
-								if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
-									dmg.source = mDamageRedir[dmg.source];
-								AddDamageInfo(dmg, false);
-							}
-						}
-					}
-				}
-			} else if (msg->Combat.Info1.c1 == 21) {
-				auto it = mActiveDoT.begin();
-				while (it != mActiveDoT.end()) {
-					if (it->expires < timestamp)
-						it = mActiveDoT.erase(it);
-					else
-						++it;
-				}
-			} else if (msg->Combat.Info1.c1 == 6) {
-				// death
-				int who = msg->Combat.Info1.c5;
-				if(GetActorType(msg->actor) == ACTOR_TYPE_PC)
-					mDpsInfo[msg->actor].deaths++;
-				/*
-				sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
-				dll->pipe()->sendInfo(tss);
-				//*/
-				auto it = mActiveDoT.begin();
-				while (it != mActiveDoT.end()) {
-					if (it->expires < timestamp || it->target == msg->actor)
-						it = mActiveDoT.erase(it);
-					else
-						++it;
-				}
-			}
-			break;
-		case GAME_MESSAGE::C2_AddBuff:
-			/*
-			sprintf(tss, "cmsgAddBuff %s / %d", getActorName(msg->actor), 
-				msg->Combat.AddBuff._u1);
-			dll->pipe()->sendInfo(tss);
-			//*/
-			for (int i = 0; i < msg->Combat.AddBuff.buff_count && i < 5; i++) {
-				if (getDoTPotency(msg->Combat.AddBuff.buffs[i].buffID) == 0)
-					continue; // not an attack buff
-				auto it = mActiveDoT.begin();
-				bool add = true;
-				while (it != mActiveDoT.end()) {
-					if (it->source == msg->Combat.AddBuff.buffs[i].actorID && it->target == msg->actor && it->buffid == msg->Combat.AddBuff.buffs[i].buffID) {
-						uint64_t nexpire = timestamp + (int)(msg->Combat.AddBuff.buffs[i].duration * 1000);
-						if (it->simulated) {
-							if (it->contagioned) {
-								mContagionApplyDelayEstimation.add((int) (timestamp - it->applied));
-								//sprintf(tss, "cmsg => simulated (Contagion: %d / %d)", nexpire - it->expires, estimatedContagionDelay.get());
-							} else {
-								mDotApplyDelayEstimation[it->buffid].add((int) (timestamp - it->applied));
-								//sprintf(tss, "cmsg => simulated (%d: %d / %d)", it->buffid, nexpire - it->expires, estimatedDelays[it->buffid].get());
-							}
-							//dll->pipe()->sendInfo(tss);
-						}
-						it->applied = timestamp;
-						it->expires = nexpire;
-						it->simulated = 0;
-						it->contagioned = 0;
-						add = false;
-						break;
-					} else if (it->expires < timestamp) {
-						it = mActiveDoT.erase(it);
-					} else
-						++it;
-				}
-				if (add) {
-					TEMPBUFF b;
-					b.buffid = msg->Combat.AddBuff.buffs[i].buffID;
-					b.source = msg->Combat.AddBuff.buffs[i].actorID;
-					b.target = msg->actor;
-					b.applied = timestamp;
-					b.expires = timestamp + (int)(msg->Combat.AddBuff.buffs[i].duration * 1000);
-					b.potency = getDoTPotency(b.buffid);
-					b.contagioned = 0;
-					b.simulated = 0;
-					mActiveDoT.push_back(b);
-				}
-			}
-			break;
-		case GAME_MESSAGE::C2_UseAbility:
-			// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
-			// dll->pipe()->AddChat(tss);
-			
-			ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
-			break;
-		case GAME_MESSAGE::C2_UseAoEAbility:
-			// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
-			// dll->pipe()->AddChat(tss);
-
-			if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
-				int baseActor = NULL_ACTOR;
-				for (int i = 0; i < 16; i++)
-					if (msg->Combat.UseAoEAbility.targets[i].target != 0)
-						for (int j = 0; j < 4; j++)
-							if (msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].swingtype == 11)
-								baseActor = msg->Combat.UseAoEAbility.targets[i].target;
-				if (baseActor != NULL_ACTOR) {
-					for (int i = 0; i < 16; i++)
-						if (msg->Combat.UseAoEAbility.targets[i].target != 0)
-							for (int j = 0; j < 4; j++)
-								if (msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].swingtype == 17) {
-									TEMPBUFF buff;
-									uint64_t expires = -1;
-									for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
-										if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
-											it->source == msg->actor &&
-											it->target == baseActor) {
-											expires = it->expires;
-											break;
-										}
-									if (expires != -1) {
-										bool addNew = true;
-										for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
-											if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
-												it->source == msg->actor &&
-												it->target == msg->Combat.UseAoEAbility.targets[i].target) {
-												it->applied = timestamp;
-												it->expires = expires;
-												it->simulated = 1;
-												addNew = false;
-												break;
-											}
-										if (addNew) {
-											buff.buffid = msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage;
-											buff.applied = timestamp;
-											buff.expires = expires;
-											buff.source = msg->actor;
-											buff.target = msg->Combat.UseAoEAbility.targets[i].target;
-											buff.potency = getDoTPotency(buff.buffid);
-											buff.simulated = 1;
-
-											mActiveDoT.push_back(buff);
-										}
+							if (total > 0) {
+								for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
+									int mine = msg->Combat.Info1.c3 * it->potency / total;
+									if (mine > 0) {
+										TEMPDMG dmg;
+										dmg.timestamp = timestamp;
+										dmg.source = it->source;
+										dmg.buffId = it->buffid;
+										dmg.isDoT = true;
+										dmg.dmg = mine;
+										if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
+											dmg.source = mDamageRedir[dmg.source];
+										AddDamageInfo(dmg, false);
 									}
 								}
-				}
-
-			} else {
-				for (int i = 0; i < 16; i++)
-					if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
+							}
+						} else {
+							for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
+								if (it->source == it->target && it->buffid == msg->Combat.Info1.c5) {
+									int mine = msg->Combat.Info1.c3;
+									if (mine > 0) {
+										TEMPDMG dmg;
+										dmg.timestamp = timestamp;
+										dmg.source = it->source;
+										dmg.buffId = it->buffid;
+										dmg.isDoT = true;
+										dmg.dmg = mine;
+										if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
+											dmg.source = mDamageRedir[dmg.source];
+										AddDamageInfo(dmg, false);
+									}
+								}
+							}
+						}
+					} else if (msg->Combat.Info1.c1 == 21) {
+						auto it = mActiveDoT.begin();
+						while (it != mActiveDoT.end()) {
+							if (it->expires < timestamp)
+								it = mActiveDoT.erase(it);
+							else
+								++it;
+						}
+					} else if (msg->Combat.Info1.c1 == 6) {
+						// death
+						int who = msg->Combat.Info1.c5;
+						if (GetActorType(msg->actor) == ACTOR_TYPE_PC)
+							mDpsInfo[msg->actor].deaths++;
 						/*
-						sprintf(tss, "cmsg  => Target[%i] %d / %s", i, msg->Combat.UseAoEAbility.targets[i].target, getActorName(msg->Combat.UseAoEAbility.targets[i].target));
+						sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
 						dll->pipe()->sendInfo(tss);
 						//*/
-						ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attackToTarget[i], timestamp);
+						auto it = mActiveDoT.begin();
+						while (it != mActiveDoT.end()) {
+							if (it->expires < timestamp || it->target == msg->actor)
+								it = mActiveDoT.erase(it);
+							else
+								++it;
+						}
 					}
+					break;
+				case GAME_MESSAGE::C2_AddBuff:
+					/*
+					sprintf(tss, "cmsgAddBuff %s / %d", getActorName(msg->actor),
+						msg->Combat.AddBuff._u1);
+					dll->pipe()->sendInfo(tss);
+					//*/
+					for (int i = 0; i < msg->Combat.AddBuff.buff_count && i < 5; i++) {
+						if (getDoTPotency(msg->Combat.AddBuff.buffs[i].buffID) == 0)
+							continue; // not an attack buff
+						auto it = mActiveDoT.begin();
+						bool add = true;
+						while (it != mActiveDoT.end()) {
+							if (it->source == msg->Combat.AddBuff.buffs[i].actorID && it->target == msg->actor && it->buffid == msg->Combat.AddBuff.buffs[i].buffID) {
+								uint64_t nexpire = timestamp + (int) (msg->Combat.AddBuff.buffs[i].duration * 1000);
+								if (it->simulated) {
+									if (it->contagioned) {
+										mContagionApplyDelayEstimation.add((int) (timestamp - it->applied));
+										//sprintf(tss, "cmsg => simulated (Contagion: %d / %d)", nexpire - it->expires, estimatedContagionDelay.get());
+									} else {
+										mDotApplyDelayEstimation[it->buffid].add((int) (timestamp - it->applied));
+										//sprintf(tss, "cmsg => simulated (%d: %d / %d)", it->buffid, nexpire - it->expires, estimatedDelays[it->buffid].get());
+									}
+									//dll->pipe()->sendInfo(tss);
+								}
+								it->applied = timestamp;
+								it->expires = nexpire;
+								it->simulated = 0;
+								it->contagioned = 0;
+								add = false;
+								break;
+							} else if (it->expires < timestamp) {
+								it = mActiveDoT.erase(it);
+							} else
+								++it;
+						}
+						if (add) {
+							TEMPBUFF b;
+							b.buffid = msg->Combat.AddBuff.buffs[i].buffID;
+							b.source = msg->Combat.AddBuff.buffs[i].actorID;
+							b.target = msg->actor;
+							b.applied = timestamp;
+							b.expires = timestamp + (int) (msg->Combat.AddBuff.buffs[i].duration * 1000);
+							b.potency = getDoTPotency(b.buffid);
+							b.contagioned = 0;
+							b.simulated = 0;
+							mActiveDoT.push_back(b);
+						}
+					}
+					break;
+				case GAME_MESSAGE::C2_UseAbility:
+					// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
+					// dll->pipe()->AddChat(tss);
+
+					ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
+					break;
+				case GAME_MESSAGE::C2_UseAoEAbility:
+					// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
+					// dll->pipe()->AddChat(tss);
+
+					if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
+						int baseActor = NULL_ACTOR;
+						for (int i = 0; i < 16; i++)
+							if (msg->Combat.UseAoEAbility.targets[i].target != 0)
+								for (int j = 0; j < 4; j++)
+									if (msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].swingtype == 11)
+										baseActor = msg->Combat.UseAoEAbility.targets[i].target;
+						if (baseActor != NULL_ACTOR) {
+							for (int i = 0; i < 16; i++)
+								if (msg->Combat.UseAoEAbility.targets[i].target != 0)
+									for (int j = 0; j < 4; j++)
+										if (msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].swingtype == 17) {
+											TEMPBUFF buff;
+											uint64_t expires = -1;
+											for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
+												if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
+													it->source == msg->actor &&
+													it->target == baseActor) {
+													expires = it->expires;
+													break;
+												}
+											if (expires != -1) {
+												bool addNew = true;
+												for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
+													if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
+														it->source == msg->actor &&
+														it->target == msg->Combat.UseAoEAbility.targets[i].target) {
+														it->applied = timestamp;
+														it->expires = expires;
+														it->simulated = 1;
+														addNew = false;
+														break;
+													}
+												if (addNew) {
+													buff.buffid = msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage;
+													buff.applied = timestamp;
+													buff.expires = expires;
+													buff.source = msg->actor;
+													buff.target = msg->Combat.UseAoEAbility.targets[i].target;
+													buff.potency = getDoTPotency(buff.buffid);
+													buff.simulated = 1;
+
+													mActiveDoT.push_back(buff);
+												}
+											}
+										}
+						}
+
+					} else {
+						for (int i = 0; i < 16; i++)
+							if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
+								/*
+								sprintf(tss, "cmsg  => Target[%i] %d / %s", i, msg->Combat.UseAoEAbility.targets[i].target, getActorName(msg->Combat.UseAoEAbility.targets[i].target));
+								dll->pipe()->sendInfo(tss);
+								//*/
+								ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attackToTarget[i], timestamp);
+							}
+					}
+					break;
+				default:
+					goto DEFPRT;
 			}
 			break;
-		default:
-			goto DEFPRT;
 		}
-		break;
-	}
-	DEFPRT:
-	default:
-		/*
-		int pos = sprintf(tss, "cmsg%04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, getActorName(msg->actor), msg->length);
-		for (int i = 0; i < msg->length - 32 && i<64; i ++)
-			pos += sprintf(tss + pos, "%02X ", (int)((unsigned char*)msg->data)[i]);
-		dll->pipe()->sendInfo(tss);
-		//*/
-		break;
+DEFPRT:
+		default:
+			/*
+			int pos = sprintf(tss, "cmsg%04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, getActorName(msg->actor), msg->length);
+			for (int i = 0; i < msg->length - 32 && i<64; i ++)
+				pos += sprintf(tss + pos, "%02X ", (int)((unsigned char*)msg->data)[i]);
+			dll->pipe()->sendInfo(tss);
+			//*/
+			break;
 	}
 }
 
@@ -913,8 +923,8 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 		if (packet.signature == 0x41A05252) {
 			if (buf != nullptr) {
 				for (int i = 0; i < packet.message_count; i++) {
-					ProcessGameMessage(buf, packet.timestamp, ((char*)&packet.data - (char*)&packet), setTimestamp);
-					buf += *((uint32_t*)buf);
+					ProcessGameMessage(buf, packet.timestamp, ((char*) &packet.data - (char*) &packet), setTimestamp);
+					buf += *((uint32_t*) buf);
 				}
 			}
 		}

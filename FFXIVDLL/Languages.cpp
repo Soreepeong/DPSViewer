@@ -40,6 +40,7 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_DOT_SHOW"] = "Show DOT";
 		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_HIDE_NAME"] = "Hide other names";
 		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_SHOW"] = "Show everyone";
+		loc[LANGUAGE_ENGLISH]["OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"] = "Hide during cutscenes";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_BOLD"] = "Bold text";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_SIZE"] = "Text size";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_NAME"] = "Font name";
@@ -77,6 +78,7 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_DOT_SHOW"] = u8"DOT 보이기";
 		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_HIDE_NAME"] = u8"다른 이름 숨기기";
 		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_SHOW"] = u8"모두 보이기";
+		loc[LANGUAGE_KOREAN]["OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"] = u8"동영상 재생 시 숨기기";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_BOLD"] = u8"굵은 글자";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_SIZE"] = u8"글자 크기";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_NAME"] = u8"서체 이름";

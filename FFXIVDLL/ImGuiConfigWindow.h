@@ -50,6 +50,7 @@ private:
 
 public:
 
+	bool ShowOnlyWhenChatWindowOpen = true;
 	int UseDrawOverlay = true;
 	bool ShowEveryDPS = true;
 	int fontSize = 17;
