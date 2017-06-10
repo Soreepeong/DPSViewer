@@ -4,6 +4,7 @@
 #include "GameDataProcess.h"
 #include "OverlayRenderer.h"
 #include "Tools.h"
+#include "MemoryScanner.h"
 
 class Hooks;
 class GameDataProcess;
@@ -17,7 +18,7 @@ private:
 	Hooks *pHooks;
 	GameDataProcess *pDataProcess;
 	HWND ffxivHwnd;
-
+	MemoryScanner scanner;
 
 	BOOL WINAPI FindFFXIVWindow(HWND h);
 	static BOOL WINAPI FindFFXIVWindow(HWND h, LPARAM l) {
@@ -32,6 +33,10 @@ public:
 
 	bool isUnloading() {
 		return WAIT_OBJECT_0 == WaitForSingleObject(hUnloadEvent, 0);
+	}
+
+	MemoryScanner* memory() {
+		return &scanner;
 	}
 
 	HWND ffxiv() {

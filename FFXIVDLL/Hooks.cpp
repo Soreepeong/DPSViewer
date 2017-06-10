@@ -64,20 +64,22 @@ textSectionFound:
 #ifdef _WIN64
 	pfnOrig.ProcessWindowMessage = (ProcessWindowMessage) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x40\x53\x48\x83\xEC\x60\x48\x89\x6C\x24\x70\x48\x8D\x4C\x24\x30\x33\xED\x45\x33\xC9\x45\x33\xC0\x33\xD2\x89\x6C\x24\x20\xBB\x0A", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
 	pfnOrig.ProcessNewLine = (ProcessNewLine) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x48\x89\x5C\x24\x20\x55\x56\x57\x48\x81\xEC\x10\x01\x00\x00\x48\x8B\x05\x00\x00\x00\x01\x48\x33\xC4\x48\x89\x84\x24\x00\x01\x00\x00\x41\x8B\x00\x41\x8B\xE9\x49\x8B\x00\x83\xE0\x0F\x48\x8B\xDA", "xxxxxxxxxxxxxxxxxx???xxxxxxxxxxxxxxxxxxxx?xxxxxx");
+	pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x40\x55\x48\x83\xEC\x20\x48\x8B\x91\xC8\x00\x00\x00\x48\x8B\xE9\x48\x85\xD2", "xxxxxxxxxxxxxxxxxxx");
+	pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x40\x53\x48\x83\xEC\x40\x48\x8B\x91\xC8\x00\x00\x00\x48\x8B\xD9\x48\x85\xD2", "xxxxxxxxxxxxxxxxxxx");
 #else
-	pfnOrig.ProcessWindowMessage = (ProcessWindowMessage) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x83\xEC\x1C\x53\x8B\x1D\x00\x00\x00\x00\x57\x6A\x00", "xxxxxxxxx????xxx");
+	pfnOrig.ProcessWindowMessage = (ProcessWindowMessage) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x83\xEC\x1C\x53\x8B\x1D\x00\x00\x00\x00\x57\x6A\x00", "xxxxxxxxx????xxx");
 	pfnOrig.ProcessNewLine = (ProcessNewLine) (hGame + sectionHeaders->VirtualAddress - 1);
 	do {
-		pfnOrig.ProcessNewLine = (ProcessNewLine) Tools::FindPattern((DWORD) pfnOrig.ProcessNewLine + 1,
-			sectionHeaders->Misc.VirtualSize - (DWORD) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress),
+		pfnOrig.ProcessNewLine = (ProcessNewLine) Tools::FindPattern((DWORD_PTR) pfnOrig.ProcessNewLine + 1,
+			sectionHeaders->Misc.VirtualSize - (DWORD_PTR) pfnOrig.ProcessNewLine + (DWORD_PTR) (hGame + sectionHeaders->VirtualAddress),
 			(PBYTE) "\x55\x8B\xEC\x81\xEC\xAC\x00\x00\x00\xA1\x00\x00\x00\x00\x33\xC5\x89\x45\xFC\x53\x8B\x5D", "xxxxxxxxxx????xxxxxxxx");
-		if (pfnOrig.ProcessNewLine && 0 != Tools::FindPattern((DWORD) pfnOrig.ProcessNewLine, 0x300,
+		if (pfnOrig.ProcessNewLine && 0 != Tools::FindPattern((DWORD_PTR) pfnOrig.ProcessNewLine, 0x300,
 			(PBYTE) "\xFF\x83\x7D\x10\x02\x7F\x16\x8D\x85\x54\xFF\xFF\xFF\x50\x8D\x4D\xA8\x51\x8D",
 			"xxxxxxxxxxxxxxxxxxx"))
 			break;
-	} while (pfnOrig.ProcessNewLine && (int) (sectionHeaders->Misc.VirtualSize - (DWORD) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress)) > 0);
-	pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x00\x00\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x75\x7a", "xxxxxxxxxxxx?????xx????xxxxxxxx");
-	pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x00\x00\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x0f\x85", "xxxxxxxxxxxx?????xx????xxxxxxxx");
+	} while (pfnOrig.ProcessNewLine && (int) (sectionHeaders->Misc.VirtualSize - (DWORD_PTR) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress)) > 0);
+	pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x00\x00\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x75\x7a", "xxxxxxxxxxxx?????xx????xxxxxxxx");
+	pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x00\x00\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x0f\x85", "xxxxxxxxxxxx?????xx????xxxxxxxx");
 #endif
 	MH_CreateHook(pfnOrig.ProcessWindowMessage, hook_ProcessWindowMessage, (PVOID*) &pfnBridge.ProcessWindowMessage);
 	MH_CreateHook(pfnOrig.ProcessNewLine, hook_ProcessNewLine, (PVOID*) &pfnBridge.ProcessNewLine);
@@ -244,7 +246,7 @@ char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis) {
 #else
 char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis, void *_u) {
 #endif
-	if(strncmp((char*)pthis+4, "_Status", 7) == 0)
+	if(strncmp((char*)pthis+sizeof(char*), "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = false;
 	return pfnBridge.HideFFXIVWindow(pthis);
 }
@@ -254,9 +256,9 @@ char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis) {
 #else
 char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis, void *_u) {
 #endif
-	if (strncmp((char*) pthis + 4, "_Status", 7) == 0)
+	if (strncmp((char*) pthis + sizeof(char*), "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = true;
-	else if(strncmp((char*) pthis + 4, "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
+	else if(strncmp((char*) pthis + sizeof(char*), "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
 		FlashWindow(dll->ffxiv(), true);
 	/*
 	char test[256];

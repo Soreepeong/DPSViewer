@@ -231,26 +231,11 @@ class GameDataProcess {
 	friend class ImGuiConfigWindow;
 
 private:
-	struct {
-		int id;
-		int name;
-		int owner;
-		int type;
-		int job;
-	}pActor;
-	struct {
-		int current;
-		int hover;
-		int focus;
-	}pTarget;
 
 	static int getDoTPotency(int dot);
 	int getDoTDuration(int skill);
 
 	std::map<std::wstring, DWORD> mClassColors;
-
-	char *pTargetMap;
-	char **pActorMap;
 
 	Tools::ByteQueue mSent, mRecv;
 
@@ -308,7 +293,7 @@ private:
 	static DWORD WINAPI UpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*)p)->UpdateInfoThread(); return 0; }
 
 public:
-	GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent);
+	GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent);
 	~GameDataProcess();
 
 	inline int GetActorType(int id);

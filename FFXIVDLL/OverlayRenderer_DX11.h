@@ -31,9 +31,7 @@ private:
 	IFW1Factory *pFW1Factory;
 	IFW1FontWrapper *pFW;
 
-	// std::deque<IDirect3DSurface9*> mCaptureBuffers;
-
-	// void CaptureBackgroundSave(IDirect3DSurface9 *buf);
+	std::deque<ID3D11Texture2D*> mCaptureBuffers;
 	void CaptureBackgroundSaverThread();
 	static DWORD WINAPI CaptureBackgroundSaverExternal(PVOID p) { ((OverlayRendererDX11*) p)->CaptureBackgroundSaverThread(); return 0; }
 

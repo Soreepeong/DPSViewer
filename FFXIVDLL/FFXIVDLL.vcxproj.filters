@@ -52,24 +52,24 @@
     <ClCompile Include="Languages.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OverlayRenderer_DX9.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="imgui\imgui_impl_dx11.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="OverlayRenderer_DX11.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MemoryScanner.cpp" />
+    <ClCompile Include="OverlayRenderer_DX11.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="OverlayRenderer_DX9.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="DX11_TextureFromImage.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="DX11_ScreenGrab.cpp">
+      <Filter>DirectX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dx9hook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="dx9table.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="FFXIVDLL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -83,9 +83,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OverlayRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="targetver.h">
@@ -130,16 +127,31 @@
     <ClInclude Include="ImGuiConfigWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OverlayRenderer_DX9.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="imgui\imgui_impl_dx11.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="OverlayRenderer_DX11.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="MemoryScanner.h" />
+    <ClInclude Include="DX11_TextureFromImage.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="dx9hook.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="dx9table.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayRenderer_DX11.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="OverlayRenderer_DX9.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="DX11_ScreenGrab.h">
+      <Filter>DirectX</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -159,6 +171,9 @@
     </Filter>
     <Filter Include="Resources\Job Images">
       <UniqueIdentifier>{7e6169bb-0954-491a-92c0-bcd783f60ad7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DirectX">
+      <UniqueIdentifier>{e63e645f-6299-4288-b2bb-a5b89a2b1a16}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

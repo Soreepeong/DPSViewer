@@ -41,7 +41,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>..\Release\</OutputPath>
@@ -67,12 +67,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Info.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Info.Designer.cs">
-      <DependentUpon>Info.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Program.API.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Program.Injector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -100,17 +95,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FFXIVAPP.Memory\FFXIVAPP.Memory.csproj">
-      <Project>{9510d5ef-208a-4897-a582-8eae5c6e9406}</Project>
-      <Name>FFXIVAPP.Memory</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Info.resx">
-      <DependentUpon>Info.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

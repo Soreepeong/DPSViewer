@@ -14,7 +14,7 @@
 #include "OverlayRenderer.h"
 #include "Hooks.h"
 
-GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
+GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	dll(dll),
 	hUnloadEvent(unloadEvent),
 	mSent(1048576 * 8),
@@ -24,20 +24,6 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, FILE *f, HANDLE unloadEvent) :
 	wDOT(*new DOTWindowController()) {
 	mLastAttack.dmg = 0;
 	mLastAttack.timestamp = 0;
-#pragma warning( push )
-#pragma warning( disable : 4477)
-#ifdef _WIN64
-	fwscanf(f, L"%lld%d%d%d%d%d",
-		&pActorMap, &pActor.id, &pActor.name, &pActor.owner, &pActor.type, &pActor.job);
-	fwscanf(f, L"%lld%d%d%d",
-		&pTargetMap, &pTarget.current, &pTarget.hover, &pTarget.focus);
-#else
-	fwscanf(f, L"%d%d%d%d%d%d",
-		&pActorMap, &pActor.id, &pActor.name, &pActor.owner, &pActor.type, &pActor.job);
-	fwscanf(f, L"%d%d%d%d",
-		&pTargetMap, &pTarget.current, &pTarget.hover, &pTarget.focus);
-#endif
-#pragma warning( pop )
 
 	mLocalTimestamp = mServerTimestamp = Tools::GetLocalTimestamp();
 
@@ -200,19 +186,19 @@ inline int GameDataProcess::GetActorType(int id) {
 	if (mActorPointers.find(id) == mActorPointers.end())
 		return -1;
 	char *c = (char*) (mActorPointers[id]);
-	c += pActor.type;
+	c += dll->memory()->Struct.Actor.type;
 	return *c;
 }
 
 inline int GameDataProcess::GetTargetId(int type) {
 	__try {
-		char *c = pTargetMap + type;
+		char *c = ((char*) dll->memory()->Result.Data.TargetMap) + type;
 		if (c == 0)
 			return NULL_ACTOR;
 		char* ptr = (char*)*(PVOID*) c;
 		if (ptr == 0)
 			return NULL_ACTOR;
-		return *(int*) (ptr + pActor.id);
+		return *(int*) (ptr + dll->memory()->Struct.Actor.id);
 	} __except (1) {
 		return 0;
 	}
@@ -227,7 +213,7 @@ inline std::string GameDataProcess::GetActorName(int id) {
 		return t;
 	}
 	char *c = (char*) (mActorPointers[id]);
-	c += pActor.name;
+	c += dll->memory()->Struct.Actor.name;
 	if (!Tools::TestValidString(c))
 		return "(error)";
 	if (strlen(c) == 0)
@@ -241,7 +227,7 @@ inline TCHAR* GameDataProcess::GetActorJobString(int id) {
 	if (mActorPointers.find(id) == mActorPointers.end())
 		return L"(?)";
 	char *c = (char*) (mActorPointers[id]);
-	c += pActor.job;
+	c += dll->memory()->Struct.Actor.job;
 	if (!Tools::TestValidString(c))
 		return L"(??)";
 	switch (*c) {
@@ -289,11 +275,11 @@ void GameDataProcess::ResolveUsers() {
 	mActorPointers.clear();
 	for (int i = 0; i < limit; i++) {
 		__try {
-			char* ptr = pActorMap[i];
+			char* ptr = ((char**)dll->memory()->Result.Data.ActorMap)[i];
 			if (ptr == 0) continue;
-			int id = *(int*) (ptr + pActor.id);
-			int owner = *(int*) (ptr + pActor.owner);
-			int type = *(char*) (ptr + pActor.type);
+			int id = *(int*) (ptr + dll->memory()->Struct.Actor.id);
+			int owner = *(int*) (ptr + dll->memory()->Struct.Actor.owner);
+			int type = *(char*) (ptr + dll->memory()->Struct.Actor.type);
 			if (mSelfId == 0)
 				mSelfId = id;
 			if (owner != NULL_ACTOR)
@@ -463,9 +449,9 @@ void GameDataProcess::UpdateOverlayMessage() {
 			while (wDOT.getChildCount() > 1)
 				delete wDOT.removeChild(1);
 			if (!buff_sort.empty()) {
-				int currentTarget = GetTargetId(pTarget.current);
-				int focusTarget = GetTargetId(pTarget.focus);
-				int hoverTarget = GetTargetId(pTarget.hover);
+				int currentTarget = GetTargetId(dll->memory()->Struct.Target.current);
+				int focusTarget = GetTargetId(dll->memory()->Struct.Target.focus);
+				int hoverTarget = GetTargetId(dll->memory()->Struct.Target.hover);
 				std::sort(buff_sort.begin(), buff_sort.end(), [&](const TEMPBUFF & a, const TEMPBUFF & b) {
 					if ((a.target == focusTarget) ^ (b.target == focusTarget))
 						return (a.target == focusTarget ? 1 : 0) > (b.target == focusTarget ? 1 : 0);

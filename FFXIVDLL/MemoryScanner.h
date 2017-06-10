@@ -9,13 +9,23 @@ public:
 		struct {
 			PVOID ProcessWindowMessage;
 			PVOID ProcessNewLine;
+			PVOID HideFFXIVWindow;
+			PVOID ShowFFXIVWindow;
 		} Functions;
 		struct {
 			PVOID ActorMap;
 			PVOID TargetMap;
 			PVOID PartyMap;
 		} Data;
-	}Result;
+	} Result;
+	struct {
+		struct {
+			uint32_t id, name, owner, type, job;
+		} Actor;
+		struct {
+			uint32_t current, hover, focus;
+		} Target;
+	} Struct;
 private:
 
 	class DataSignature {
@@ -35,6 +45,7 @@ private:
 	IMAGE_SECTION_HEADER *sectionHeaders;
 
 	void ScanInto(PVOID *p, std::vector<DataSignature> &map);
+	bool ScanInto(PVOID *p, DataSignature &s);
 	DWORD DoScan();
 	static DWORD WINAPI DoScanExternal(PVOID p) { return ((MemoryScanner*) p)->DoScan(); }
 

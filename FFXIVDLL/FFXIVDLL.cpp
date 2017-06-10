@@ -21,23 +21,14 @@ BOOL WINAPI FFXIVDLL::FindFFXIVWindow(HWND handle) {
 FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	hInstance(instance)
 {
-	TCHAR fn[1024];
-	GetModuleFileName(hInstance, fn, sizeof(fn));
-	wsprintf(wcsrchr(fn, L'\\') + 1, L"FFXIVDLLInfo_%d.txt", GetCurrentProcessId());
-	FILE *f = _wfopen(fn, L"r");
-	if (f == nullptr)
-		return;
 	EnumWindows(FFXIVDLL::FindFFXIVWindow, (LPARAM) this);
 
 	Languages::initialize();
 
 	hUnloadEvent = CreateEvent(NULL, true, false, NULL);
 
-	pDataProcess = new GameDataProcess(this, f, hUnloadEvent);
+	pDataProcess = new GameDataProcess(this, hUnloadEvent);
 	pHooks = new Hooks(this);
-
-	fclose(f);
-	DeleteFile(fn);
 
 	addChat("/e Initialized");
 	pHooks->Activate();
