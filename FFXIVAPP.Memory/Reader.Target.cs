@@ -34,7 +34,7 @@ namespace FFXIVAPP.Memory
             {
                 try
                 {
-                    var targetHateStructure = (Scanner.Instance.Locations["PLAYERINFO"].GetAddress()) - MemoryHandler.Instance.Structures.TargetInfo.HateStructure;
+					var targetHateStructure = new IntPtr(0); // (Scanner.Instance.Locations["PLAYERINFO"].GetAddress()) - MemoryHandler.Instance.Structures.TargetInfo.HateStructure;
                     var enmityEntries = new List<EnmityEntry>();
 
                     if (Scanner.Instance.Locations.ContainsKey("TARGET"))

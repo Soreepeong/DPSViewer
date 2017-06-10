@@ -76,8 +76,8 @@ textSectionFound:
 			"xxxxxxxxxxxxxxxxxxx"))
 			break;
 	} while (pfnOrig.ProcessNewLine && (int) (sectionHeaders->Misc.VirtualSize - (DWORD) pfnOrig.ProcessNewLine + (DWORD) (hGame + sectionHeaders->VirtualAddress)) > 0);
-	pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x10\x01\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x75\x7a", "xxxxxxxxxxxx?????xxxxxxxxxxxxxx");
-	pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x10\x01\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x0f\x85", "xxxxxxxxxxxx?????xxxxxxxxxxxxxx");
+	pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x00\x00\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x75\x7a", "xxxxxxxxxxxx?????xx????xxxxxxxx");
+	pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x86\x80\x00\x00\x00\x85\xC0\x0F\x00\x00\x00\x00\x00\x8B\x8E\x00\x00\x00\x00\xC1\xE9\x07\xF6\xC1\x01\x0f\x85", "xxxxxxxxxxxx?????xx????xxxxxxxx");
 #endif
 	MH_CreateHook(pfnOrig.ProcessWindowMessage, hook_ProcessWindowMessage, (PVOID*) &pfnBridge.ProcessWindowMessage);
 	MH_CreateHook(pfnOrig.ProcessNewLine, hook_ProcessNewLine, (PVOID*) &pfnBridge.ProcessNewLine);
@@ -239,13 +239,21 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 	return alen;
 }
 
+#ifdef _WIN64
+char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis) {
+#else
 char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis, void *_u) {
+#endif
 	if(strncmp((char*)pthis+4, "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = false;
 	return pfnBridge.HideFFXIVWindow(pthis);
 }
 
+#ifdef _WIN64
+char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis) {
+#else
 char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis, void *_u) {
+#endif
 	if (strncmp((char*) pthis + 4, "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = true;
 	else if(strncmp((char*) pthis + 4, "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())

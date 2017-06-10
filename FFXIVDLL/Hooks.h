@@ -35,19 +35,17 @@ public:
 } CHATITEM, *PCHATITEM;
 
 #ifdef _WIN64
-	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
-
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, DWORD*, char**, int);
+	static char __fastcall hook_ShowFFXIVWindow(void*);
+	static char __fastcall hook_HideFFXIVWindow(void*);
 
 	typedef HRESULT(APIENTRY *Dx11SwapChain_Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
 	static HRESULT APIENTRY hook_Dx11SwapChain_Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
 #else
-	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, void*, SIZE_T*, char**, int);
 
-	typedef char (__thiscall *ShowHideFFXIVWindow)(void*);
 	static char __fastcall hook_ShowFFXIVWindow(void*, void*);
 	static char __fastcall hook_HideFFXIVWindow(void*, void*);
 
@@ -62,16 +60,16 @@ public:
 	static HRESULT APIENTRY hook_Dx9Present(IDirect3DDevice9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion);
 
 #endif
+	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
+	typedef char (__thiscall *ShowHideFFXIVWindow)(void*);
 	typedef char(*ProcessWindowMessage)();
-	static char hook_ProcessWindowMessage();
-
+	typedef HCURSOR(WINAPI *WinApiSetCursor)(HCURSOR hCursor);
 	typedef int(__thiscall *OnRecv)(SOCKET, char*, int, int);
 	typedef int(__thiscall *OnSend)(SOCKET, char*, int, int);
+
+	static char hook_ProcessWindowMessage();
 	static int WINAPI hook_socket_recv(SOCKET s, char* buf, int len, int flags);
 	static int WINAPI hook_socket_send(SOCKET s, const char* buf, int len, int flags);
-
-	typedef HCURSOR(WINAPI *WinApiSetCursor)(HCURSOR hCursor);
-
 	static HCURSOR WINAPI hook_WinApiSetCursor(HCURSOR hCursor);
 
 

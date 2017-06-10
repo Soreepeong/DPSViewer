@@ -205,20 +205,27 @@ inline int GameDataProcess::GetActorType(int id) {
 }
 
 inline int GameDataProcess::GetTargetId(int type) {
-	char *c = ((char*) pTargetMap + type);
-	if (c == 0)
-		return NULL_ACTOR;
-	int ptr = *(int*) c;
-	if (ptr == 0)
-		return NULL_ACTOR;
-	return *(int*) (ptr + pActor.id);
+	__try {
+		char *c = pTargetMap + type;
+		if (c == 0)
+			return NULL_ACTOR;
+		char* ptr = (char*)*(PVOID*) c;
+		if (ptr == 0)
+			return NULL_ACTOR;
+		return *(int*) (ptr + pActor.id);
+	} __except (1) {
+		return 0;
+	}
 }
 
-inline char* GameDataProcess::GetActorName(int id) {
+inline std::string GameDataProcess::GetActorName(int id) {
 	if (id == SOURCE_LIMIT_BREAK)
 		return "(Limit Break)";
-	if (mActorPointers.find(id) == mActorPointers.end())
-		return "(unknown)";
+	if (mActorPointers.find(id) == mActorPointers.end()) {
+		char t[256];
+		sprintf(t, "%08X", id);
+		return t;
+	}
 	char *c = (char*) (mActorPointers[id]);
 	c += pActor.name;
 	if (!Tools::TestValidString(c))
@@ -276,16 +283,17 @@ inline TCHAR* GameDataProcess::GetActorJobString(int id) {
 }
 
 void GameDataProcess::ResolveUsers() {
-	int limit = 344;
+	int limit = 1372;
 	mSelfId = 0;
 	mDamageRedir.clear();
 	mActorPointers.clear();
 	for (int i = 0; i < limit; i++) {
 		__try {
-			PVOID ptr = (*pActorMap)[i];
+			char* ptr = pActorMap[i];
 			if (ptr == 0) continue;
-			int id = *(int*) ((char*) ptr + pActor.id);
-			int owner = *(int*) ((char*) ptr + pActor.owner);
+			int id = *(int*) (ptr + pActor.id);
+			int owner = *(int*) (ptr + pActor.owner);
+			int type = *(char*) (ptr + pActor.type);
 			if (mSelfId == 0)
 				mSelfId = id;
 			if (owner != NULL_ACTOR)
@@ -477,7 +485,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(col = new OverlayRenderer::Control(currentTarget == it->target ? L"T" :
 						hoverTarget == it->target ? L"M" :
 						focusTarget == it->target ? L"F" : L"", CONTROL_TEXT_STRING, DT_CENTER));
-					MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+					MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target).c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 					wRow.addChild(col = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(col = new OverlayRenderer::Control(Languages::getDoTName(it->buffid), CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.1fs%s",

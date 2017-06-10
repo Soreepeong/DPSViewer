@@ -218,7 +218,7 @@ void OverlayRendererDX11::RenderOverlay() {
 		ImGui_ImplDX11_NewFrame();
 		textRenderList.clear();
 
-		if (!Hooks::isFFXIVChatWindowOpen || *Hooks::isFFXIVChatWindowOpen) {
+		if (Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) {
 			mWindows.width = rect.right - rect.left;
 			mWindows.height = rect.bottom - rect.top;
 			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);

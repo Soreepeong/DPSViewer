@@ -249,8 +249,8 @@ private:
 
 	std::map<std::wstring, DWORD> mClassColors;
 
-	PVOID pTargetMap;
-	PVOID **pActorMap;
+	char *pTargetMap;
+	char **pActorMap;
 
 	Tools::ByteQueue mSent, mRecv;
 
@@ -313,7 +313,7 @@ public:
 
 	inline int GetActorType(int id);
 	inline int GetTargetId(int type);
-	inline char* GetActorName(int id);
+	inline std::string GetActorName(int id);
 	inline TCHAR* GetActorJobString(int id);
 
 	void ResetMeter();

@@ -118,7 +118,7 @@ namespace DpsViewer
 			}
 			if (processes.Count > 0) {
 				string gameLanguage = "English";
-
+				
 				if (processes.Count > 1 && args.Length == 0) {
 					string k = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
 					foreach (var p in processes)
@@ -149,28 +149,32 @@ namespace DpsViewer
 				MemoryHandler.Instance.SetProcess(processModel, gameLanguage, version);
 				// MemoryHandler.Instance.Structures.ActorEntity.GatheringInvisible = 248;
 
-				while (!Scanner.Instance.Locations.ContainsKey("CHARMAP") ||
-					!Scanner.Instance.Locations.ContainsKey("TARGET"))
+				Debug.Print("base: " + process.MainModule.BaseAddress.ToString("X16"));
+				while (!Scanner.Instance.Locations.ContainsKey("CHARMAP"))
 					Thread.Sleep(100);
+				foreach(var a in Reader.GetActors().MonsterEntities) 
+					Debug.Print(a.Value.Name + ": " + a.Value.ID.ToString("X8") + " / " + a.Value.Pointer.ToString("X16") + " / " + a.Value.OwnerID.ToString("X8") + " / " + a.Value.Type + " / " + a.Value.Job);
 
-				// Scanner.Instance.Locations["CHARMAP"].SigScanAddress = new IntPtr(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt64() + process.MainModule.BaseAddress.ToInt64());
-				foreach(var a in Reader.GetActors().MonsterEntities) {
-					Debug.Print(a.Value.Name + ": " + a.Value.ID.ToString("X8") + " / " + a.Value.Pointer.ToString("X16"));
-				}
+				/*
+				while (!Scanner.Instance.Locations.ContainsKey("PARTYMAP"))
+					Thread.Sleep(100);
 				Reader.GetPartyMembers();
+				//*/
+				while (!Scanner.Instance.Locations.ContainsKey("TARGET"))
+					Thread.Sleep(100);
 				Reader.GetTargetInfo();
 
 				string dllFN = "FFXIVDLL_" + (dx11 ? "x64" : "x86") + ".dll";
 
 
 				StreamWriter info = new StreamWriter(AppDomain.CurrentDo‌​main.BaseDirectory + "FFXIVDLLInfo_" + process.Id + ".txt");
-				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].SigScanAddress.ToInt64());
+				info.WriteLine(Scanner.Instance.Locations["CHARMAP"].GetAddress().ToInt64());
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.ID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Name);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.OwnerID);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Type);
 				info.WriteLine(MemoryHandler.Instance.Structures.ActorEntity.Job);
-				info.WriteLine(((IntPtr)Scanner.Instance.Locations["TARGET"]).ToInt64());
+				info.WriteLine(Scanner.Instance.Locations["TARGET"].GetAddress().ToInt64());
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Current);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.MouseOver);
 				info.WriteLine(MemoryHandler.Instance.Structures.TargetInfo.Focus);

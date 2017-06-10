@@ -227,13 +227,6 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 				child.bottom = min(child.top + maxHeight, area.bottom);
 				rc.right = child.left + border + padding + margin - calcX;
 				rc.bottom = child.bottom + border + padding + margin - calcY;
-				if (height == SIZE_WRAP && heightFixed == -1) {
-					child.left = base;
-					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it) {
-						(*it)->measure(target, child, -1, rc.bottom - rc.top - 2 * (border + padding + margin), 0);
-						child.left += (*it)->calcWidth;
-					}
-				}
 			} else {
 				int base = child.top;
 				int maxWidth = 0;
@@ -246,13 +239,6 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 				child.right = min(child.left + maxWidth, area.right);
 				rc.right = child.right + border + padding + margin - calcX;
 				rc.bottom = child.top + border + padding + margin - calcY;
-				if (width == SIZE_WRAP && widthFixed == -1) {
-					child.top = base;
-					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it) {
-						(*it)->measure(target, child, rc.right - rc.left - 2 * (border + padding + margin), -1, 0);
-						child.top += (*it)->calcHeight;
-					}
-				}
 
 				if (layoutDirection == LAYOUT_DIRECTION_VERTICAL_TABLE) {
 					std::vector<int> colWidth;
