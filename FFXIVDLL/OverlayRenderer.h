@@ -17,6 +17,7 @@ enum CONTROL_LAYOUT_DIRECTION {
 	LAYOUT_DIRECTION_HORIZONTAL,
 	LAYOUT_DIRECTION_VERTICAL,
 	LAYOUT_DIRECTION_VERTICAL_TABLE,
+	LAYOUT_DIRECTION_VERTICAL_TABLE_SAMESIZE,
 	LAYOUT_ABSOLUTE
 };
 enum CONTROL_TEXT_TYPE : uint32_t {
@@ -99,6 +100,9 @@ public:
 			float heightF;
 		};
 
+		int maxWidth;
+		int maxHeight;
+
 		int calcX;
 		int calcY;
 		int calcWidth;
@@ -119,7 +123,7 @@ public:
 		void measure(OverlayRenderer *target, RECT &area, int widthFixed, int heightFixed, int skipChildren);
 		void draw(OverlayRenderer *target);
 		int hittest(int x, int y) const;
-		void removeAllChildren();
+		void removeAndDeleteAllChildren();
 		void addChild(OverlayRenderer::Control *c, CONTROL_CHILD_TYPE type);
 		void addChild(OverlayRenderer::Control *c);
 		OverlayRenderer::Control* getChild(int i, CONTROL_CHILD_TYPE type);

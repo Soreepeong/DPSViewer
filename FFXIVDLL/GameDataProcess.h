@@ -16,6 +16,7 @@ class DOTWindowController;
 
 struct PER_USER_DMG {
 	int def;
+	int crit;
 	int ind;
 };
 

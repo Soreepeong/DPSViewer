@@ -14,6 +14,8 @@
 #include "OverlayRenderer.h"
 #include "Hooks.h"
 
+#define LIGHTER_COLOR(color,how) (((color)&0xFF000000) | (min(255, max(0, (((color)>>16)&0xFF)+(how)))<<16) | (min(255, max(0, (((color)>>8)&0xFF)+(how)))<<8) | (min(255, max(0, (((color)>>0)&0xFF)+(how)))<<0)))
+
 GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	dll(dll),
 	hUnloadEvent(unloadEvent),
@@ -73,6 +75,10 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	OverlayRenderer::Control *mTable = new OverlayRenderer::Control();
 	mTable->layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
 	wDPS.addChild(mTable);
+	mTable = new OverlayRenderer::Control();
+	mTable->layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE_SAMESIZE;
+	mTable->visible = 0;
+	wDPS.addChild(mTable);
 
 	wDPS.layoutDirection = LAYOUT_DIRECTION_VERTICAL;
 	wDPS.relativePosition = 1;
@@ -83,8 +89,8 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 }
 
 void GameDataProcess::ReloadLocalization() {
-	wDPS.getChild(1)->removeAllChildren();
-	wDOT.removeAllChildren();
+	wDPS.getChild(1)->removeAndDeleteAllChildren();
+	wDOT.removeAndDeleteAllChildren();
 
 	OverlayRenderer::Control *mTableHeaderDef = new OverlayRenderer::Control();
 	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
@@ -222,15 +228,19 @@ inline std::string GameDataProcess::GetActorName(int id) {
 }
 
 inline TCHAR* GameDataProcess::GetActorJobString(int id) {
-	if (id == SOURCE_LIMIT_BREAK)
-		return L"LB";
-	if (mActorPointers.find(id) == mActorPointers.end())
-		return L"(?)";
-	char *c = (char*) (mActorPointers[id]);
-	c += dll->memory()->Struct.Actor.job;
-	if (!Tools::TestValidString(c))
-		return L"(??)";
-	switch (*c) {
+	if (id >= 35 || id < 0) {
+
+		if (id == SOURCE_LIMIT_BREAK)
+			return L"LB";
+		if (mActorPointers.find(id) == mActorPointers.end())
+			return L"(?)";
+		char *c = (char*) (mActorPointers[id]);
+		c += dll->memory()->Struct.Actor.job;
+		if (!Tools::TestValidString(c))
+			return L"(??)";
+		id = *c;
+	}
+	switch (id) {
 		case 1: return L"GLD";
 		case 2: return L"PGL";
 		case 3: return L"MRD";
@@ -327,8 +337,10 @@ void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 			mDpsInfo[dmg.source].totalDamage.def += dmg.dmg;
 			if (mDpsInfo[dmg.source].maxDamage.dmg < dmg.dmg)
 				mDpsInfo[dmg.source].maxDamage = dmg;
-			if (dmg.isCrit)
+			if (dmg.isCrit) {
 				mDpsInfo[dmg.source].critHits++;
+				mDpsInfo[dmg.source].totalDamage.crit += dmg.dmg;
+			}
 			if (dmg.dmg == 0)
 				mDpsInfo[dmg.source].missHits++;
 			mDpsInfo[dmg.source].totalHits++;
@@ -347,6 +359,29 @@ void GameDataProcess::UpdateOverlayMessage() {
 	int pos = 0;
 	if (dll->hooks()->GetOverlayRenderer() == nullptr)
 		return;
+
+	/* // Debug info
+	mDpsInfo.clear();
+	mLastIdleTime = timestamp - 1000;
+	for (int i = 19; i <= 24+19-1; i++) {
+		char test[256];
+		int p = sprintf(test, "usr%i", i);
+		for (int j = 0; j < i / 2; j++)
+			p += sprintf(test + p, "a");
+		mDpsInfo[i].totalDamage.ind = 100;
+		mDpsInfo[i].totalDamage.def = 100 * i;
+		mDpsInfo[i].totalDamage.crit = min(i * i, mDpsInfo[i].totalDamage.def+ mDpsInfo[i].totalDamage.ind);
+		mDpsInfo[i].critHits = i * 2;
+		mDpsInfo[i].missHits = i;
+		mDpsInfo[i].totalHits = i * 3;
+		mDpsInfo[i].maxDamage.dmg = i * 1000;
+		mDpsInfo[i].maxDamage.isCrit = i % 2;
+		mDpsInfo[i].deaths = i;
+		mDpsInfo[i].dotHits = (int) (i*1.5);
+		mActorInfo[i].job = GetActorJobString(i);
+		mActorInfo[i].name = test;
+	}
+	//*/
 	{
 		CalculateDps(timestamp);
 
@@ -373,8 +408,9 @@ void GameDataProcess::UpdateOverlayMessage() {
 			}
 			wDPS.getChild(0, CHILD_TYPE_NORMAL)->text = res;
 			OverlayRenderer::Control &wTable = *wDPS.getChild(1, CHILD_TYPE_NORMAL);
-			while (wTable.getChildCount() > 1)
-				delete wTable.removeChild(1);
+			OverlayRenderer::Control &wTable24 = *wDPS.getChild(2, CHILD_TYPE_NORMAL);
+			while (wTable.getChildCount() > 1) delete wTable.removeChild(1);
+			wTable24.removeAndDeleteAllChildren();
 
 			if (!mDpsInfo.empty()) {
 				uint32_t i = 0;
@@ -393,12 +429,10 @@ void GameDataProcess::UpdateOverlayMessage() {
 
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
 					i++;
-					if (!dll->hooks()->GetOverlayRenderer()->GetUseDrawOverlayEveryone() && it->first != mSelfId)
+					if (mCalculatedDamages.size() > wDPS.simpleViewThreshold && it->first != mSelfId)
 						continue;
-					else if (mCalculatedDamages.size() > 8 && !(mypos - 4 <= i))
+					else if (!dll->hooks()->GetOverlayRenderer()->GetUseDrawOverlayEveryone() && it->first != mSelfId)
 						continue;
-					else if (++displayed > 8)
-						break;
 					OverlayRenderer::Control &wRow = *(new OverlayRenderer::Control());
 					TEMPDMG &max = mDpsInfo[it->first].maxDamage;
 					float curDps = (float) (it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
@@ -406,7 +440,9 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 
 					wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
-					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, (mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x80000000), CHILD_TYPE_BACKGROUND);
+					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
+					wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x20), CHILD_TYPE_BACKGROUND);
+					wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
 
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
@@ -416,7 +452,9 @@ void GameDataProcess::UpdateOverlayMessage() {
 					else {
 						MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 					}
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT));
+					auto uname = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT);
+					uname->maxWidth = wDPS.maxNameWidth;
+					wRow.addChild(uname);
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f", curDps);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", it->second);
@@ -431,6 +469,51 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 
 					wTable.addChild(&wRow);
+				}
+				wTable.setPaddingRecursive(wDPS.padding);
+				if (wTable24.visible = mCalculatedDamages.size() > 8) {
+
+					OverlayRenderer::Control *wRow24 = new OverlayRenderer::Control();
+					wRow24->layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
+					i = 0;
+					for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it) {
+						i++;
+						float curDps = (float) (it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
+						OverlayRenderer::Control &wCol24 = *(new OverlayRenderer::Control());
+						wCol24.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
+						wCol24.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
+						if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUserName() && it->first != mSelfId)
+							wcscpy(tmp, L"...");
+						else {
+							MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+						}
+						OverlayRenderer::Control *uname = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT);
+						uname->maxWidth = wDPS.maxNameWidth;
+						wCol24.addChild(uname);
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f", curDps);
+						wCol24.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT));
+						wCol24.addChild(new OverlayRenderer::Control(1.f, 1.f, 0x90000000), CHILD_TYPE_BACKGROUND);
+						wCol24.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
+						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
+						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x40), CHILD_TYPE_BACKGROUND);
+
+
+						wCol24.setPaddingRecursive(wDPS.padding/2);
+						wCol24.padding = wDPS.padding / 2;
+						wCol24.margin = wDPS.padding;
+						wRow24->addChild(&wCol24);
+						if (wRow24->getChildCount() == 3) {
+							wTable24.addChild(wRow24);
+							wRow24 = new OverlayRenderer::Control();
+							wRow24->layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
+						}
+					}
+					wRow24->padding = 0;
+					wTable24.padding = 0;
+					if (wRow24->getChildCount() == 0)
+						delete wRow24;
+					else
+						wTable24.addChild(wRow24);
 				}
 			}
 		}
@@ -507,7 +590,6 @@ void GameDataProcess::UpdateOverlayMessage() {
 			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDPS);
 			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDOT);
 		}
-		wDPS.getChild(1)->setPaddingRecursive(wDPS.padding);
 		wDOT.setPaddingRecursive(wDOT.padding);
 	}
 }

@@ -13,6 +13,7 @@ OverlayRenderer::Control::Control() :
 	relativeSize(0),
 	parent(0),
 	visible(1),
+	maxWidth(-1), maxHeight(-1),
 	text(L""),
 	textAlign(DT_LEFT),
 	layoutDirection(CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_VERTICAL),
@@ -33,6 +34,7 @@ OverlayRenderer::Control::Control(CONTROL_LAYOUT_DIRECTION dir) :
 	relativeSize(0),
 	parent(0),
 	visible(1),
+	maxWidth(-1), maxHeight(-1),
 	text(L""),
 	textAlign(DT_LEFT),
 	layoutDirection(dir),
@@ -53,6 +55,7 @@ OverlayRenderer::Control::Control(float width, float height, DWORD bgcolor) :
 	relativeSize(1),
 	parent(0),
 	visible(1),
+	maxWidth(-1), maxHeight(-1),
 	textAlign(DT_LEFT),
 	text(L""),
 	layoutDirection(CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_VERTICAL),
@@ -74,6 +77,7 @@ OverlayRenderer::Control::Control(std::wstring txt, CONTROL_TEXT_TYPE useIcon, i
 	relativeSize(0),
 	parent(0),
 	visible(1),
+	maxWidth(-1), maxHeight(-1),
 	layoutDirection(CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_VERTICAL),
 	statusFlag{ 0, 0, 0, 0 },
 	useIcon(useIcon),
@@ -84,7 +88,7 @@ OverlayRenderer::Control::Control(std::wstring txt, CONTROL_TEXT_TYPE useIcon, i
 }
 
 OverlayRenderer::Control::~Control() {
-	removeAllChildren();
+	removeAndDeleteAllChildren();
 }
 
 void OverlayRenderer::Control::setPaddingRecursive(int p) {
@@ -109,7 +113,7 @@ void OverlayRenderer::Control::requestFront() {
 	}
 }
 
-void OverlayRenderer::Control::removeAllChildren() {
+void OverlayRenderer::Control::removeAndDeleteAllChildren() {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	for (int i = 0; i < CONTROL_CHILD_TYPE::_CHILD_TYPE_COUNT; i++) {
 		for (auto it = children[i].begin(); it != children[i].end(); ++it)
@@ -276,6 +280,31 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 					}
 					rc.bottom = rc.top + (border + padding + margin)*2 + baseTop - children[CHILD_TYPE_NORMAL].front()->calcY;
 					rc.right = rc.left + (border + padding + margin) * 2 + widthSum;
+				}else if (layoutDirection == LAYOUT_DIRECTION_VERTICAL_TABLE_SAMESIZE) {
+					int colWidth = 0, colHeight = 0;
+					unsigned int horz = 0, vert = 0;
+					int baseTop = children[CHILD_TYPE_NORMAL].front()->calcY;
+					vert = children[CHILD_TYPE_NORMAL].size();
+					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it) {
+						horz = max(horz, (*it)->children[CHILD_TYPE_NORMAL].size());
+						for (auto it2 = (*it)->children[CHILD_TYPE_NORMAL].begin(); it2 != (*it)->children[CHILD_TYPE_NORMAL].end(); ++it2) {
+							colWidth = max(colWidth, (*it2)->calcWidth);
+							colHeight = max(colHeight, (*it2)->calcHeight);
+						}
+					}
+					int i = 0;
+					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it, ++i) {
+						int j = 0;
+						RECT rt = { calcX + margin + border + padding, calcY + margin + border + padding + i * colHeight, colWidth*horz, colHeight };
+						(*it)->measure(target, rt, rt.right, rt.bottom, 1);
+						rt.right = colWidth;
+						for (auto it2 = (*it)->children[CHILD_TYPE_NORMAL].begin(); it2 != (*it)->children[CHILD_TYPE_NORMAL].end(); ++it2, ++j) {
+							(*it2)->measure(target, rt, rt.right, rt.bottom, 0);
+							rt.left += colWidth;
+						}
+					}
+					rc.bottom = rc.top + (border + padding + margin) * 2 + colHeight * vert;
+					rc.right = rc.left + (border + padding + margin) * 2 + colWidth * horz;
 				}
 			}
 		}
@@ -297,6 +326,8 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 	}
 	calcWidth = widthFixed != -1 ? (int) (widthFixed * (relativeSize ? widthF : 1.f)) : min(rc.right, area.right - area.left);
 	calcHeight = heightFixed != -1 ? (int)(heightFixed * (relativeSize ? heightF : 1.f)) : min(rc.bottom, area.bottom - area.top);
+	if (maxWidth != -1) calcWidth = min(maxWidth, calcWidth);
+	if (maxHeight != -1) calcHeight = min(maxHeight, calcHeight);
 	rc = { calcX + margin + border, calcY + margin + border,
 		calcWidth - 2 * (margin + border), calcHeight - 2 * (margin + border) };
 	rc.right += rc.left; rc.bottom += rc.top;

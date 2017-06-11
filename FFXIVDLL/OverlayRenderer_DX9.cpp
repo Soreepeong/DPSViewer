@@ -61,8 +61,10 @@ void OverlayRendererDX9::OnLostDevice() {
 		mSprite->Release();
 		mSprite = nullptr;
 	}
-	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it))
+	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it)) {
+		if (it->second != nullptr)
 		it->second->Release();
+	}
 	ImGui_ImplDX9_InvalidateDeviceObjects();
 }
 
@@ -107,7 +109,7 @@ void OverlayRendererDX9::DrawText(int x, int y, TCHAR *text, DWORD Color) {
 					mFont->DrawTextW(NULL, text, -1, &rc4, DT_NOCLIP, (~Color & 0xFFFFFF) | 0xFF000000);
 				}
 	RECT rc = { x, y , 10000, 10000 };
-	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP, Color);
+	mFont->DrawTextW(NULL, text, -1, &rc, 0, Color);
 }
 
 void OverlayRendererDX9::DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align) {
@@ -116,10 +118,10 @@ void OverlayRendererDX9::DrawText(int x, int y, int width, int height, TCHAR *te
 			for (int j = -mConfig.border; j <= mConfig.border; j++)
 				if (i != 0 && j != 0) {
 					RECT rc4 = { x + i, y + j, x + i + width, y + j + height };
-					mFont->DrawTextW(NULL, text, -1, &rc4, DT_NOCLIP | align, (~Color & 0xFFFFFF) | 0xFF000000);
+					mFont->DrawTextW(NULL, text, -1, &rc4, 0 | align, (~Color & 0xFFFFFF) | 0xFF000000);
 				}
 	RECT rc = { x, y , x + width, y + height };
-	mFont->DrawTextW(NULL, text, -1, &rc, DT_NOCLIP | align, Color);
+	mFont->DrawTextW(NULL, text, -1, &rc, 0 | align, Color);
 }
 
 void OverlayRendererDX9::DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex) {

@@ -58,6 +58,8 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDOT.yF = readIni(L"DOTMeter", L"y", 0.1f, 0.f, 1.f);
 
 	dll->process()->wDPS.visible = readIni(L"DPSMeter", L"Visible", 1, 0, 1);
+	dll->process()->wDPS.maxNameWidth = readIni(L"DPSMeter", L"MaxNameWidth", 64, 16, 128);
+	dll->process()->wDPS.simpleViewThreshold = readIni(L"DPSMeter", L"SimpleViewThreshold", 8, 1, 24);
 	dll->process()->wDPS.xF = readIni(L"DPSMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDPS.yF = readIni(L"DPSMeter", L"y", 0.1f, 0.f, 1.f);
 	ShowEveryDPS = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
@@ -130,6 +132,8 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DOTMeter", L"y", dll->process()->wDOT.yF);
 
 	writeIni(L"DPSMeter", L"Visible", dll->process()->wDPS.visible);
+	writeIni(L"DPSMeter", L"MaxNameWidth", dll->process()->wDPS.maxNameWidth);
+	writeIni(L"DPSMeter", L"SimpleViewThreshold", dll->process()->wDPS.simpleViewThreshold);
 	writeIni(L"DPSMeter", L"x", dll->process()->wDPS.xF);
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
 	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);
@@ -230,6 +234,8 @@ void ImGuiConfigWindow::Render() {
 			ImGui::Checkbox(Languages::get("OPTION_SHOW_TIMES"), &showTimes);
 			ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
 			ImGui::Checkbox(Languages::get("OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"), &ShowOnlyWhenChatWindowOpen);
+			ImGui::SliderInt(Languages::get("OPTION_DPS_NAME_LENGTH"), &(dll->process()->wDPS.maxNameWidth), 16, 128);
+			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), &(dll->process()->wDPS.simpleViewThreshold), 1, 24);
 			ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
 			ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
 			ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);
