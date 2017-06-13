@@ -290,6 +290,8 @@ char Hooks::hook_ProcessWindowMessage() {
 	if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001)
 		pOverlayRenderer->CaptureScreen();
 
+	if(dll->hooks()->GetOverlayRenderer())
+		dll->hooks()->GetOverlayRenderer()->DoMainThreadOperation();
 
 	char res = pfnBridge.ProcessWindowMessage();
 	mHookedFunctionDepth--;
@@ -399,6 +401,7 @@ void Hooks::updateLastFocus(WindowControllerBase *control) {
 
 LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
 	bool callDef = false;
+
 	ImGuiIO &io = ImGui::GetIO();
 #ifdef _WIN64
 	ImGui_ImplDX11_WndProcHandler(hWnd, iMessage, wParam, lParam);

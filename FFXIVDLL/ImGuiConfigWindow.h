@@ -62,6 +62,8 @@ public:
 	char capturePath[512] = "";
 	int captureFormat = D3DXIFF_BMP;
 	char fontName[512] = "Segoe UI";
+	bool UseExternalWindow;
+	int ExternalWindowRefreshRate;
 
 	bool showTimes;
 

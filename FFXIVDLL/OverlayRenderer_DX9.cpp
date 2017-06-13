@@ -42,6 +42,7 @@ PDXTEXTURETYPE OverlayRendererDX9::GetTextureFromFile(TCHAR *resName) {
 
 void OverlayRendererDX9::ReloadFromConfig() {
 	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
+	OverlayRenderer::ReloadFromConfig();
 	if (mFont != nullptr) {
 		mFont->Release();
 		mFont = nullptr;
@@ -80,6 +81,10 @@ void OverlayRendererDX9::OnResetDevice() {
 
 
 void OverlayRendererDX9::DrawBox(int x, int y, int w, int h, DWORD Color) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawBox(x, y, w, h, Color);
+		return;
+	}
 	struct Vertex {
 		float x, y, z, ht;
 		DWORD Color;
@@ -101,6 +106,10 @@ void OverlayRendererDX9::DrawBox(int x, int y, int w, int h, DWORD Color) {
 }
 
 void OverlayRendererDX9::DrawText(int x, int y, TCHAR *text, DWORD Color) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawText(x, y, text, Color);
+		return;
+	}
 	if (mConfig.border)
 		for (int i = -mConfig.border; i <= mConfig.border; i++)
 			for (int j = -mConfig.border; j <= mConfig.border; j++)
@@ -113,6 +122,10 @@ void OverlayRendererDX9::DrawText(int x, int y, TCHAR *text, DWORD Color) {
 }
 
 void OverlayRendererDX9::DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawText(x, y, width, height, text, Color, align);
+		return;
+	}
 	if (mConfig.border)
 		for (int i = -mConfig.border; i <= mConfig.border; i++)
 			for (int j = -mConfig.border; j <= mConfig.border; j++)
@@ -125,6 +138,10 @@ void OverlayRendererDX9::DrawText(int x, int y, int width, int height, TCHAR *te
 }
 
 void OverlayRendererDX9::DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawTexture(x, y, w, h, tex);
+		return;
+	}
 	D3DSURFACE_DESC desc;
 	tex->GetLevelDesc(0, &desc);
 	D3DXMATRIX matrix;
@@ -137,6 +154,10 @@ void OverlayRendererDX9::DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE 
 	mSprite->End();
 }
 void OverlayRendererDX9::MeasureText(RECT &rc, TCHAR *text, int flags) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::MeasureText(rc, text, flags);
+		return;
+	}
 	mFont->DrawTextW(NULL, text, -1, &rc, DT_CALCRECT | flags, NULL);
 }
 
@@ -154,16 +175,18 @@ void OverlayRendererDX9::RenderOverlay() {
 
 		pDevice->BeginScene();
 
-		if (Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) {
+		if ((Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) && !mConfig.UseExternalWindow) {
 			mWindows.width = prt.Width;
 			mWindows.height = prt.Height;
 			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
+			/*
 			for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
 				if ((*it)->relativeSize) {
 					(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
 					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
 				}
 			}
+			//*/
 			mWindows.draw(this);
 		}
 

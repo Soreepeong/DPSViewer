@@ -44,6 +44,7 @@ typedef LPDIRECT3DTEXTURE9 PDXTEXTURETYPE;
 class OverlayRenderer {
 	friend class Hooks;
 	friend class ImGuiConfigWindow;
+	friend class GameDataProcess;
 public:
 
 	class Control {
@@ -152,11 +153,11 @@ protected:
 	Control mWindows;
 	ImGuiConfigWindow mConfig;
 
-	virtual void DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex) = 0;
-	virtual void DrawBox(int x, int y, int w, int h, DWORD Color) = 0;
-	virtual void MeasureText(RECT &rc, TCHAR *text, int flags) = 0;
-	virtual void DrawText(int x, int y, TCHAR *text, DWORD Color) = 0;
-	virtual void DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align) = 0;
+	virtual void DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex);
+	virtual void DrawBox(int x, int y, int w, int h, DWORD Color);
+	virtual void MeasureText(RECT &rc, TCHAR *text, int flags);
+	virtual void DrawText(int x, int y, TCHAR *text, DWORD Color);
+	virtual void DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align);
 	virtual void RenderOverlay() = 0;
 
 	virtual void CheckCapture() = 0;
@@ -164,6 +165,25 @@ protected:
 	std::recursive_mutex mCaptureMutex;
 	bool mDoCapture = false;
 	HANDLE hSaverThread;
+
+	bool mUseDefaultRenderer;
+
+private:
+	const TCHAR *EXTERNAL_WINDOW_CLASS = L"DPSViewerExternalWindow";
+
+	bool mUnloadable;
+	std::map<Control*, HWND> mExternalWindows;
+	std::map<Control*, HDC> mExternalDC;
+	HDC mExternalTemporaryDC;
+	HFONT mExternalFont = nullptr;
+	Control* mExternalCurrent;
+	uint64_t mExternalLastUpdate = 0;
+
+	void RenderExternalOverlay();
+
+	static OverlayRenderer *ExternalRendererRef;
+	LRESULT ExternalWindowWndProc(HWND hWnd, UINT message, WPARAM w, LPARAM l);
+	static LRESULT CALLBACK ExternalWindowWndProcExternal(HWND hWnd, UINT message, WPARAM w, LPARAM l);
 
 public:
 	OverlayRenderer(FFXIVDLL *dll);
@@ -173,9 +193,12 @@ public:
 
 	void CaptureScreen();
 
-	virtual void ReloadFromConfig() = 0;
+	virtual void ReloadFromConfig();
 	virtual void OnLostDevice() = 0;
 	virtual void OnResetDevice() = 0;
+
+	bool IsUnloadable();
+	void DoMainThreadOperation();
 
 	void DrawOverlay();
 
@@ -183,9 +206,6 @@ public:
 	int GetUseDrawOverlay();
 	void SetUseDrawOverlayEveryone(bool use);
 	int GetUseDrawOverlayEveryone();
-	void GetCaptureFormat(int format);
-	int GetHideOtherUserName();
-	void SetHideOtherUserName();
 
 	void AddWindow(Control *windows);
 	Control* GetRoot();

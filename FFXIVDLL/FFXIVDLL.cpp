@@ -39,9 +39,12 @@ FFXIVDLL::~FFXIVDLL()
 {
 
 	addChat("/e Unloading");
-	Sleep(100);
 
 	SetEvent(hUnloadEvent);
+	
+	while (!pHooks->GetOverlayRenderer()->IsUnloadable())
+		Sleep(50);
+
 
 	delete pHooks;
 	delete pDataProcess;

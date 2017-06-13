@@ -28,6 +28,8 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	bold = readIni(L"UI", L"FontBold", 1, 0, 1)?true:false;
 	border = readIni(L"UI", L"FontBorder", 0, 0, 3);
 	ShowOnlyWhenChatWindowOpen = readIni(L"UI", L"ShowOnlyWhenChatWindowOpen", 1, 0, 1) ? true : false;
+	UseExternalWindow = readIni(L"UI", L"UseExternalWindow", 1, 0, 1) ? true : false;
+	ExternalWindowRefreshRate = readIni(L"UI", L"ExternalWindowRefreshRate", 5, 1, 25);
 	readIni(L"UI", L"FontName", "Segoe UI", fontName, sizeof(fontName));
 
 	
@@ -119,6 +121,8 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"UI", L"FontBorder", border);
 	writeIni(L"UI", L"FontName", fontName);
 	writeIni(L"UI", L"ShowOnlyWhenChatWindowOpen", (int) ShowOnlyWhenChatWindowOpen);
+	writeIni(L"UI", L"UseExternalWindow", (int) UseExternalWindow);
+	writeIni(L"UI", L"ExternalWindowRefreshRate", ExternalWindowRefreshRate);
 
 	writeIni(L"Capture", L"Path", capturePath);
 	writeIni(L"Capture", L"Format", captureFormat);
@@ -221,21 +225,24 @@ void ImGuiConfigWindow::Render() {
 		} ImGui::SameLine();
 		if (ImGui::Button(dll->process()->wDOT.visible ? Languages::get("OPTION_DOT_HIDE") : Languages::get("OPTION_DOT_SHOW"))) {
 			dll->process()->wDOT.toggleVisibility();
-		} ImGui::SameLine();
-		if (ImGui::Button(Languages::get("OPTION_DPS_RESET"))) {
-			dll->process()->ResetMeter();
 		}
-		ImGui::Checkbox(Languages::get("OPTION_OTHERS_SHOW"), &ShowEveryDPS); ImGui::SameLine();
-		ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName);
 
-		ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
-
-		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_DPS"))) {
+			if (ImGui::Button(Languages::get("OPTION_DPS_RESET"))) {
+				dll->process()->ResetMeter();
+			}
 			ImGui::Checkbox(Languages::get("OPTION_SHOW_TIMES"), &showTimes);
-			ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
-			ImGui::Checkbox(Languages::get("OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"), &ShowOnlyWhenChatWindowOpen);
+			ImGui::Checkbox(Languages::get("OPTION_OTHERS_SHOW"), &ShowEveryDPS); ImGui::SameLine();
+			ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName);
+			ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_NAME_LENGTH"), &(dll->process()->wDPS.maxNameWidth), 16, 128);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), &(dll->process()->wDPS.simpleViewThreshold), 1, 24);
+		}
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
+			ImGui::Checkbox(Languages::get("OPTION_USE_EXTERNAL_WINDOW"), &UseExternalWindow);
+			ImGui::SliderInt(Languages::get("OPTION_EXTERNAL_WINDOW_REFRESH_RATE"), &ExternalWindowRefreshRate, 1, 30);
+			ImGui::Checkbox(Languages::get("OPTION_FONT_BOLD"), &bold);
+			ImGui::Checkbox(Languages::get("OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"), &ShowOnlyWhenChatWindowOpen);
 			ImGui::SliderInt(Languages::get("OPTION_TEXT_BORDER"), &border, 0, 3);
 			ImGui::SliderInt(Languages::get("OPTION_FONT_SIZE"), &fontSize, 9, 36);
 			ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);

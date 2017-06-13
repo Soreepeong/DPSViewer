@@ -85,6 +85,9 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	wDOT.relativePosition = 1;
 	wDOT.layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
 
+	wDPS.text = L"DPS";
+	wDOT.text = L"DOT";
+
 	ReloadLocalization();
 }
 
@@ -182,6 +185,7 @@ int GameDataProcess::getDoTDuration(int skill) {
 		case 0x2e5: return 30000;
 		case 0x346: return 18000;
 		case 0x34b: return 30000;
+		case 0x2d5: return 24000;
 		case 0x31e: return 24000;
 	}
 	return 0;
@@ -447,7 +451,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 
-					if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUserName() && it->first != mSelfId)
+					if (dll->hooks()->GetOverlayRenderer()->mConfig.hideOtherUserName && it->first != mSelfId)
 						wcscpy(tmp, L"...");
 					else {
 						MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
@@ -482,7 +486,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 						OverlayRenderer::Control &wCol24 = *(new OverlayRenderer::Control());
 						wCol24.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 						wCol24.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
-						if (dll->hooks()->GetOverlayRenderer()->GetHideOtherUserName() && it->first != mSelfId)
+						if (dll->hooks()->GetOverlayRenderer()->mConfig.hideOtherUserName && it->first != mSelfId)
 							wcscpy(tmp, L"...");
 						else {
 							MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));

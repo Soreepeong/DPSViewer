@@ -69,6 +69,7 @@ PDXTEXTURETYPE OverlayRendererDX11::GetTextureFromFile(TCHAR *resName) {
 }
 
 void OverlayRendererDX11::ReloadFromConfig() {
+	OverlayRenderer::ReloadFromConfig();
 	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	MultiByteToWideChar(CP_UTF8, 0, mConfig.fontName, -1, mFontName, 512);
 	FW1_FONTWRAPPERCREATEPARAMS createParams;
@@ -126,6 +127,10 @@ void OverlayRendererDX11::OnResetDevice() {
 }
 
 void OverlayRendererDX11::DrawBox(int x, int y, int w, int h, DWORD Color) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawBox(x, y, w, h, Color);
+		return;
+	}
 	ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + h), Color);
 }
 
@@ -146,21 +151,37 @@ void OverlayRendererDX11::TextDrawCallback(RenderInfo& ri) {
 
 
 void OverlayRendererDX11::DrawText(int x, int y, TCHAR *text, DWORD Color) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawText(x, y, text, Color);
+		return;
+	}
 	RenderInfo rnd = { this, text, x, y, -1, -1, 0, Color };
 	ImGui::GetWindowDrawList()->AddCallback(TextDrawCallbackExternal, (PVOID) textRenderList.size());
 	textRenderList.push_back(rnd);
 }
 
 void OverlayRendererDX11::DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawText(x, y, width, height, text, Color, align);
+		return;
+	}
 	RenderInfo rnd = { this, text, x, y, width, height, align, Color };
 	ImGui::GetWindowDrawList()->AddCallback(TextDrawCallbackExternal, (PVOID) textRenderList.size());
 	textRenderList.push_back(rnd);
 }
 
 void OverlayRendererDX11::DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::DrawTexture(x, y, w, h, tex);
+		return;
+	}
 	ImGui::GetWindowDrawList()->AddImage((ImTextureID) tex, ImVec2(x, y), ImVec2(x + w, y + h));
 }
 void OverlayRendererDX11::MeasureText(RECT &rc, TCHAR *text, int flags) {
+	if (mUseDefaultRenderer) {
+		OverlayRenderer::MeasureText(rc, text, flags);
+		return;
+	}
 	FW1_RECTF rf = { rc.left, rc.top, rc.right, rc.bottom }, rf2;
 	if (rf.Right - rf.Left <= 0)
 		rf.Right = rf.Left + 2000;
@@ -202,7 +223,7 @@ void OverlayRendererDX11::RenderOverlay() {
 		ImGui_ImplDX11_NewFrame();
 		textRenderList.clear();
 
-		if (Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) {
+		if ((Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) && !mConfig.UseExternalWindow) {
 			mWindows.width = rect.right - rect.left;
 			mWindows.height = rect.bottom - rect.top;
 			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
