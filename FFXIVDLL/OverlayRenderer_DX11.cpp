@@ -227,7 +227,7 @@ void OverlayRendererDX11::RenderOverlay() {
 			mWindows.width = rect.right - rect.left;
 			mWindows.height = rect.bottom - rect.top;
 			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
-			for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
+			for (auto it = mWindows.children[1].begin(); it != mWindows.children[1].end(); ++it) {
 				if ((*it)->relativeSize) {
 					(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
 					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));

@@ -63,14 +63,14 @@ void OverlayRenderer::DoMainThreadOperation() {
 		mExternalWindows.clear();
 		mExternalDC.clear();
 		mUnloadable = true;
-	}else{
+	} else {
 		for (int i = mWindows.getChildCount() - 1; i >= 0; --i) {
 			Control* c = mWindows.getChild(i);
 			if (mExternalWindows.count(c) == 0) {
 				int sx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
 				int sy = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 				HWND hwnd = CreateWindowEx(WS_EX_LAYERED, EXTERNAL_WINDOW_CLASS, c->text.c_str(), WS_POPUP, (int) (c->xF * sx), (int) (c->yF * sy), 0, 0, dll->ffxiv(), NULL, dll->instance(), 0);
-				if(mConfig.UseExternalWindow)
+				if (mConfig.UseExternalWindow)
 					ShowWindow(hwnd, SW_SHOW);
 				else
 					ShowWindow(hwnd, SW_HIDE);
@@ -187,14 +187,12 @@ void OverlayRenderer::RenderExternalOverlay() {
 			mWindows.height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
 			RECT rect = { 0, 0, mWindows.width, mWindows.height };
 			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
-			/*
-			for (auto it = mWindows.children[0].begin(); it != mWindows.children[0].end(); ++it) {
-			if ((*it)->relativeSize) {
-			(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
-			(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+			for (auto it = mWindows.children[1].begin(); it != mWindows.children[1].end(); ++it) {
+				if ((*it)->relativeSize) {
+					(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
+					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+				}
 			}
-			}
-			//*/
 			for (auto i = mWindows.children[1].begin(); i != mWindows.children[1].end(); ++i) {
 				if (((WindowControllerBase*) *i)->isLocked())
 					SetWindowLong(mExternalWindows[mExternalCurrent], GWL_EXSTYLE, GetWindowLong(mExternalWindows[mExternalCurrent], GWL_EXSTYLE) | WS_EX_TRANSPARENT);
@@ -211,13 +209,13 @@ void OverlayRenderer::RenderExternalOverlay() {
 				SetWindowPos(mExternalWindows[mExternalCurrent], 0, 0, 0, (*i)->calcWidth, (*i)->calcHeight, SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOREDRAW);
 				GetWindowRect(mExternalWindows[mExternalCurrent], &rt);
 
-				mExternalCurrent->xF = (float) (rt.right - rt.left) / mWindows.width;
-				mExternalCurrent->xF = (float) (rt.bottom - rt.top) / mWindows.height;
+				mExternalCurrent->xF = (float) (rt.left) / mWindows.width;
+				mExternalCurrent->yF = (float) (rt.top) / mWindows.height;
 				SelectObject(mExternalTemporaryDC, mExternalFont);
 				SelectObject(mExternalDC[mExternalCurrent], mExternalFont);
 				mWindows.draw(this);
 				BitBlt(mExternalDC[mExternalCurrent], 0, 0, (*i)->calcWidth, (*i)->calcHeight, mExternalTemporaryDC, 0, 0, SRCCOPY);
-				
+
 				SelectObject(mExternalTemporaryDC, hbmOld);
 				DeleteObject(hbmMem);
 				DeleteDC(mExternalTemporaryDC);
@@ -257,7 +255,7 @@ void OverlayRenderer::DrawText(int x, int y, TCHAR *text, DWORD Color) {
 	::DrawText(mExternalTemporaryDC, text, -1, &rc, DT_NOCLIP);
 }
 void OverlayRenderer::DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align) {
-	RECT rc = { x - mExternalCurrent->calcX, y - mExternalCurrent->calcY, x + width - mExternalCurrent->calcX, y+height - mExternalCurrent->calcY };
+	RECT rc = { x - mExternalCurrent->calcX, y - mExternalCurrent->calcY, x + width - mExternalCurrent->calcX, y + height - mExternalCurrent->calcY };
 	SetTextColor(mExternalTemporaryDC, Color & 0xFFFFFF);
 	SetBkMode(mExternalTemporaryDC, TRANSPARENT);
 	::DrawText(mExternalTemporaryDC, text, -1, &rc, align);
