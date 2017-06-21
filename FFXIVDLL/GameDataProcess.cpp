@@ -117,6 +117,7 @@ void GameDataProcess::ReloadLocalization() {
 	mTableHeaderDef = new OverlayRenderer::Control();
 	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_RESNAME, DT_CENTER));
+	// mTableHeaderDef->addChild(new OverlayRenderer::Control(L"Source", CONTROL_TEXT_STRING, DT_LEFT));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DOTTABLE_NAME"), CONTROL_TEXT_STRING, DT_LEFT));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DOTTABLE_SKILL"), CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DOTTABLE_TIME"), CONTROL_TEXT_STRING, DT_RIGHT));
@@ -346,6 +347,8 @@ inline TCHAR* GameDataProcess::GetActorJobString(int id) {
 		case 31: return L"MCH";
 		case 32: return L"DRK";
 		case 33: return L"AST";
+		case 34: return L"SAM";
+		case 35: return L"RDM";
 	}
 	return L"(???)";
 }
@@ -514,8 +517,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
 					if (maxDps > 0) {
 						wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
-						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x20), CHILD_TYPE_BACKGROUND);
-						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
+						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000.f / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x20), CHILD_TYPE_BACKGROUND);
+						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000.f / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
 					}
 
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
@@ -545,7 +548,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wTable.addChild(&wRow);
 				}
 				wTable.setPaddingRecursive(wDPS.padding);
-				if (wTable24.visible = mCalculatedDamages.size() > wDPS.simpleViewThreshold) {
+				if (wTable24.visible = (mCalculatedDamages.size() > wDPS.simpleViewThreshold)) {
 
 					OverlayRenderer::Control *wRow24 = new OverlayRenderer::Control();
 					wRow24->layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
@@ -568,8 +571,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 						wCol24.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT));
 						wCol24.addChild(new OverlayRenderer::Control(1.f, 1.f, 0x90000000), CHILD_TYPE_BACKGROUND);
 						wCol24.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
-						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
-						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x40), CHILD_TYPE_BACKGROUND);
+						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000.f / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
+						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000.f / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x40), CHILD_TYPE_BACKGROUND);
 
 
 						wCol24.setPaddingRecursive(wDPS.padding / 2);
@@ -594,10 +597,10 @@ void GameDataProcess::UpdateOverlayMessage() {
 		{
 			std::vector<TEMPBUFF> buff_sort;
 			for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
-				if (it->expires < timestamp || GetActorType(it->target) == ACTOR_TYPE_PC)
+				if (it->expires < timestamp)
 					it = mActiveDoT.erase(it);
 				else {
-					if (it->source == mSelfId) {
+					if (it->source == mSelfId && it->target != mSelfId && it->potency > 0) {
 						buff_sort.push_back(*it);
 					}
 					++it;
@@ -628,6 +631,10 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(col = new OverlayRenderer::Control(currentTarget == it->target ? L"T" :
 						hoverTarget == it->target ? L"M" :
 						focusTarget == it->target ? L"F" : L"", CONTROL_TEXT_STRING, DT_CENTER));
+
+					// MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->source).c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+					// wRow.addChild(col = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+
 					MultiByteToWideChar(CP_UTF8, 0, GetActorName(it->target).c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
 					wRow.addChild(col = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(col = new OverlayRenderer::Control(Languages::getDoTName(it->buffid), CONTROL_TEXT_STRING, DT_CENTER));
@@ -669,6 +676,25 @@ void GameDataProcess::UpdateOverlayMessage() {
 }
 
 void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp) {
+	switch (skill) {
+		case 0xc7:
+		case 0x1090:
+		case 0x1091:
+		case 0xca:
+		case 0x1092:
+		case 0x1093:
+		case 0x108f:
+		case 0x108e:
+		case 0x1095:
+		case 0x1094:
+		case 0xcd:
+		case 0x1096:
+		case 0xd0:
+		case 0x1097:
+		case 0x1098:
+			source = SOURCE_LIMIT_BREAK;
+			break;
+	}
 	for (int i = 0; i < 8; i++) {
 		if (info->attack[i].swingtype == 0) continue;
 
@@ -679,23 +705,6 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		if (mDamageRedir.find(source) != mDamageRedir.end())
 			source = mDamageRedir[source];
 		dmg.source = source;
-		switch (skill) {
-			case 0xc8:
-			case 0xc9:
-			case 0xca:
-			case 0xcb:
-			case 0xcc:
-			case 0xcd:
-			case 0x1092:
-			case 0x1093:
-			case 0x108f:
-			case 0x108e:
-			case 0x1095:
-			case 0x1094:
-			case 0x1096:
-				source = SOURCE_LIMIT_BREAK;
-				break;
-		}
 		switch (info->attack[i].swingtype) {
 			case 1:
 			case 10:
@@ -824,7 +833,9 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 								}
 							}
 						} else {
+							// sprintf(tss, "/e c5=%d", msg->Combat.Info1.c5); dll->addChat(tss);
 							for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it) {
+								// sprintf(tss, "/e %d/%d, %d/%d", it->source, it->target, it->buffid, msg->Combat.Info1.c5); dll->addChat(tss);
 								if (it->source == it->target && it->buffid == msg->Combat.Info1.c5) {
 									int mine = msg->Combat.Info1.c3;
 									if (mine > 0) {
@@ -868,14 +879,9 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					}
 					break;
 				case GAME_MESSAGE::C2_AddBuff:
-					//*
-					sprintf(tss, "/e AddBuff %s / %d", GetActorName(msg->actor),
-						msg->Combat.AddBuff._u1);
-					dll->addChat(tss);
-					//* /
 					for (int i = 0; i < msg->Combat.AddBuff.buff_count && i < 5; i++) {
-						if (getDoTPotency(msg->Combat.AddBuff.buffs[i].buffID) == 0)
-							continue; // not an attack buff
+						// Track non-attack buffs too for ground AoEs
+						// if (getDoTPotency(msg->Combat.AddBuff.buffs[i].buffID) == 0) continue; // not an attack buff
 						auto it = mActiveDoT.begin();
 						bool add = true;
 						while (it != mActiveDoT.end()) {
@@ -913,6 +919,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 							b.contagioned = 0;
 							b.simulated = 0;
 							mActiveDoT.push_back(b);
+							// sprintf(tss, "/e AddBuff %s->%s / %d (%.2f)", GetActorName(msg->Combat.AddBuff.buffs[i].actorID).c_str(), GetActorName(msg->actor).c_str(), (int) b.buffid, msg->Combat.AddBuff.buffs[i].duration); dll->addChat(tss);
 						}
 					}
 					break;

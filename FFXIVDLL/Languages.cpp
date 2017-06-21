@@ -118,7 +118,7 @@ namespace Languages {
 		loc2[LANGUAGE_KOREAN][L"DOTTABLE_TIME"] = L"시간";
 	}
 
-	TCHAR *getDoTName(int skill) {
+	std::wstring getDoTName(int skill) {
 		switch (language) {
 			case LANGUAGE_KOREAN:
 				switch (skill) {
@@ -158,7 +158,6 @@ namespace Languages {
 					case 0x52e: return L"바이오가";
 					case 0x52f: return L"미아즈가";
 				}
-				return L"(알 수 없음)";
 			default:
 				switch (skill) {
 					case 0x12: return L"Poison";
@@ -197,7 +196,9 @@ namespace Languages {
 					case 0x52e: return L"Bio III";
 					case 0x52f: return L"Miasma III";
 				}
-				return L"(unknown)";
 		}
+		TCHAR def[256];
+		swprintf(def, sizeof(def)/sizeof(TCHAR), L"%x", skill);
+		return def;
 	}
 }

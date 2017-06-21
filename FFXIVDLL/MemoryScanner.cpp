@@ -21,13 +21,16 @@ textSectionFound:
 	bool kor = wcsstr(ffxivPath, L"KOREA") ? true : false;
 
 #ifdef _WIN64
-	// GLO v3.57, KOR v3.4
-	ActorMap.push_back(DataSignature("48c1e8033dffff0000742b3da80100007324488d0d", 21, true, 2, new int[2]{ 0, 0 }));
-	TargetMap.push_back(DataSignature("400fb6f684c0410f45f5488d0d", 13, true, 2, new int[2]{ 0, 184 }));
+	// GLO KOR v3.4
 	if (kor) {
+		ActorMap.push_back(DataSignature("48c1e8033dffff0000742b3da80100007324488d0d", 21, true, 2, new int[2]{ 0, 0 }));
+		TargetMap.push_back(DataSignature("400fb6f684c0410f45f5488d0d", 13, true, 2, new int[2]{ 0, 184 }));
 		Struct.Actor = { 116, 48, 132, 138, 5336 };
 		Struct.Target = { 0, 32, 80 };
 	} else {
+		ActorMap.push_back(DataSignature("488b03488bcbff90a0000000888391000000488d0d", 19, false, 2, new int[2]{ 0, 0 }));
+		TargetMap.push_back(DataSignature("48896c2440488974244881fbf71c00000f85********488d0d", 25, false, 2, new int[2]{ 0, 192 }));
+		PartyMap.push_back(DataSignature("8bd78020fbf6db1ac980e1040808488d0d", 9, false, 2, new int[2]{ 0, 0 }));
 		Struct.Actor = { 116, 48, 132, 140, 5184 };
 		Struct.Target = { 0, 32, 80 };
 	}
@@ -82,7 +85,7 @@ bool MemoryScanner::ScanInto(PVOID *p, DataSignature &s) {
 		if (!ptr) return false;
 		ptr += s.offset;
 		char *next = ptr;
-		for (int i = 0; i < s.path.size(); i++) {
+		for (unsigned int i = 0; i < s.path.size(); i++) {
 			ptr = next + s.path[i];
 			if (i + 1 < s.path.size()) {
 				if (i == 0 && s.rip)

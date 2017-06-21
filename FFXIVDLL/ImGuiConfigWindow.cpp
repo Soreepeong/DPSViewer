@@ -137,7 +137,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 
 	writeIni(L"DPSMeter", L"Visible", dll->process()->wDPS.visible);
 	writeIni(L"DPSMeter", L"MaxNameWidth", dll->process()->wDPS.maxNameWidth);
-	writeIni(L"DPSMeter", L"SimpleViewThreshold", dll->process()->wDPS.simpleViewThreshold);
+	writeIni(L"DPSMeter", L"SimpleViewThreshold", (int) dll->process()->wDPS.simpleViewThreshold);
 	writeIni(L"DPSMeter", L"x", dll->process()->wDPS.xF);
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
 	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);
@@ -236,7 +236,7 @@ void ImGuiConfigWindow::Render() {
 			ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_NAME_LENGTH"), &(dll->process()->wDPS.maxNameWidth), 16, 128);
-			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), &(dll->process()->wDPS.simpleViewThreshold), 1, 24);
+			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), (int*)&(dll->process()->wDPS.simpleViewThreshold), 1, 24);
 		}
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
 			ImGui::Checkbox(Languages::get("OPTION_USE_EXTERNAL_WINDOW"), &UseExternalWindow);
