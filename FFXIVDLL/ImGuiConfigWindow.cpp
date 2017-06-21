@@ -276,6 +276,8 @@ void ImGuiConfigWindow::Render() {
 		if (ImGui::Button(Languages::get("OPTION_QUIT"), ImVec2(90,30))) {
 			dll->spawnSelfUnloader();
 		}
+		if (!dll->memory()->IsScanComplete())
+			ImGui::Text(Languages::get("OPTION_LOADING"));
 		ImGui::End();
 	}
 }

@@ -49,6 +49,8 @@ namespace DpsViewer {
 					IntPtr h = OpenProcess(ProcessAccessFlags.All, false, p.Id);
 					if (h.ToInt32() != -1) {
 						ejectDll(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
+						if (MessageBox.Show("" + p.MainModule.BaseAddress.ToString("X8"), "a", MessageBoxButtons.YesNo) == DialogResult.Yes)
+							return;
 						InjectDLL(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
 						CloseHandle(h);
 						SetForegroundWindow(ffxivhWnd);

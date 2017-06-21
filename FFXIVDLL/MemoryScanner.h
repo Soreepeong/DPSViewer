@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include <Windows.h>
+#include <mutex>
+
+typedef std::function<void()> MemoryScannerCallback;
 
 class MemoryScanner {
 public:
@@ -39,6 +42,8 @@ private:
 	};
 
 	std::vector<DataSignature> ActorMap, TargetMap, PartyMap;
+	std::vector<MemoryScannerCallback> callbacks;
+	std::mutex mCallbackMutex;
 
 	HMODULE hGame;
 	IMAGE_NT_HEADERS *peHeader;
@@ -56,5 +61,6 @@ public:
 	~MemoryScanner();
 
 	bool IsScanComplete();
+	void AddCallback(MemoryScannerCallback callback);
 };
 

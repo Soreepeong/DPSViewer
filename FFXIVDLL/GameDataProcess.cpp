@@ -444,9 +444,11 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 
 					wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
-					wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
-					wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x20), CHILD_TYPE_BACKGROUND);
-					wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
+					if (maxDps > 0) {
+						wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
+						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x20), CHILD_TYPE_BACKGROUND);
+						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
+					}
 
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
@@ -475,7 +477,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wTable.addChild(&wRow);
 				}
 				wTable.setPaddingRecursive(wDPS.padding);
-				if (wTable24.visible = mCalculatedDamages.size() > 8) {
+				if (wTable24.visible = mCalculatedDamages.size() > wDPS.simpleViewThreshold) {
 
 					OverlayRenderer::Control *wRow24 = new OverlayRenderer::Control();
 					wRow24->layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
@@ -699,7 +701,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				break;
 			}
 		}
-		/*
+		//*
 		char tss[512];
 		sprintf(tss, "/e    => %d/%d/%d/%d/%d/%d",
 			(int)info->attack[i].swingtype,
@@ -709,7 +711,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			(int)info->attack[i].damage,
 			(int)info->attack[i].data1_right
 			);
-		dll->pipe()->AddChat(tss);
+		dll->addChat(tss);
 		//*/
 	}
 }
@@ -723,14 +725,16 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 		timestamp = mServerTimestamp;
 
 	GAME_MESSAGE *msg = (GAME_MESSAGE*) data;
-	// std::string ts; char tss[512];
+	char tss[512];
 	switch (msg->message_cat1) {
 		case GAME_MESSAGE::C1_Combat:
 		{
 			switch (msg->message_cat2) {
-				case 0x0143:
+				case 0x143:
+				case 0x10f:
 				case GAME_MESSAGE::C2_ActorInfo:
 					break;
+				/*
 				case GAME_MESSAGE::C2_Info1:
 					if (msg->Combat.Info1.c1 == 23 && msg->Combat.Info1.c2 == 3) {
 						if (msg->Combat.Info1.c5 == 0) {
@@ -788,7 +792,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 						/*
 						sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
 						dll->pipe()->sendInfo(tss);
-						//*/
+						//* /
 						auto it = mActiveDoT.begin();
 						while (it != mActiveDoT.end()) {
 							if (it->expires < timestamp || it->target == msg->actor)
@@ -799,11 +803,11 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					}
 					break;
 				case GAME_MESSAGE::C2_AddBuff:
-					/*
-					sprintf(tss, "cmsgAddBuff %s / %d", getActorName(msg->actor),
+					//*
+					sprintf(tss, "/e AddBuff %s / %d", GetActorName(msg->actor),
 						msg->Combat.AddBuff._u1);
-					dll->pipe()->sendInfo(tss);
-					//*/
+					dll->addChat(tss);
+					//* /
 					for (int i = 0; i < msg->Combat.AddBuff.buff_count && i < 5; i++) {
 						if (getDoTPotency(msg->Combat.AddBuff.buffs[i].buffID) == 0)
 							continue; // not an attack buff
@@ -848,14 +852,14 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					}
 					break;
 				case GAME_MESSAGE::C2_UseAbility:
-					// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
-					// dll->pipe()->AddChat(tss);
+					sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
+					dll->addChat(tss);
 
 					ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
 					break;
 				case GAME_MESSAGE::C2_UseAoEAbility:
-					// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
-					// dll->pipe()->AddChat(tss);
+					sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
+					dll->addChat(tss);
 
 					if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
 						int baseActor = NULL_ACTOR;
@@ -908,14 +912,11 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					} else {
 						for (int i = 0; i < 16; i++)
 							if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
-								/*
-								sprintf(tss, "cmsg  => Target[%i] %d / %s", i, msg->Combat.UseAoEAbility.targets[i].target, getActorName(msg->Combat.UseAoEAbility.targets[i].target));
-								dll->pipe()->sendInfo(tss);
-								//*/
 								ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attackToTarget[i], timestamp);
 							}
 					}
 					break;
+					//*/
 				default:
 					goto DEFPRT;
 			}
@@ -923,11 +924,14 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 		}
 DEFPRT:
 		default:
-			/*
-			int pos = sprintf(tss, "cmsg%04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, getActorName(msg->actor), msg->length);
-			for (int i = 0; i < msg->length - 32 && i<64; i ++)
-				pos += sprintf(tss + pos, "%02X ", (int)((unsigned char*)msg->data)[i]);
-			dll->pipe()->sendInfo(tss);
+			//*
+			// int pos = sprintf(tss, "/e unknown %04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, GetActorName(msg->actor), msg->length);
+			if (msg->actor == 0x102464F7 || strcmp(GetActorName(msg->actor).c_str(), "Striking Dummy") == 0) {
+				int pos = sprintf(tss, "/e U %04X:%04X (%s) ", (int) msg->message_cat1, (int) msg->message_cat2, GetActorName(msg->actor).c_str());
+				for (int i = 0; i < msg->length && i < 64; i++)
+					pos += sprintf(tss + pos, "%02X ", (int) ((unsigned char*) msg)[i]);
+				dll->addChat(tss);
+			}
 			//*/
 			break;
 	}

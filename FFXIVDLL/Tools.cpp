@@ -2,8 +2,7 @@
 #include<chrono>
 #include <tlhelp32.h>
 #include <psapi.h>
-void Tools::MillisToSystemTime(UINT64 millis, SYSTEMTIME *st)
-{
+void Tools::MillisToSystemTime(UINT64 millis, SYSTEMTIME *st) {
 	UINT64 multiplier = 10000;
 	UINT64 t = multiplier * millis;
 	ULARGE_INTEGER li;
@@ -14,8 +13,7 @@ void Tools::MillisToSystemTime(UINT64 millis, SYSTEMTIME *st)
 	::FileTimeToSystemTime(&ft, st);
 }
 
-void Tools::MillisToLocalTime(UINT64 millis, SYSTEMTIME *st)
-{
+void Tools::MillisToLocalTime(UINT64 millis, SYSTEMTIME *st) {
 	UINT64 multiplier = 10000;
 	UINT64 t = multiplier * millis;
 	ULARGE_INTEGER li;
@@ -42,10 +40,9 @@ bool Tools::DirExists(const std::wstring& dirName_in) {
 	return false;    // this is not a directory!
 }
 
-DWORD Tools::GetMainThreadID(DWORD dwProcID)
-{
+DWORD Tools::GetMainThreadID(DWORD dwProcID) {
 	DWORD dwMainThreadID = 0;
-	ULONGLONG ullMinCreateTime = ((ULONGLONG)~((ULONGLONG)0));
+	ULONGLONG ullMinCreateTime = ((ULONGLONG) ~((ULONGLONG) 0));
 
 	HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
 	if (hThreadSnap != INVALID_HANDLE_VALUE) {
@@ -64,7 +61,7 @@ DWORD Tools::GetMainThreadID(DWORD dwProcID)
 						LARGE_INTEGER li;
 						li.LowPart = afTimes[0].dwLowDateTime;
 						li.HighPart = afTimes[0].dwHighDateTime;
-						if (li.QuadPart && (uint64_t)li.QuadPart < ullMinCreateTime) {
+						if (li.QuadPart && (uint64_t) li.QuadPart < ullMinCreateTime) {
 							ullMinCreateTime = li.QuadPart;
 							dwMainThreadID = th32.th32ThreadID; // let it be main... :)
 						}
@@ -84,20 +81,20 @@ DWORD Tools::GetMainThreadID(DWORD dwProcID)
 }
 
 bool Tools::BinaryCompare(const BYTE* pData, const BYTE* bMask, const char* szMask) {
-	__try {
-		for (; *szMask; ++szMask, ++pData, ++bMask)
-			if (*szMask == 'x' && *pData != *bMask)
-				return false;
+	for (; *szMask; ++szMask, ++pData, ++bMask)
+		if (*szMask == 'x' && *pData != *bMask)
+			return false;
 
-		return (*szMask) == NULL;
-	} __except(EXCEPTION_EXECUTE_HANDLER) {
-		return false;
-	}
+	return (*szMask) == NULL;
 }
 DWORD_PTR Tools::FindPattern(DWORD_PTR dwAddress, DWORD_PTR dwLen, BYTE *bMask, char * szMask) {
-	for (DWORD_PTR i = 0; i < dwLen; i++)
-		if (BinaryCompare((BYTE*)(dwAddress + i), bMask, szMask))
-			return (DWORD_PTR)(dwAddress + i);
+	__try {
+		for (DWORD_PTR i = 0; i < dwLen; i++)
+			if (BinaryCompare((BYTE*) (dwAddress + i), bMask, szMask))
+				return (DWORD_PTR) (dwAddress + i);
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		return 0;
+	}
 
 	return 0;
 }

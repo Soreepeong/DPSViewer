@@ -72,6 +72,7 @@ public:
 	static int WINAPI hook_socket_send(SOCKET s, const char* buf, int len, int flags);
 	static HCURSOR WINAPI hook_WinApiSetCursor(HCURSOR hCursor);
 
+	void MemorySearchCompleteCallback();
 
 	static struct HOOKS_ORIG_FN_SET {
 		ProcessWindowMessage ProcessWindowMessage;

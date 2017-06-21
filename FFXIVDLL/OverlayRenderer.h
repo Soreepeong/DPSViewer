@@ -166,7 +166,7 @@ protected:
 	bool mDoCapture = false;
 	HANDLE hSaverThread;
 
-	bool mUseDefaultRenderer;
+	bool mUseDefaultRenderer = false;
 
 private:
 	const TCHAR *EXTERNAL_WINDOW_CLASS = L"DPSViewerExternalWindow";
