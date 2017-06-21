@@ -16,15 +16,15 @@ namespace Languages {
 			return code;
 		return loc2[language][code].c_str();
 	}
-	
+
 	TCHAR *getLanguageName(int lang) {
 		switch (lang) {
-		case LANGUAGE_ENGLISH:
-			return L"English";
-		case LANGUAGE_KOREAN:
-			return L"한국어";
-		default:
-			return L"(unknown)";
+			case LANGUAGE_ENGLISH:
+				return L"English";
+			case LANGUAGE_KOREAN:
+				return L"한국어";
+			default:
+				return L"(unknown)";
 		}
 	}
 
@@ -120,70 +120,84 @@ namespace Languages {
 
 	TCHAR *getDoTName(int skill) {
 		switch (language) {
-		case LANGUAGE_KOREAN:
-			switch (skill) {
-			case 0xf8: return L"파멸의 진";
-			case 0xf4: return L"골절";
-			case 0x77: return L"이단 찌르기";
-			case 0x76: return L"꽃잎 폭풍";
-			case 0x6a: return L"혈도 찌르기";
-			case 0xf6: return L"파쇄권";
-			case 0x7c: return L"독화살";
-			case 0x81: return L"바람 화살";
-			case 0x8f: return L"에어로";
-			case 0x90: return L"에어로라";
-			case 0xa1: return L"선더";
-			case 0xa2: return L"선더";
-			case 0xa3: return L"선더";
-			case 0xb3: return L"바이오";
-			case 0xb4: return L"미아즈마";
-			case 0xbd: return L"바이오라";
-			case 0xbc: return L"미아즈라";
-			case 0x13a: return L"지옥의 화염";
-			case 0x12: return L"독";
-			case 0xec: return L"초코 찌르기";
-			case 0x1ec: return L"무쌍베기";
-			case 0x1fc: return L"그림자 송곳니";
-			case 0x356: return L"산탄 사격";
-			case 0x2e5: return L"재앙";
-			case 0x346: return L"컴버스";
-			case 0x34b: return L"컴버라";
-			case 0x2d5: return L"꿰뚫는 검격";
-			case 0x31e: return L"에어로가";
-			}
-			return L"(알 수 없음)";
-		default:
-			switch (skill) {
-			case 0xf8: return L"circle of scorn";
-			case 0xf4: return L"fracture";
-			case 0x77: return L"phlebotomize";
-			case 0x76: return L"chaos thrust";
-			case 0x6a: return L"touch of death";
-			case 0xf6: return L"demolish";
-			case 0x7c: return L"venomous bite";
-			case 0x81: return L"windbite";
-			case 0x8f: return L"aero";
-			case 0x90: return L"aero ii";
-			case 0xa1: return L"thunder";
-			case 0xa2: return L"thunder";
-			case 0xa3: return L"thunder";
-			case 0xb3: return L"bio";
-			case 0xb4: return L"miasma";
-			case 0xbd: return L"bio ii";
-			case 0xbc: return L"miasma ii";
-			case 0x13a: return L"inferno";
-			case 0x12: return L"poison";
-			case 0xec: return L"choco beak";
-			case 0x1ec: return L"mutilation";
-			case 0x1fc: return L"shadow fang";
-			case 0x356: return L"lead shot";
-			case 0x2e5: return L"scourge";
-			case 0x346: return L"combust";
-			case 0x34b: return L"combust ii";
-			case 0x2d5: return L"goring blade";
-			case 0x31e: return L"aero iii";
-			}
-			return L"(unknown)";
+			case LANGUAGE_KOREAN:
+				switch (skill) {
+					case 0xf8: return L"파멸의 진";
+					case 0xf4: return L"골절";
+					case 0x77: return L"이단 찌르기";
+					case 0x76: return L"꽃잎 폭풍";
+					case 0x6a: return L"혈도 찌르기";
+					case 0xf6: return L"파쇄권";
+					case 0x7c: return L"독화살";
+					case 0x81: return L"바람 화살";
+					case 0x8f: return L"에어로";
+					case 0x90: return L"에어로라";
+					case 0xa1: return L"선더";
+					case 0xa2: return L"선더라";
+					case 0xa3: return L"선더가";
+					case 0xb3: return L"바이오";
+					case 0xb4: return L"미아즈마";
+					case 0xbd: return L"바이오라";
+					case 0xbc: return L"미아즈라";
+					case 0x13a: return L"지옥의 화염";
+					case 0x12: return L"독";
+					case 0xec: return L"초코 찌르기";
+					case 0x1ec: return L"무쌍베기";
+					case 0x1fc: return L"그림자 송곳니";
+					case 0x356: return L"산탄 사격";
+					case 0x2e5: return L"재앙";
+					case 0x346: return L"컴버스";
+					case 0x34b: return L"컴버라";
+					case 0x2d5: return L"꿰뚫는 검격";
+					case 0x31e: return L"에어로가";
+					case 0x4b5: return L"flamethrower";
+					case 0x4ba: return L"선더쟈";
+					case 0x527: return L"higanbana";
+					case 0x529: return L"caustic bite";
+					case 0x52a: return L"stormbite";
+					case 0x52e: return L"바이오가";
+					case 0x52f: return L"미아즈가";
+				}
+				return L"(알 수 없음)";
+			default:
+				switch (skill) {
+					case 0x12: return L"Poison";
+					case 0x6a: return L"Touch of Death";
+					case 0x76: return L"Chaos Thrust";
+					case 0x77: return L"Phlebotomize";
+					case 0x7c: return L"Venomous Bite";
+					case 0x81: return L"Windbite";
+					case 0x8f: return L"Aero";
+					case 0x90: return L"Aero II";
+					case 0xa1: return L"Thunder";
+					case 0xa2: return L"Thunder II";
+					case 0xa3: return L"Thunder III";
+					case 0xb3: return L"Bio";
+					case 0xb4: return L"Miasma";
+					case 0xbc: return L"Miasma II";
+					case 0xbd: return L"Bio II";
+					case 0xec: return L"Choco Beak";
+					case 0xf4: return L"Fracture";
+					case 0xf6: return L"Demolish";
+					case 0xf8: return L"Circle of Scorn";
+					case 0x13a: return L"Inferno";
+					case 0x1ec: return L"Mutilation";
+					case 0x1fc: return L"Shadow Fang";
+					case 0x2d5: return L"Goring Blade";
+					case 0x2e5: return L"Scourge";
+					case 0x31e: return L"Aero III";
+					case 0x346: return L"Combust";
+					case 0x34b: return L"Combust II";
+					case 0x356: return L"Lead Shot";
+					case 0x4b5: return L"Flamethrower";
+					case 0x4ba: return L"Thunder IV";
+					case 0x527: return L"Higanbana";
+					case 0x529: return L"Caustic Bite";
+					case 0x52a: return L"Stormbite";
+					case 0x52e: return L"Bio III";
+					case 0x52f: return L"Miasma III";
+				}
+				return L"(unknown)";
 		}
 	}
 }

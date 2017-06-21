@@ -13,6 +13,7 @@
 #include "ImGuiConfigWindow.h"
 #include "OverlayRenderer.h"
 #include "Hooks.h"
+#include <psapi.h>
 
 #define LIGHTER_COLOR(color,how) (((color)&0xFF000000) | (min(255, max(0, (((color)>>16)&0xFF)+(how)))<<16) | (min(255, max(0, (((color)>>8)&0xFF)+(how)))<<8) | (min(255, max(0, (((color)>>0)&0xFF)+(how)))<<0)))
 
@@ -31,6 +32,11 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 
 	hUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
 	hUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::UpdateInfoThreadExternal, this, NULL, NULL);
+
+	TCHAR ffxivPath[MAX_PATH];
+	GetModuleFileNameEx(GetCurrentProcess(), NULL, ffxivPath, MAX_PATH);
+	bool kor = wcsstr(ffxivPath, L"KOREA") ? true : false;
+	version = kor ? 340 : 400;
 
 	// default colors
 
@@ -125,68 +131,130 @@ GameDataProcess::~GameDataProcess() {
 }
 
 int GameDataProcess::getDoTPotency(int dot) {
-	switch (dot) {
-		case 0xf8: return 30;
-		case 0xf4: return 20;
-		case 0x77: return 30;
-		case 0x76: return 35;
-		case 0x6a: return 25;
-		case 0xf6: return 50;
-		case 0x7c: return 40;
-		case 0x81: return 50;
-		case 0x8f: return 25;
-		case 0x90: return 50;
-		case 0xa1: return 40;
-		case 0xa2: return 40;
-		case 0xa3: return 40;
-		case 0xb3: return 40;
-		case 0xb4: return 35;
-		case 0xbd: return 35;
-		case 0xbc: return 10;
-		case 0x13a: return 20;
-		case 0x12: return 50;
-		case 0xec: return 20;
-		case 0x1ec: return 30;
-		case 0x1fc: return 40;
-		case 0x356: return 44;
-		case 0x2e5: return 40;
-		case 0x346: return 40;
-		case 0x34b: return 45;
-		case 0x2d5: return 50;
-		case 0x31e: return 40;
+	if (version == 340) {
+		switch (dot) {
+			case 0xf8: return 30;
+			case 0xf4: return 20;
+			case 0x77: return 30;
+			case 0x76: return 35;
+			case 0x6a: return 25;
+			case 0xf6: return 50;
+			case 0x7c: return 40;
+			case 0x81: return 50;
+			case 0x8f: return 25;
+			case 0x90: return 50;
+			case 0xa1: return 40;
+			case 0xa2: return 40;
+			case 0xa3: return 40;
+			case 0xb3: return 40;
+			case 0xb4: return 35;
+			case 0xbd: return 35;
+			case 0xbc: return 10;
+			case 0x13a: return 20;
+			case 0x12: return 50;
+			case 0xec: return 20;
+			case 0x1ec: return 30;
+			case 0x1fc: return 40;
+			case 0x356: return 44;
+			case 0x2e5: return 40;
+			case 0x346: return 40;
+			case 0x34b: return 45;
+			case 0x2d5: return 50;
+			case 0x31e: return 40;
+		}
+	} else if (version == 400) {
+		switch (dot) {
+			case 0x76: return 35;
+			case 0x7c: return 40;
+			case 0x81: return 50;
+			case 0x8f: return 30;
+			case 0x90: return 50;
+			case 0xa1: return 40;
+			case 0xa2: return 30;
+			case 0xa3: return 40;
+			case 0xb3: return 40;
+			case 0xb4: return 35;
+			case 0xbd: return 35;
+			case 0xf6: return 50;
+			case 0xf8: return 30;
+			case 0x13a: return 20;
+			case 0x1fc: return 40;
+			case 0x2d5: return 60;
+			case 0x31e: return 40;
+			case 0x346: return 40;
+			case 0x34b: return 50;
+			case 0x4b5: return 60;
+			case 0x4ba: return 30;
+			case 0x527: return 35;
+			case 0x529: return 45;
+			case 0x52a: return 55;
+			case 0x52e: return 40;
+			case 0x52f: return 40;
+		}
 	}
 	return 0;
 }
 
 int GameDataProcess::getDoTDuration(int skill) {
-	switch (skill) {
-		case 0xf8: return 15000;
-		case 0xf4: return 30000;
-		case 0x77: return 24000;
-		case 0x76: return 30000;
-		case 0x6a: return 30000;
-		case 0xf6: return 21000;
-		case 0x7c: return 18000;
-		case 0x81: return 18000;
-		case 0x8f: return 18000;
-		case 0x90: return 12000;
-		case 0xa1: return 18000;
-		case 0xa2: return 21000;
-		case 0xa3: return 24000;
-		case 0xb3: return 18000;
-		case 0xb4: return 24000;
-		case 0xbd: return 30000;
-		case 0xbc: return 15000;
-		case 0x13a: return 15000;
-		case 0x12: return 15000;
-		case 0xec: return 18000;
-		case 0x1ec: return 30000;
-		case 0x356: return 30000;
-		case 0x2e5: return 30000;
-		case 0x346: return 18000;
-		case 0x34b: return 30000;
-		case 0x2d5: return 24000;
-		case 0x31e: return 24000;
+	if (version == 340) {
+		switch (skill) {
+			case 0xf8: return 15000;
+			case 0xf4: return 30000;
+			case 0x77: return 24000;
+			case 0x76: return 30000;
+			case 0x6a: return 30000;
+			case 0xf6: return 21000;
+			case 0x7c: return 18000;
+			case 0x81: return 18000;
+			case 0x8f: return 18000;
+			case 0x90: return 12000;
+			case 0xa1: return 18000;
+			case 0xa2: return 21000;
+			case 0xa3: return 24000;
+			case 0xb3: return 18000;
+			case 0xb4: return 24000;
+			case 0xbd: return 30000;
+			case 0xbc: return 15000;
+			case 0x13a: return 15000;
+			case 0x12: return 15000;
+			case 0xec: return 18000;
+			case 0x1ec: return 30000;
+			case 0x356: return 30000;
+			case 0x2e5: return 30000;
+			case 0x346: return 18000;
+			case 0x34b: return 30000;
+			case 0x2d5: return 24000;
+			case 0x31e: return 24000;
+		}
+	} else if (version == 400) {
+		switch (skill) {
+			case 0x76: return 30000;
+			case 0x7c: return 18000;
+			case 0x81: return 18000;
+			case 0x8f: return 18000;
+			case 0x90: return 18000;
+			case 0xa1: return 18000;
+			case 0xa2: return 21000;
+			case 0xa3: return 24000;
+			case 0xb3: return 18000;
+			case 0xb4: return 24000;
+			case 0xbd: return 30000;
+			case 0xf6: return 18000;
+			case 0xf8: return 15000;
+			case 0x13a: return 15000;
+			case 0x1fc: return 21000;
+			case 0x2d5: return 21000;
+			case 0x31e: return 24000;
+			case 0x346: return 18000;
+			case 0x34b: return 30000;
+			case 0x4b5: return 10000;
+			case 0x4ba: return 18000;
+			case 0x527: return 60000;
+			case 0x529: return 30000;
+			case 0x52a: return 30000;
+			case 0x52e: return 30000;
+			case 0x52f: return 30000;
+		}
 	}
 	return 0;
 }
@@ -289,7 +357,7 @@ void GameDataProcess::ResolveUsers() {
 	mActorPointers.clear();
 	for (int i = 0; i < limit; i++) {
 		__try {
-			char* ptr = ((char**)dll->memory()->Result.Data.ActorMap)[i];
+			char* ptr = ((char**) dll->memory()->Result.Data.ActorMap)[i];
 			if (ptr == 0) continue;
 			int id = *(int*) (ptr + dll->memory()->Struct.Actor.id);
 			int owner = *(int*) (ptr + dll->memory()->Struct.Actor.owner);
@@ -504,7 +572,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 						wCol24.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000. / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x40), CHILD_TYPE_BACKGROUND);
 
 
-						wCol24.setPaddingRecursive(wDPS.padding/2);
+						wCol24.setPaddingRecursive(wDPS.padding / 2);
 						wCol24.padding = wDPS.padding / 2;
 						wCol24.margin = wDPS.padding;
 						wRow24->addChild(&wCol24);
@@ -601,7 +669,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 }
 
 void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp) {
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 8; i++) {
 		if (info->attack[i].swingtype == 0) continue;
 
 		TEMPDMG dmg = { 0 };
@@ -701,7 +769,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				break;
 			}
 		}
-		//*
+		/*
 		char tss[512];
 		sprintf(tss, "/e    => %d/%d/%d/%d/%d/%d",
 			(int)info->attack[i].swingtype,
@@ -730,11 +798,8 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 		case GAME_MESSAGE::C1_Combat:
 		{
 			switch (msg->message_cat2) {
-				case 0x143:
-				case 0x10f:
 				case GAME_MESSAGE::C2_ActorInfo:
 					break;
-				/*
 				case GAME_MESSAGE::C2_Info1:
 					if (msg->Combat.Info1.c1 == 23 && msg->Combat.Info1.c2 == 3) {
 						if (msg->Combat.Info1.c5 == 0) {
@@ -792,7 +857,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 						/*
 						sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
 						dll->pipe()->sendInfo(tss);
-						//* /
+						//*/
 						auto it = mActiveDoT.begin();
 						while (it != mActiveDoT.end()) {
 							if (it->expires < timestamp || it->target == msg->actor)
@@ -852,63 +917,16 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					}
 					break;
 				case GAME_MESSAGE::C2_UseAbility:
-					sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill);
-					dll->addChat(tss);
-
 					ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
 					break;
+				case GAME_MESSAGE::C2_UseAbilityV4:
+					// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill); dll->addChat(tss);
+
+					ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbilityV4.skill, &msg->Combat.UseAbilityV4.attack, timestamp);
+					break;
 				case GAME_MESSAGE::C2_UseAoEAbility:
-					sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill);
-					dll->addChat(tss);
-
 					if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
-						int baseActor = NULL_ACTOR;
-						for (int i = 0; i < 16; i++)
-							if (msg->Combat.UseAoEAbility.targets[i].target != 0)
-								for (int j = 0; j < 4; j++)
-									if (msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].swingtype == 11)
-										baseActor = msg->Combat.UseAoEAbility.targets[i].target;
-						if (baseActor != NULL_ACTOR) {
-							for (int i = 0; i < 16; i++)
-								if (msg->Combat.UseAoEAbility.targets[i].target != 0)
-									for (int j = 0; j < 4; j++)
-										if (msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].swingtype == 17) {
-											TEMPBUFF buff;
-											uint64_t expires = -1;
-											for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
-												if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
-													it->source == msg->actor &&
-													it->target == baseActor) {
-													expires = it->expires;
-													break;
-												}
-											if (expires != -1) {
-												bool addNew = true;
-												for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
-													if (it->buffid == msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage &&
-														it->source == msg->actor &&
-														it->target == msg->Combat.UseAoEAbility.targets[i].target) {
-														it->applied = timestamp;
-														it->expires = expires;
-														it->simulated = 1;
-														addNew = false;
-														break;
-													}
-												if (addNew) {
-													buff.buffid = msg->Combat.UseAoEAbility.attackToTarget[i].attack[j].damage;
-													buff.applied = timestamp;
-													buff.expires = expires;
-													buff.source = msg->actor;
-													buff.target = msg->Combat.UseAoEAbility.targets[i].target;
-													buff.potency = getDoTPotency(buff.buffid);
-													buff.simulated = 1;
-
-													mActiveDoT.push_back(buff);
-												}
-											}
-										}
-						}
-
+						SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbility.targets, msg->Combat.UseAoEAbility.attackToTarget);
 					} else {
 						for (int i = 0; i < 16; i++)
 							if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
@@ -916,7 +934,18 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 							}
 					}
 					break;
-					//*/
+				case GAME_MESSAGE::C2_UseAoEAbilityV4:
+					// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill); dll->addChat(tss);
+
+					if (GetActorName(msg->actor), msg->Combat.UseAoEAbilityV4.skill == 174) { // Bane
+						SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbilityV4.targets, msg->Combat.UseAoEAbilityV4.attackToTarget);
+					} else {
+						for (int i = 0; i < 16; i++)
+							if (msg->Combat.UseAoEAbilityV4.targets[i].target != 0) {
+								ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbilityV4.targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attackToTarget[i], timestamp);
+							}
+					}
+					break;
 				default:
 					goto DEFPRT;
 			}
@@ -924,8 +953,8 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 		}
 DEFPRT:
 		default:
-			//*
-			// int pos = sprintf(tss, "/e unknown %04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, GetActorName(msg->actor), msg->length);
+			/*
+			int pos = sprintf(tss, "/e unknown %04X:%04X (%s, %x) ", (int)msg->message_cat1, (int)msg->message_cat2, GetActorName(msg->actor), msg->length);
 			if (msg->actor == 0x102464F7 || strcmp(GetActorName(msg->actor).c_str(), "Striking Dummy") == 0) {
 				int pos = sprintf(tss, "/e U %04X:%04X (%s) ", (int) msg->message_cat1, (int) msg->message_cat2, GetActorName(msg->actor).c_str());
 				for (int i = 0; i < msg->length && i < 64; i++)
@@ -935,6 +964,56 @@ DEFPRT:
 			//*/
 			break;
 	}
+}
+
+void GameDataProcess::SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO* attacks) {
+	int baseActor = NULL_ACTOR;
+	for (int i = 0; i < 16; i++)
+		if (targets[i].target != 0)
+			for (int j = 0; j < 4; j++)
+				if (attacks[i].attack[j].swingtype == 11)
+					baseActor = targets[i].target;
+	if (baseActor != NULL_ACTOR) {
+		for (int i = 0; i < 16; i++)
+			if (targets[i].target != 0)
+				for (int j = 0; j < 4; j++)
+					if (attacks[i].attack[j].swingtype == 17) {
+						TEMPBUFF buff;
+						uint64_t expires = -1;
+						for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
+							if (it->buffid == attacks[i].attack[j].damage &&
+								it->source == actor &&
+								it->target == baseActor) {
+								expires = it->expires;
+								break;
+							}
+						if (expires != -1) {
+							bool addNew = true;
+							for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ++it)
+								if (it->buffid == attacks[i].attack[j].damage &&
+									it->source == actor &&
+									it->target == targets[i].target) {
+									it->applied = timestamp;
+									it->expires = expires;
+									it->simulated = 1;
+									addNew = false;
+									break;
+								}
+							if (addNew) {
+								buff.buffid = attacks[i].attack[j].damage;
+								buff.applied = timestamp;
+								buff.expires = expires;
+								buff.source = actor;
+								buff.target = targets[i].target;
+								buff.potency = getDoTPotency(buff.buffid);
+								buff.simulated = 1;
+
+								mActiveDoT.push_back(buff);
+							}
+						}
+					}
+	}
+
 }
 
 void GameDataProcess::PacketErrorMessage(int signature, int length) {

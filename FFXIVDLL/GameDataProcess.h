@@ -50,16 +50,17 @@ enum ATTACK_ELEMENT_TYPE : uint8_t {
 	ELEM_Unaspected,
 };
 
+struct ATTACK_INFO_EACH {
+	char swingtype;
+	ATTACK_DAMAGE_TYPE damagetype;
+	ATTACK_ELEMENT_TYPE elementtype;
+	char data0_rr;
+	short damage;
+	short data1_right;
+};
+
 struct ATTACK_INFO {
-	struct {
-		char swingtype;
-		ATTACK_DAMAGE_TYPE damagetype;
-		ATTACK_ELEMENT_TYPE elementtype;
-		char data0_rr;
-		short damage;
-		short data1_right;
-	}attack[4]; // 8 x 4 bytes
-	int _u4[8];
+	ATTACK_INFO_EACH attack[8];
 };
 
 struct TEMPUSERINFO {
@@ -90,6 +91,11 @@ struct TEMPDMG {
 	bool isCrit;
 };
 
+struct TARGET_STRUCT {
+	uint32_t target;
+	uint32_t _u1;
+};
+
 #pragma pack(push, 1)
 struct GAME_MESSAGE {
 	uint32_t length; // 0 ~ 3
@@ -111,6 +117,8 @@ struct GAME_MESSAGE {
 		MatchFound = 0x339
 		*/
 		C2_DelBuff = 0x00EC,
+		C2_UseAbilityV4 = 0x00F1,
+		C2_UseAoEAbilityV4 = 0x00F4,
 		C2_StartCasting = 0x0110,
 		C2_AddBuff = 0x0141,
 		C2_Info1 = 0x0142,
@@ -155,16 +163,29 @@ struct GAME_MESSAGE {
 				ATTACK_INFO attack;
 			} UseAbility;
 			struct {
+				uint32_t target; // 32
+				uint8_t _u1[4]; // 36
+				uint32_t skill; // 40
+				uint8_t _u3[28]; // 44
+				ATTACK_INFO attack; // 72
+			} UseAbilityV4;
+			struct {
 				uint8_t _u1[12]; // 32
 				uint32_t skill; // 44
 				uint8_t _u2[20]; // 48
 				ATTACK_INFO attackToTarget[16]; // 68
 				uint32_t _u3; // 1092
-				struct {
-					uint32_t target;
-					uint32_t _u1;
-				}targets[16]; // 1096
+				TARGET_STRUCT targets[16]; // 1096
 			} UseAoEAbility;
+			struct {
+				uint8_t _u1[8]; // 32
+				uint32_t skill; // 40
+				uint8_t _u2[23]; // 44
+				uint8_t attackCount; // 67
+				uint8_t _u3[4]; // 68
+				ATTACK_INFO attackToTarget[8]; // 72
+				TARGET_STRUCT targets[8]; // 584
+			} UseAoEAbilityV4;
 			struct {
 				uint8_t _u1[12]; // 32
 				uint32_t HP; // 44
@@ -233,7 +254,8 @@ class GameDataProcess {
 
 private:
 
-	static int getDoTPotency(int dot);
+	int version;
+	int getDoTPotency(int dot);
 	int getDoTDuration(int skill);
 
 	std::map<std::wstring, DWORD> mClassColors;
@@ -283,6 +305,7 @@ private:
 	void AddDamageInfo(TEMPDMG dmg, bool direct);
 	void CalculateDps(uint64_t timestamp);
 	void UpdateOverlayMessage();
+	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO* attacks);
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp);
 	void ProcessGameMessage(void *data, uint64_t timestamp, int len, bool setTimestamp);
 	void PacketErrorMessage(int signature, int length);
