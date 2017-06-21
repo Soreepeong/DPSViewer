@@ -59,8 +59,39 @@ struct ATTACK_INFO_EACH {
 	short data1_right;
 };
 
+struct ATTACK_INFO_EACH_V4 {
+	union {
+		struct {
+			char swingtype;
+			char isCrit : 1;
+			char isDirectHit : 1;
+			char _u4 : 6;
+			ATTACK_ELEMENT_TYPE elementtype : 4;
+			ATTACK_DAMAGE_TYPE damagetype : 4;
+			char _u5;
+		};
+		uint32_t _data0;
+	};
+
+	short damage;
+	union {
+		struct {
+			char _u0 : 4;
+			char mult10 : 1;
+			char _u1 : 3;
+		};
+		char _u2;
+	};
+	char _u3[3];
+	short data1_right;
+};
+
 struct ATTACK_INFO {
 	ATTACK_INFO_EACH attack[8];
+};
+
+struct ATTACK_INFO_V4 {
+	ATTACK_INFO_EACH_V4 attack[8];
 };
 
 struct TEMPUSERINFO {
@@ -87,8 +118,10 @@ struct TEMPDMG {
 		int buffId;
 	};
 	int dmg;
-	bool isDoT;
-	bool isCrit;
+	char isDoT : 1;
+	char isCrit : 1;
+	char isDirectHit : 1;
+	char _u0 : 5;
 };
 
 struct TARGET_STRUCT {
@@ -167,13 +200,13 @@ struct GAME_MESSAGE {
 				uint8_t _u1[4]; // 36
 				uint32_t skill; // 40
 				uint8_t _u3[28]; // 44
-				ATTACK_INFO attack; // 72
+				ATTACK_INFO_V4 attack; // 72
 			} UseAbilityV4;
 			struct {
 				uint8_t _u1[12]; // 32
 				uint32_t skill; // 44
 				uint8_t _u2[20]; // 48
-				ATTACK_INFO attackToTarget[16]; // 68
+				ATTACK_INFO attack[16]; // 68
 				uint32_t _u3; // 1092
 				TARGET_STRUCT targets[16]; // 1096
 			} UseAoEAbility;
@@ -183,7 +216,7 @@ struct GAME_MESSAGE {
 				uint8_t _u2[23]; // 44
 				uint8_t attackCount; // 67
 				uint8_t _u3[4]; // 68
-				ATTACK_INFO attackToTarget[8]; // 72
+				ATTACK_INFO_V4 attack[8]; // 72
 				TARGET_STRUCT targets[8]; // 584
 			} UseAoEAbilityV4;
 			struct {
@@ -274,6 +307,7 @@ private:
 		int dotHits;
 		int totalHits;
 		int critHits;
+		int directHits;
 		int missHits;
 	};
 	std::map<int, DPS_METER_TEMP_INFO> mDpsInfo;
@@ -305,8 +339,10 @@ private:
 	void AddDamageInfo(TEMPDMG dmg, bool direct);
 	void CalculateDps(uint64_t timestamp);
 	void UpdateOverlayMessage();
-	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO* attacks);
+	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO *attacks);
+	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO_V4 *attacks);
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp);
+	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO_V4 *info, uint64_t timestamp);
 	void ProcessGameMessage(void *data, uint64_t timestamp, int len, bool setTimestamp);
 	void PacketErrorMessage(int signature, int length);
 	void ParsePacket(Tools::ByteQueue &p, bool setTimestamp);

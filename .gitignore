@@ -241,3 +241,5 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 distribution/FFXIVAPP.Memory.dll
+madler-zlib
+TsudaKageyu-minhook
