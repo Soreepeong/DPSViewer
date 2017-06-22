@@ -145,13 +145,6 @@ void RemoveFFXIVMutex() {
 			/* Reallocate the buffer and try again. */
 			objectNameInfo = realloc(objectNameInfo, returnLength);
 			if (!NT_SUCCESS(NtQueryObject( dupHandle, ObjectNameInformation, objectNameInfo, returnLength, NULL ))) {
-				/* We have the type name, so just display that. */
-				printf(
-					"[%#x] %.*S: (could not get name)\n",
-					handle.Handle,
-					objectTypeInfo->Name.Length / 2,
-					objectTypeInfo->Name.Buffer
-				);
 				free(objectTypeInfo);
 				free(objectNameInfo);
 				continue;
@@ -203,14 +196,14 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	pHooks->Activate();
 	scanner.AddCallback([&] () {
 		char res[512];
-		sprintf(res, "/e Initialized: PWM %llx, PNL %llx, SFW %llx, HFW %llx, Actor %llx, Party %llx, Target %llx",
+		sprintf(res, "/e Initialized"/*": PWM %llx, PNL %llx, SFW %llx, HFW %llx, Actor %llx, Party %llx, Target %llx",
 			(uint64_t) scanner.Result.Functions.ProcessWindowMessage, 
 			(uint64_t) scanner.Result.Functions.ProcessNewLine,
 			(uint64_t) scanner.Result.Functions.ShowFFXIVWindow,
 			(uint64_t) scanner.Result.Functions.HideFFXIVWindow,
 			(uint64_t) scanner.Result.Data.ActorMap,
 			(uint64_t) scanner.Result.Data.PartyMap,
-			(uint64_t) scanner.Result.Data.TargetMap);
+			(uint64_t) scanner.Result.Data.TargetMap*/);
 		addChat(res);
 	});
 }

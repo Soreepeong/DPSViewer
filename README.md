@@ -4,12 +4,13 @@
 ![Korean](https://raw.githubusercontent.com/Soreepeong/DPSViewer/master/readme-images/img-kor.png)
 
 
-DPSViewer is a lightweight DPS meter for FFXIV (v3.57 for Global version and v3.4 for Korean version).
+DPSViewer is a lightweight DPS meter for FFXIV (v4.0 for Global version and v3.4 for Korean version).
 It supports both DX9 and DX11 versions.
 
   - See the DPS of everyone around you
   - Take multiple screenshots without delay
   - See your DoT status even when there are too many DoTs (in 24-people raids)
+  - Parse only yourself, your party, your alliance, or everyone
 
 Installation
 ----
@@ -25,12 +26,13 @@ It will NOT work after any FFXIV update. In that case, please wait for me to upd
 # DPSViewer (한국어 설명)
 
 DPSViewer는 파이널 판타지 14를 위한 가벼운 DPS 미터 프로그램입니다.
-글로벌 서버는 v3.57, 한국 서버는 v3.4 까지 지원합니다. 파이널 판타지 업데이트 이후에는 사용 불가능해지니 그 때는 이 프로그램의 업데이트를 기다리셔야 합니다.
+글로벌 서버는 v4.0, 한국 서버는 v3.4 까지 지원합니다. 파이널 판타지 업데이트 이후에는 사용 불가능해지니 그 때는 이 프로그램의 업데이트를 기다리셔야 합니다.
 현재 DX9 및 DX11 버전을 지원합니다.
 
   - 주변 모두의 DPS 보기.
   - 대기시간 없이 스크린샷 연사.
   - DoT가 안 떠도 예측해서 시간 재어 보여줌. (24인 레이드)
+  - 연합 및 파티만 보기.
 
 설치
 ----
