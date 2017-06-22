@@ -138,12 +138,16 @@ Hooks::~Hooks() {
 	int mainThread = Tools::GetMainThreadID(GetCurrentProcessId());
 	HANDLE mainThreadHandle = OpenThread(THREAD_SUSPEND_RESUME, false, mainThread);
 	SuspendThread(mainThreadHandle);
+	Sleep(10);
 	MH_DisableHook(MH_ALL_HOOKS);
+	Sleep(10);
 	ResumeThread(mainThreadHandle);
 	CloseHandle(mainThreadHandle);
 
 	while (mHookedFunctionDepth > 0) Sleep(1);
+	Sleep(10);
 	MH_Uninitialize();
+	Sleep(10);
 
 	if (pOverlayRenderer != nullptr)
 		delete pOverlayRenderer;
@@ -220,7 +224,7 @@ char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis) {
 #else
 char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis, void *_u) {
 #endif
-	if(strncmp((char*)pthis+sizeof(char*), "_Status", 7) == 0)
+	if (strncmp((char*) pthis + sizeof(char*), "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = false;
 	return pfnBridge.HideFFXIVWindow(pthis);
 }
@@ -232,7 +236,7 @@ char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis, void *_u) {
 #endif
 	if (strncmp((char*) pthis + sizeof(char*), "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = true;
-	else if(strncmp((char*) pthis + sizeof(char*), "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
+	else if (strncmp((char*) pthis + sizeof(char*), "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
 		FlashWindow(dll->ffxiv(), true);
 	/*
 	char test[256];
@@ -264,7 +268,7 @@ char Hooks::hook_ProcessWindowMessage() {
 	if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001)
 		pOverlayRenderer->CaptureScreen();
 
-	if(dll->hooks()->GetOverlayRenderer())
+	if (dll->hooks()->GetOverlayRenderer())
 		dll->hooks()->GetOverlayRenderer()->DoMainThreadOperation();
 
 	char res = pfnBridge.ProcessWindowMessage();
@@ -351,10 +355,12 @@ HRESULT APIENTRY Hooks::hook_Dx9Present(IDirect3DDevice9 *pDevice, const RECT   
 #endif
 
 HCURSOR WINAPI Hooks::hook_WinApiSetCursor(HCURSOR hCursor) {
-	if (mLockCursor)
-		return hCursor;
-	else
-		return pfnBridge.WinApiSetCursor(hCursor);
+	mHookedFunctionDepth++;
+	HCURSOR res = hCursor;
+	if (!mLockCursor)
+		res = pfnBridge.WinApiSetCursor(hCursor);
+	mHookedFunctionDepth--;
+	return res;
 }
 
 void Hooks::updateLastFocus(WindowControllerBase *control) {
@@ -374,6 +380,7 @@ void Hooks::updateLastFocus(WindowControllerBase *control) {
 }
 
 LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam) {
+	mHookedFunctionDepth++;
 	bool callDef = false;
 
 	ImGuiIO &io = ImGui::GetIO();
@@ -384,99 +391,39 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 #endif
 	if (io.WantCaptureMouse)
 		mLockCursor = true;
-		switch (iMessage) {
-			case WM_MOUSEMOVE:
-				callDef = true;
-			case WM_RBUTTONDBLCLK:
-			case WM_RBUTTONDOWN:
-			case WM_RBUTTONUP:
-			case WM_LBUTTONDBLCLK:
-			case WM_LBUTTONDOWN:
-			case WM_LBUTTONUP:
-			case WM_MBUTTONDBLCLK:
-			case WM_MBUTTONDOWN:
-			case WM_MBUTTONUP:
-			case WM_MOUSEHOVER:
-			case WM_MOUSEHWHEEL:
-			case WM_MOUSELEAVE:
-			case WM_MOUSEWHEEL:
-				if (io.WantCaptureMouse) {
-					return 0;
-				} else if (pOverlayRenderer != nullptr && !pOverlayRenderer->mConfig.UseExternalWindow) {
-					int xPos = GET_X_LPARAM(lParam);
-					int yPos = GET_Y_LPARAM(lParam);
-					WindowControllerBase *pos = pOverlayRenderer->GetWindowAt(xPos, yPos);
-					if (lastHover != nullptr)
-						lastHover->statusFlag[CONTROL_STATUS_HOVER] = 0;
-					lastHover = pos;
-					if (lastHover != nullptr)
-						lastHover->statusFlag[CONTROL_STATUS_HOVER] = 1;
-					if (ffxivHookCaptureControl != nullptr && ffxivHookCaptureControl->isLocked())
-						updateLastFocus(nullptr);
-					WindowControllerBase *control = ffxivHookCaptureControl ? ffxivHookCaptureControl : pos;
-					if (control && !ffxivWndPressed) {
-						mLockCursor = true;
-						int res = control->callback(hWnd, iMessage, wParam, lParam);
-						switch (res) {
-							case 0: updateLastFocus(nullptr); callDef = true; break;
-							case 1: updateLastFocus(nullptr); callDef = false; break;
-							case 2: updateLastFocus(control); callDef = true; break;
-							case 3: updateLastFocus(control); callDef = false; break;
-							case 4: callDef = true; break;
-							case 5: callDef = false; break;
-						}
-						if (pos != control && pos != nullptr) {
-							int res = pos->callback(hWnd, iMessage, wParam, lParam);
-							switch (res) {
-								case 0: updateLastFocus(nullptr); callDef = true; break;
-								case 1: updateLastFocus(nullptr); callDef = false; break;
-								case 2: updateLastFocus(pos); callDef = true; break;
-								case 3: updateLastFocus(pos); callDef = false; break;
-								case 4: callDef = true; break;
-								case 5: callDef = false; break;
-							}
-						}
-					} else {
-						mLockCursor = false;
-						callDef = true;
-						switch (iMessage) {
-							case WM_LBUTTONDOWN:
-							case WM_RBUTTONDOWN:
-							case WM_MBUTTONDOWN:
-								ffxivWndPressed = true;
-								break;
-							case WM_LBUTTONUP:
-							case WM_RBUTTONUP:
-							case WM_MBUTTONUP:
-								ffxivWndPressed = false;
-								break;
-						}
-					}
-				} else
-					callDef = true;
-				break;
-			case WM_KEYDOWN:
-			case WM_KEYUP:
-			case WM_CHAR:
-				if (io.WantCaptureKeyboard || io.WantTextInput)
-					return 0;
-				else if (ffxivHookCaptureControl && !ffxivWndPressed) {
-					int res = ffxivHookCaptureControl->callback(hWnd, iMessage, wParam, lParam);
-					switch (res) {
-						case 0: updateLastFocus(nullptr); callDef = true; break;
-						case 1: updateLastFocus(nullptr); callDef = false; break;
-						case 2: updateLastFocus(ffxivHookCaptureControl); callDef = true; break;
-						case 3: updateLastFocus(ffxivHookCaptureControl); callDef = false; break;
-						case 4: callDef = true; break;
-						case 5: callDef = false; break;
-					}
-				} else
-					callDef = true;
-				break;
-			default:
-				callDef = true;
-				if (ffxivHookCaptureControl && !ffxivWndPressed) {
-					WindowControllerBase *control = ffxivHookCaptureControl;
+	switch (iMessage) {
+		case WM_MOUSEMOVE:
+			callDef = true;
+		case WM_RBUTTONDBLCLK:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_LBUTTONDBLCLK:
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_MBUTTONDBLCLK:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_MOUSEHOVER:
+		case WM_MOUSEHWHEEL:
+		case WM_MOUSELEAVE:
+		case WM_MOUSEWHEEL:
+			if (io.WantCaptureMouse) {
+				mHookedFunctionDepth--;
+				return 0;
+			} else if (pOverlayRenderer != nullptr && !pOverlayRenderer->mConfig.UseExternalWindow) {
+				int xPos = GET_X_LPARAM(lParam);
+				int yPos = GET_Y_LPARAM(lParam);
+				WindowControllerBase *pos = pOverlayRenderer->GetWindowAt(xPos, yPos);
+				if (lastHover != nullptr)
+					lastHover->statusFlag[CONTROL_STATUS_HOVER] = 0;
+				lastHover = pos;
+				if (lastHover != nullptr)
+					lastHover->statusFlag[CONTROL_STATUS_HOVER] = 1;
+				if (ffxivHookCaptureControl != nullptr && ffxivHookCaptureControl->isLocked())
+					updateLastFocus(nullptr);
+				WindowControllerBase *control = ffxivHookCaptureControl ? ffxivHookCaptureControl : pos;
+				if (control && !ffxivWndPressed) {
+					mLockCursor = true;
 					int res = control->callback(hWnd, iMessage, wParam, lParam);
 					switch (res) {
 						case 0: updateLastFocus(nullptr); callDef = true; break;
@@ -486,9 +433,75 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 						case 4: callDef = true; break;
 						case 5: callDef = false; break;
 					}
+					if (pos != control && pos != nullptr) {
+						int res = pos->callback(hWnd, iMessage, wParam, lParam);
+						switch (res) {
+							case 0: updateLastFocus(nullptr); callDef = true; break;
+							case 1: updateLastFocus(nullptr); callDef = false; break;
+							case 2: updateLastFocus(pos); callDef = true; break;
+							case 3: updateLastFocus(pos); callDef = false; break;
+							case 4: callDef = true; break;
+							case 5: callDef = false; break;
+						}
+					}
+				} else {
+					mLockCursor = false;
+					callDef = true;
+					switch (iMessage) {
+						case WM_LBUTTONDOWN:
+						case WM_RBUTTONDOWN:
+						case WM_MBUTTONDOWN:
+							ffxivWndPressed = true;
+							break;
+						case WM_LBUTTONUP:
+						case WM_RBUTTONUP:
+						case WM_MBUTTONUP:
+							ffxivWndPressed = false;
+							break;
+					}
 				}
-		}
-	if (callDef)
-		return CallWindowProc(ffxivWndProc, hWnd, iMessage, wParam, lParam);
+			} else
+				callDef = true;
+			break;
+		case WM_KEYDOWN:
+		case WM_KEYUP:
+		case WM_CHAR:
+			if (io.WantCaptureKeyboard || io.WantTextInput) {
+				mHookedFunctionDepth--;
+				return 0;
+			} else if (ffxivHookCaptureControl && !ffxivWndPressed) {
+				int res = ffxivHookCaptureControl->callback(hWnd, iMessage, wParam, lParam);
+				switch (res) {
+					case 0: updateLastFocus(nullptr); callDef = true; break;
+					case 1: updateLastFocus(nullptr); callDef = false; break;
+					case 2: updateLastFocus(ffxivHookCaptureControl); callDef = true; break;
+					case 3: updateLastFocus(ffxivHookCaptureControl); callDef = false; break;
+					case 4: callDef = true; break;
+					case 5: callDef = false; break;
+				}
+			} else
+				callDef = true;
+			break;
+		default:
+			callDef = true;
+			if (ffxivHookCaptureControl && !ffxivWndPressed) {
+				WindowControllerBase *control = ffxivHookCaptureControl;
+				int res = control->callback(hWnd, iMessage, wParam, lParam);
+				switch (res) {
+					case 0: updateLastFocus(nullptr); callDef = true; break;
+					case 1: updateLastFocus(nullptr); callDef = false; break;
+					case 2: updateLastFocus(control); callDef = true; break;
+					case 3: updateLastFocus(control); callDef = false; break;
+					case 4: callDef = true; break;
+					case 5: callDef = false; break;
+				}
+			}
+	}
+	if (callDef) {
+		HRESULT res = CallWindowProc(ffxivWndProc, hWnd, iMessage, wParam, lParam);
+		mHookedFunctionDepth--;
+		return res;
+	}
+	mHookedFunctionDepth--;
 	return 0;
 }

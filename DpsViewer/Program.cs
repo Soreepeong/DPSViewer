@@ -44,6 +44,7 @@ namespace DpsViewer {
 						MessageBox.Show("FFXIV window not found");
 						return;
 					}
+					// MessageBox.Show("Entrypoint: " + p.MainModule.BaseAddress.ToString("X16")); return;
 					string dllFN = "FFXIVDLL_" + (IntPtr.Size == 4 ? "x86" : "x64") + ".dll";
 
 					IntPtr h = OpenProcess(ProcessAccessFlags.All, false, p.Id);

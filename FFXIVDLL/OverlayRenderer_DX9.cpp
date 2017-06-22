@@ -10,7 +10,7 @@ OverlayRendererDX9::OverlayRendererDX9(FFXIVDLL *dll, IDirect3DDevice9* device) 
 	pDevice(device),
 	mFont(nullptr),
 	mSprite(nullptr),
-	OverlayRenderer(dll){
+	OverlayRenderer(dll) {
 
 	ImGui_ImplDX9_Init(dll->ffxiv(), pDevice);
 
@@ -64,7 +64,7 @@ void OverlayRendererDX9::OnLostDevice() {
 	}
 	for (auto it = mResourceTextures.begin(); it != mResourceTextures.end(); it = mResourceTextures.erase(it)) {
 		if (it->second != nullptr)
-		it->second->Release();
+			it->second->Release();
 	}
 	ImGui_ImplDX9_InvalidateDeviceObjects();
 }
@@ -161,36 +161,43 @@ void OverlayRendererDX9::MeasureText(RECT &rc, TCHAR *text, int flags) {
 	mFont->DrawTextW(NULL, text, -1, &rc, DT_CALCRECT | flags, NULL);
 }
 
+void OverlayRendererDX9::RenderOverlayWindow() {
+	std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
+	D3DVIEWPORT9 prt;
+	pDevice->GetViewport(&prt);
+#pragma warning( push )
+#pragma warning( disable : 4838)
+	RECT rect = { prt.X, prt.Y, prt.X + prt.Width, prt.Y + prt.Height };
+#pragma warning( pop )
+
+	if ((Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) && !mConfig.UseExternalWindow) {
+		mWindows.width = prt.Width;
+		mWindows.height = prt.Height;
+		mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
+		for (auto it = mWindows.children[1].begin(); it != mWindows.children[1].end(); ++it) {
+			if ((*it)->relativeSize) {
+				(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
+				(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
+			}
+		}
+		mWindows.draw(this);
+	}
+}
+
 void OverlayRendererDX9::RenderOverlay() {
 
 	if (mConfig.UseDrawOverlay && mFont != nullptr) {
-		std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
-
-		D3DVIEWPORT9 prt;
-		pDevice->GetViewport(&prt);
-#pragma warning( push )
-#pragma warning( disable : 4838)
-		RECT rect = { prt.X, prt.Y, prt.X + prt.Width, prt.Y + prt.Height };
-#pragma warning( pop )
-
 		pDevice->BeginScene();
 
-		if ((Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) && !mConfig.UseExternalWindow) {
-			mWindows.width = prt.Width;
-			mWindows.height = prt.Height;
-			mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
-			for (auto it = mWindows.children[1].begin(); it != mWindows.children[1].end(); ++it) {
-				if ((*it)->relativeSize) {
-					(*it)->xF = min(1 - (*it)->calcWidth / (*it)->getParent()->width, max(0, (*it)->xF));
-					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
-				}
-			}
-			mWindows.draw(this);
-		}
+		__try {
+			RenderOverlayWindow();
+		} __except (1) {}
 
-		ImGui_ImplDX9_NewFrame();
-		mConfig.Render();
-		ImGui::Render();
+		__try {
+			ImGui_ImplDX9_NewFrame();
+			mConfig.Render();
+			ImGui::Render();
+		} __except (1) {}
 
 		pDevice->EndScene();
 	}

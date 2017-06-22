@@ -73,17 +73,15 @@ struct ATTACK_INFO_EACH_V4 {
 		uint32_t _data0;
 	};
 
-	short damage;
+	uint16_t damage;
 	union {
 		struct {
-			char _u0 : 4;
-			char mult10 : 1;
-			char _u1 : 3;
+			char mult10 : 4;
+			char _u1 : 4;
 		};
 		char _u2;
 	};
-	char _u3[3];
-	short data1_right;
+	char _u3;
 };
 
 struct ATTACK_INFO {
@@ -121,7 +119,8 @@ struct TEMPDMG {
 	char isDoT : 1;
 	char isCrit : 1;
 	char isDirectHit : 1;
-	char _u0 : 5;
+	char isMiss : 1;
+	char _u0 : 4;
 };
 
 struct TARGET_STRUCT {
@@ -336,6 +335,7 @@ private:
 	unsigned char inflateBuffer[DEFLATE_CHUNK_SIZE];
 
 	void ResolveUsers();
+	bool IsParseTarget(uint32_t id);
 	void AddDamageInfo(TEMPDMG dmg, bool direct);
 	void CalculateDps(uint64_t timestamp);
 	void UpdateOverlayMessage();

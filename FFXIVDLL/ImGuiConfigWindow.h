@@ -64,6 +64,7 @@ public:
 	char fontName[512] = "Segoe UI";
 	bool UseExternalWindow;
 	int ExternalWindowRefreshRate;
+	int ParseFilter;
 
 	bool showTimes;
 

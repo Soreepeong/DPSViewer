@@ -25,6 +25,7 @@ private:
 	virtual void DrawText(int x, int y, TCHAR *text, DWORD Color);
 	virtual void DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align);
 	virtual void RenderOverlay();
+	void RenderOverlayWindow();
 
 	virtual void CheckCapture();
 

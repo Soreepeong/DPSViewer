@@ -168,9 +168,8 @@ void OverlayRenderer::DrawOverlay() {
 	CheckCapture();
 
 	RenderExternalOverlay();
-	__try {
-		RenderOverlay();
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
+	RenderOverlay();
+	__try {} __except (EXCEPTION_EXECUTE_HANDLER) {}
 }
 
 void OverlayRenderer::RenderExternalOverlay() {

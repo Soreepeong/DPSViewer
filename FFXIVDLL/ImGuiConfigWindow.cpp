@@ -65,6 +65,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDPS.xF = readIni(L"DPSMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDPS.yF = readIni(L"DPSMeter", L"y", 0.1f, 0.f, 1.f);
 	ShowEveryDPS = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
+	ParseFilter = readIni(L"DPSMeter", L"ParseFilter", 0, 0, 3);
 	hideOtherUserName = readIni(L"DPSMeter", L"HideOtherUserName", 0, 0, 1);
 	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
 	showTimes = readIni(L"DPSMeter", L"ShowTimes", 1, 0, 1);
@@ -141,6 +142,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"x", dll->process()->wDPS.xF);
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
 	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);
+	writeIni(L"DPSMeter", L"ParseFilter", ParseFilter);
 	writeIni(L"DPSMeter", L"HideOtherUserName", hideOtherUserName);
 	writeIni(L"DPSMeter", L"CombatResetTime", combatResetTime);
 	writeIni(L"DPSMeter", L"ShowTimes", (int) showTimes);
@@ -237,6 +239,7 @@ void ImGuiConfigWindow::Render() {
 			ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_NAME_LENGTH"), &(dll->process()->wDPS.maxNameWidth), 16, 128);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), (int*)&(dll->process()->wDPS.simpleViewThreshold), 1, 24);
+			ImGui::Combo(Languages::get("OPTION_DPS_PARSE_FILTER"), &ParseFilter, Languages::get("OPTION_DPS_PARSE_FILTER_CHOICES"));
 		}
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
 			ImGui::Checkbox(Languages::get("OPTION_USE_EXTERNAL_WINDOW"), &UseExternalWindow);

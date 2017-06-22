@@ -15,6 +15,587 @@
 #include "Hooks.h"
 #include <psapi.h>
 
+std::string debug_skillname(int skillid) {
+	switch (skillid) {
+		case 0x9: return "fast blade";
+		case 0xb: return "savage blade";
+		case 0x14: return "fight or flight";
+		case 0xe: return "flash";
+		case 0xf: return "riot blade";
+		case 0x18: return "shield lob";
+		case 0x10: return "shield bash";
+		case 0x15: return "rage of halone";
+		case 0x19: return "shield swipe";
+		case 0x11: return "sentinel";
+		case 0x13: return "tempered will";
+		case 0x16: return "bulwark";
+		case 0x17: return "circle of scorn";
+		case 0x35: return "bootshine";
+		case 0x36: return "true strike";
+		case 0x38: return "snap punch";
+		case 0x3b: return "internal release";
+		case 0x3c: return "fists of earth";
+		case 0x3d: return "twin snakes";
+		case 0x3e: return "arm of the destroyer";
+		case 0x42: return "demolish";
+		case 0x49: return "fists of wind";
+		case 0x40: return "steel peak";
+		case 0x41: return "mantra";
+		case 0x43: return "howling fist";
+		case 0x45: return "perfect balance";
+		case 0x1f: return "heavy swing";
+		case 0x23: return "skull sunder";
+		case 0x26: return "berserk";
+		case 0x29: return "overpower";
+		case 0x2e: return "tomahawk";
+		case 0x25: return "maim";
+		case 0x28: return "thrill of battle";
+		case 0x2f: return "butcher's block";
+		case 0x2a: return "storm's path";
+		case 0x2b: return "holmgang";
+		case 0x2c: return "vengeance";
+		case 0x2d: return "storm's eye";
+		case 0x4b: return "true thrust";
+		case 0x4e: return "vorpal thrust";
+		case 0x51: return "impulse drive";
+		case 0x4f: return "heavy thrust";
+		case 0x5a: return "piercing talon";
+		case 0x53: return "life surge";
+		case 0x54: return "full thrust";
+		case 0x55: return "blood for blood";
+		case 0x57: return "disembowel";
+		case 0x58: return "chaos thrust";
+		case 0x61: return "heavy shot";
+		case 0x62: return "straight shot";
+		case 0x65: return "raging strikes";
+		case 0x64: return "venomous bite";
+		case 0x67: return "misery's end";
+		case 0x6e: return "bloodletter";
+		case 0x70: return "repelling shot";
+		case 0x6a: return "quick nock";
+		case 0x71: return "windbite";
+		case 0x6b: return "barrage";
+		case 0x77: return "stone";
+		case 0x78: return "cure";
+		case 0x79: return "aero";
+		case 0x7c: return "medica";
+		case 0x7d: return "raise";
+		case 0x86: return "fluid aura";
+		case 0x7f: return "stone ii";
+		case 0x80: return "repose";
+		case 0x87: return "cure ii";
+		case 0x84: return "aero ii";
+		case 0x85: return "medica ii";
+		case 0x8e: return "blizzard";
+		case 0x8d: return "fire";
+		case 0x95: return "transpose";
+		case 0x90: return "thunder";
+		case 0x91: return "sleep";
+		case 0x92: return "blizzard ii";
+		case 0x9c: return "scathe";
+		case 0x93: return "fire ii";
+		case 0x94: return "thunder ii";
+		case 0x9d: return "manaward";
+		case 0x98: return "fire iii";
+		case 0x9b: return "aetherial manipulation";
+		case 0x1c: return "shield oath";
+		case 0x1a: return "sword oath";
+		case 0x1b: return "cover";
+		case 0x1d: return "spirits within";
+		case 0x1e: return "hallowed ground";
+		case 0xdd6: return "sheltron";
+		case 0xdd2: return "goring blade";
+		case 0xdd4: return "divine veil";
+		case 0xdd5: return "clemency";
+		case 0xdd3: return "royal authority";
+		case 0x1cd6: return "intervention";
+		case 0x1cd8: return "holy spirit";
+		case 0x1cd7: return "requiescat";
+		case 0x1cd9: return "passage of arms";
+		case 0x46: return "rockbreaker";
+		case 0x47: return "shoulder tackle";
+		case 0x3f: return "fists of fire";
+		case 0x48: return "one ilm punch";
+		case 0x4a: return "dragon kick";
+		case 0x10a6: return "form shift";
+		case 0xdda: return "meditation";
+		case 0xddb: return "the forbidden chakra";
+		case 0xdd9: return "elixir field";
+		case 0xdd8: return "purification";
+		case 0xdd7: return "tornado kick";
+		case 0x1ce2: return "riddle of earth";
+		case 0x1eb8: return "earth tackle";
+		case 0x1eb9: return "wind tackle";
+		case 0x1eba: return "fire tackle";
+		case 0x1ebc: return "riddle of wind";
+		case 0x1ce3: return "riddle of fire";
+		case 0x1ce4: return "brotherhood";
+		case 0x30: return "defiance";
+		case 0x31: return "inner beast";
+		case 0x32: return "unchained";
+		case 0x33: return "steel cyclone";
+		case 0x34: return "infuriate";
+		case 0xddc: return "deliverance";
+		case 0xddd: return "fell cleave";
+		case 0xddf: return "raw intuition";
+		case 0xde0: return "equilibrium";
+		case 0xdde: return "decimate";
+		case 0x1cda: return "onslaught";
+		case 0x1cdb: return "upheaval";
+		case 0x1cdc: return "shake it off";
+		case 0x1cdd: return "inner release";
+		case 0x5c: return "jump";
+		case 0x5e: return "elusive jump";
+		case 0x56: return "doom spike";
+		case 0x5f: return "spineshatter dive";
+		case 0x60: return "dragonfire dive";
+		case 0xde5: return "battle litany";
+		case 0xde1: return "blood of the dragon";
+		case 0xde2: return "fang and claw";
+		case 0xde4: return "wheeling thrust";
+		case 0xde3: return "geirskogul";
+		case 0x1ce5: return "sonic thrust";
+		case 0x1ce6: return "dragon sight";
+		case 0x1ce7: return "mirage dive";
+		case 0x1ce8: return "nastrond";
+		case 0x72: return "mage's ballad";
+		case 0x73: return "foe requiem";
+		case 0x74: return "army's paeon";
+		case 0x75: return "rain of death";
+		case 0x76: return "battle voice";
+		case 0xde7: return "the wanderer's minuet";
+		case 0x228a: return "pitch perfect";
+		case 0xde6: return "empyreal arrow";
+		case 0xde8: return "iron jaws";
+		case 0xde9: return "the warden's paean";
+		case 0xdea: return "sidewinder";
+		case 0x1ced: return "troubador";
+		case 0x1cee: return "caustic bite";
+		case 0x1cef: return "stormbite";
+		case 0x1cf0: return "nature's minne";
+		case 0x1cf1: return "refulgent arrow";
+		case 0x88: return "presence of mind";
+		case 0x89: return "regen";
+		case 0x83: return "cure iii";
+		case 0x8b: return "holy";
+		case 0x8c: return "benediction";
+		case 0xdf1: return "asylum";
+		case 0xdf0: return "stone iii";
+		case 0xdf3: return "assize";
+		case 0xdf4: return "aero iii";
+		case 0xdf2: return "tetragrammaton";
+		case 0x1d06: return "thin air";
+		case 0x1d07: return "stone iv";
+		case 0x1d08: return "divine benison";
+		case 0x1d09: return "plenary indulgence";
+		case 0x9e: return "convert";
+		case 0x9f: return "freeze";
+		case 0x9a: return "blizzard iii";
+		case 0x99: return "thunder iii";
+		case 0xa2: return "flare";
+		case 0xdf5: return "ley lines";
+		case 0xdf6: return "sharpcast";
+		case 0xdf7: return "enochian";
+		case 0xdf8: return "blizzard iv";
+		case 0xdf9: return "fire iv";
+		case 0x1cfb: return "between the lines";
+		case 0x1cfc: return "thunder iv";
+		case 0x1cfd: return "triplecast";
+		case 0x1cfe: return "foul";
+		case 0xa3: return "ruin";
+		case 0xa4: return "bio";
+		case 0xa5: return "summon";
+		case 0xbe: return "physick";
+		case 0xa6: return "aetherflow";
+		case 0xa7: return "energy drain";
+		case 0xa8: return "miasma";
+		case 0xaa: return "summon ii";
+		case 0xad: return "resurrection";
+		case 0xb2: return "bio ii";
+		case 0xae: return "bane";
+		case 0xac: return "ruin ii";
+		case 0xb0: return "rouse";
+		case 0xb3: return "shadow flare";
+		case 0xb4: return "summon iii";
+		case 0xb5: return "fester";
+		case 0xb6: return "tri-bind";
+		case 0xb8: return "enkindle";
+		case 0xdfa: return "painflare";
+		case 0xdfb: return "ruin iii";
+		case 0xb7: return "spur";
+		case 0xdfc: return "tri-disaster";
+		case 0xdfd: return "dreadwyrm trance";
+		case 0xdfe: return "deathflare";
+		case 0x1d02: return "ruin iv";
+		case 0x1cff: return "aetherpact";
+		case 0x1d1a: return "devotion";
+		case 0x1d00: return "bio iii";
+		case 0x1d01: return "miasma iii";
+		case 0x1d03: return "summon bahamut";
+		case 0x1d04: return "wyrmweave";
+		case 0x1d05: return "enkindle bahamut";
+		case 0x1d19: return "akh morn";
+		case 0xb9: return "adloquium";
+		case 0xba: return "succor";
+		case 0xbc: return "sacred soil";
+		case 0xbd: return "lustrate";
+		case 0xdff: return "indomitability";
+		case 0xe00: return "broil";
+		case 0xe01: return "deployment tactics";
+		case 0xe02: return "emergency tactics";
+		case 0xe03: return "dissipation";
+		case 0x1d0a: return "Excogitation";
+		case 0x1d0b: return "Broil II";
+		case 0x1d0c: return "Chain Strategem";
+		case 0x1d0d: return "Aetherpact ";
+		case 0x1d0e: return "Fey Union";
+		case 0x1ebd: return "Dissolve Union";
+		case 0x8c0: return "spinning edge";
+		case 0x8c1: return "shade shift";
+		case 0x8c2: return "gust slash";
+		case 0x8c5: return "hide";
+		case 0x8c6: return "assassinate";
+		case 0x8c7: return "throwing dagger";
+		case 0x8c8: return "mug";
+		case 0x8d2: return "trick attack";
+		case 0x8cf: return "aeoilian edge";
+		case 0x8d0: return "jugulate";
+		case 0x8d1: return "shadow fang";
+		case 0x8ce: return "death blossom";
+		case 0x8d3: return "ten";
+		case 0x8d4: return "ninjutsu";
+		case 0x8d5: return "chi";
+		case 0x8d6: return "shukuchi";
+		case 0x8d7: return "jin";
+		case 0x8d8: return "kassatsu";
+		case 0xded: return "smoke screen";
+		case 0xdeb: return "armor crush";
+		case 0xdec: return "shadewalker";
+		case 0xdef: return "duality";
+		case 0xdee: return "dream within a dream";
+		case 0x8d9: return "fuma shuriken";
+		case 0x8da: return "katon";
+		case 0x8db: return "raiton";
+		case 0x8dc: return "hyoton";
+		case 0x8dd: return "huton";
+		case 0x8de: return "doton";
+		case 0x8df: return "suiton";
+		case 0x8e0: return "rabbit medium";
+		case 0x1ce9: return "hellfrog medium";
+		case 0x1cea: return "bhavacakra";
+		case 0x1ceb: return "ten chi jin";
+		case 0xb32: return "split shot";
+		case 0x2290: return "heated split shot";
+		case 0xb34: return "slug shot";
+		case 0x2291: return "heated slug shot";
+		case 0xb33: return "reload";
+		case 0xb3b: return "heartbreak";
+		case 0xb3c: return "reassemble";
+		case 0xb48: return "blank";
+		case 0xb36: return "spread shot";
+		case 0xb3f: return "quick reload";
+		case 0xb38: return "hot shot";
+		case 0xb41: return "rapid fire";
+		case 0xb39: return "clean shot";
+		case 0x2292: return "heated clean shot";
+		case 0xb3e: return "wildfire";
+		case 0xb30: return "rook autoturret";
+		case 0xd9f: return "turret retrieval";
+		case 0xb31: return "bishop autoturret";
+		case 0xb40: return "gauss barrel";
+		case 0x2337: return "remove barrel";
+		case 0xb3a: return "gauss round";
+		case 0xb47: return "dismantle";
+		case 0xb45: return "hypercharge";
+		case 0xb4a: return "ricochet";
+		case 0x1cf2: return "cooldown";
+		case 0x1cf6: return "barrel stabilizer";
+		case 0x1cf7: return "rook overdrive";
+		case 0x1cf8: return "rook overload";
+		case 0x1cf9: return "bishop overload";
+		case 0x1cfa: return "flamethrower";
+		case 0xe21: return "hard slash";
+		case 0xe23: return "spinning slash";
+		case 0xe25: return "unleash";
+		case 0xe27: return "syphon strike";
+		case 0xe28: return "unmend";
+		case 0xe29: return "blood weapon";
+		case 0xe2b: return "power slash";
+		case 0xe2d: return "grit";
+		case 0xe2c: return "darkside";
+		case 0xe2f: return "blood price";
+		case 0xe30: return "souleater";
+		case 0xe31: return "dark passenger";
+		case 0xe32: return "dark mind";
+		case 0xe33: return "dark arts";
+		case 0xe34: return "shadow wall";
+		case 0xe36: return "living dead";
+		case 0xe37: return "salted earth";
+		case 0xe38: return "plunge";
+		case 0xe39: return "abyssal drain";
+		case 0xe3a: return "sole survivor";
+		case 0xe3b: return "carve and spit";
+		case 0x1cde: return "delirium";
+		case 0x1cdf: return "quietus";
+		case 0x1ce0: return "bloodspiller";
+		case 0x1ce1: return "the blackest night";
+		case 0xe0c: return "malefic";
+		case 0xe0a: return "benefic";
+		case 0xe0f: return "combust";
+		case 0xe16: return "lightspeed";
+		case 0xe10: return "helios";
+		case 0xe13: return "ascend";
+		case 0xe1e: return "essential dignity";
+		case 0xe1a: return "benefic ii";
+		case 0xe06: return "draw";
+		case 0xe14: return "diurnal sect";
+		case 0xe0b: return "aspected benefic";
+		case 0xe07: return "royal road";
+		case 0xe19: return "disable";
+		case 0xe08: return "spread";
+		case 0xe11: return "aspected helios";
+		case 0xe09: return "redraw";
+		case 0xe18: return "combust ii";
+		case 0xe15: return "nocturnal sect";
+		case 0xe1c: return "synastry";
+		case 0xe1f: return "gravity";
+		case 0xe0e: return "malefic ii";
+		case 0xe1b: return "time dilation";
+		case 0xe1d: return "collective unconscious";
+		case 0xe20: return "celestial opposition";
+		case 0x1d0f: return "earthly star";
+		case 0x2084: return "stellar detonation";
+		case 0x1d11: return "stellar explosion";
+		case 0x1d12: return "malefic iii";
+		case 0x1d13: return "minor arcana";
+		case 0x1d18: return "sleeve draw";
+		case 0x1131: return "the balance";
+		case 0x1132: return "the bole";
+		case 0x1135: return "the ewer";
+		case 0x1136: return "the spire";
+		case 0x1133: return "the arrow";
+		case 0x1134: return "the spear";
+		case 0x1d14: return "lord of crowns";
+		case 0x1d15: return "lady of crowns";
+		case 0x1d35: return "hakaze";
+		case 0x1d36: return "jinpu";
+		case 0x1d4a: return "third eye";
+		case 0x1d4c: return "ageha";
+		case 0x1d3e: return "enpi";
+		case 0x1d37: return "shifu";
+		case 0x1d3b: return "fuga";
+		case 0x1d39: return "gekko";
+		case 0x1ebb: return "iaijutsu";
+		case 0x1d41: return "higanbana";
+		case 0x1d40: return "tenka goken";
+		case 0x1d3f: return "midare setsugekka";
+		case 0x1d3c: return "mangetsu";
+		case 0x1d3a: return "kasha";
+		case 0x1d3d: return "oka";
+		case 0x1d38: return "yukikaze";
+		case 0x1d4b: return "meikyo shisui";
+		case 0x1d46: return "hissatsu: kaiten";
+		case 0x1d44: return "hissatsu: gyoten";
+		case 0x1d43: return "hissatsu: yaten";
+		case 0x1d4e: return "merciful eyes";
+		case 0x1d49: return "meditate";
+		case 0x1d42: return "hissatsu: shinten";
+		case 0x1d4d: return "hissatsu: seigan";
+		case 0x1d47: return "hagakure";
+		case 0x1d48: return "hissatsu: guren";
+		case 0x1d50: return "riposte";
+		case 0x1d4f: return "jolt";
+		case 0x1d51: return "verthunder";
+		case 0x1d52: return "corps-a-corps";
+		case 0x1d53: return "veraero";
+		case 0x1d54: return "tether";
+		case 0x1d55: return "scatter";
+		case 0x1d56: return "verfire";
+		case 0x1d57: return "verstone";
+		case 0x1d58: return "zwerchhau";
+		case 0x1d5b: return "displacement";
+		case 0x1d5d: return "fleche";
+		case 0x1d5c: return "redoublement";
+		case 0x1d5e: return "acceleration";
+		case 0x1d59: return "moulinet";
+		case 0x1d5a: return "vercure";
+		case 0x1d5f: return "contre sixte";
+		case 0x1d60: return "embolden";
+		case 0x1d61: return "manafication";
+		case 0x1d64: return "jolt ii";
+		case 0x1d63: return "verraise";
+		case 0x1d62: return "impact";
+		case 0x1d65: return "verflare";
+		case 0x1d66: return "verholy";
+		case 0x1d67: return "enchanted riposte";
+		case 0x1d68: return "enchanted zwerchhau";
+		case 0x1d69: return "enchanted redoublement";
+		case 0x1d6a: return "enchanted moulinet";
+		case 0x1d6b: return "rampart";
+		case 0x1d74: return "low blow";
+		case 0x1d6d: return "provoke";
+		case 0x1d6c: return "convalescence";
+		case 0x1d70: return "anticipation";
+		case 0x1d6f: return "reprisal";
+		case 0x1d6e: return "awareness";
+		case 0x1d72: return "interject";
+		case 0x1d73: return "ultimatum";
+		case 0x1d71: return "shirk";
+		case 0x1d8f: return "cleric stance";
+		case 0x1d86: return "break";
+		case 0x1d94: return "protect";
+		case 0x1d90: return "esuna";
+		case 0x1d8a: return "lucid dreaming";
+		case 0x1d89: return "swiftcast";
+		case 0x1d91: return "eye for an eye";
+		case 0x1d92: return "largesse";
+		case 0x1d87: return "surecast";
+		case 0x1d93: return "rescue";
+		case 0x1d75: return "second wind";
+		case 0x1d7c: return "arm's length";
+		case 0x1eb7: return "leg sweep";
+		case 0x1d79: return "diversion";
+		case 0x1d78: return "invigorate";
+		case 0x1d76: return "bloodbath";
+		case 0x1d77: return "goad";
+		case 0x1d7d: return "feint";
+		case 0x1d7b: return "crutch";
+		case 0x1d7a: return "true north";
+		case 0x1d81: return "foot graze";
+		case 0x1d82: return "leg graze";
+		case 0x1d85: return "peloton";
+		case 0x1d83: return "tactician";
+		case 0x1d84: return "refresh";
+		case 0x1d7f: return "head graze";
+		case 0x1d80: return "arm graze";
+		case 0x1d7e: return "palisade";
+		case 0x1d88: return "addle";
+		case 0x1d8c: return "drain";
+		case 0x1d8d: return "mana shift";
+		case 0x1d8b: return "apocatastasis";
+		case 0x1d8e: return "erase";
+		case 0x27d: return "gust";
+		case 0x27e: return "backdraft";
+		case 0x27f: return "downburst";
+		case 0x280: return "shining emerald";
+		case 0x27a: return "shining topaz";
+		case 0x279: return "gouge";
+		case 0x27b: return "curl";
+		case 0x27c: return "storm";
+		case 0x318: return "wind blade";
+		case 0x319: return "shockwave";
+		case 0x31a: return "aerial slash";
+		case 0x31b: return "contagion";
+		case 0x31c: return "aerial blast";
+		case 0x313: return "rock buster";
+		case 0x314: return "mountain buster";
+		case 0x315: return "earthen ward";
+		case 0x316: return "landslide";
+		case 0x317: return "earthen fury";
+		case 0x338: return "choco slash";
+		case 0x337: return "choco beak";
+		case 0x336: return "choco rush";
+		case 0x335: return "choco blast";
+		case 0x334: return "choco drop";
+		case 0x333: return "choco kick";
+		case 0x332: return "choco guard";
+		case 0x331: return "choco strike";
+		case 0x339: return "choco medica";
+		case 0x33a: return "choco surge";
+		case 0x33b: return "choco cure";
+		case 0x33c: return "choco regen";
+		case 0x31d: return "crimson cyclone";
+		case 0x31e: return "burning strike";
+		case 0x31f: return "radiant shield";
+		case 0x320: return "flaming crush";
+		case 0x321: return "inferno";
+		case 0x322: return "embrace";
+		case 0x323: return "whispering dawn";
+		case 0x324: return "fey covenant";
+		case 0x325: return "fey illumination";
+		case 0x326: return "embrace-selene";
+		case 0x327: return "silent dusk";
+		case 0x32b: return "fey wind";
+		case 0x32a: return "fey caress";
+		case 0xb4c: return "aether mortar";
+		case 0xb4b: return "volley fire";
+		case 0xe05: return "charged aether mortar";
+		case 0xe04: return "charged volley fire";
+		case 0x1d10: return "stellar burst";
+		case 0xc8: return "braver";
+		case 0xc9: return "bladedance";
+		case 0xca: return "final heaven";
+		case 0xcb: return "skyshard";
+		case 0xcc: return "starstorm";
+		case 0xcd: return "meteor";
+		case 0xce: return "healing wind";
+		case 0xcf: return "breath of the earth";
+		case 0xd0: return "pulse of life";
+		case 0xc5: return "shield wall";
+		case 0xc6: return "mighty guard";
+		case 0xc7: return "last bastion";
+		case 0x1090: return "land walker";
+		case 0x1091: return "dark force";
+		case 0x1092: return "dragonsong dive";
+		case 0x1093: return "chimatsuri";
+		case 0x108f: return "desperado";
+		case 0x108e: return "big shot";
+		case 0x1095: return "satellite beam";
+		case 0x1094: return "sagittarius arrow";
+		case 0x1096: return "teraflare";
+		case 0x1097: return "angel feathers";
+		case 0x1098: return "astral stasis";
+		case 0x1eb5: return "doom of the living";
+		case 0x1eb6: return "vermillion scourge";
+		case 0x2d4: return "digest";
+		case 0x5cd: return "lunatic voice";
+		case 0x67b: return "putrid cloud";
+		case 0x2b6: return "immortalize";
+		case 0x72c: return "bravery";
+		case 0x5fe: return "infernal fetters";
+		case 0x4da: return "death sentence";
+		case 0x4bc: return "disseminate";
+		case 0x64a: return "blood sword";
+		case 0x80a: return "pom cure";
+		case 0x89c: return "ripe banana";
+		case 0x986: return "aura curtain";
+		case 0x7da: return "lunar dynamo";
+		case 0x874: return "Mantle of the Whorl";
+		case 0x875: return "Veil of the Whorl";
+		case 0x923: return "drain-mob";
+		case 0x964: return "head over heals";
+		case 0x9ff: return "lunar dynamo 9ff";
+		case 0x993: return "frost blade";
+		case 0xb91: return "bluefire";
+		case 0xcb1: return "Mini - WoD";
+		case 0x943: return "Mini";
+		case 0xd0e: return "marrow drain";
+		case 0xd5b: return "Aetherial Distribution";
+		case 0x35b: return "ice spikes";
+		case 0x3de: return "bang toss";
+		case 0x13cc: return "sanguine bite";
+		case 0x156: return "soul drain";
+		case 0x1598: return "guzzle";
+		case 0x1734: return "retribution";
+		case 0x1731: return "seed of the sky";
+		case 0xe81: return "scorpion avatar";
+		case 0xe80: return "dragonfly avatar";
+		case 0xe82: return "beetle avatar";
+		case 0xeb1: return "warlord shell";
+		case 0x1327: return "brainhurt breakblock";
+		case 0x132c: return "meltyspume";
+		case 0x13cf: return "brainshaker";
+		case 0xfdc: return "explosion";
+		case 0x128b: return "bloodstain";
+		case 0x3: return "sprint";
+		case 0x5: return "teleport";
+
+	}
+	char res[256];
+	sprintf(res, "(skill id %x)", skillid);
+	return res;
+}
+
 #define LIGHTER_COLOR(color,how) (((color)&0xFF000000) | (min(255, max(0, (((color)>>16)&0xFF)+(how)))<<16) | (min(255, max(0, (((color)>>8)&0xFF)+(how)))<<8) | (min(255, max(0, (((color)>>0)&0xFF)+(how)))<<0)))
 
 GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
@@ -109,7 +690,7 @@ void GameDataProcess::ReloadLocalization() {
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DPS"), CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_TOTAL"), CONTROL_TEXT_STRING, DT_CENTER));
 	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CRITICAL"), CONTROL_TEXT_STRING, DT_CENTER));
-	if(version == 340)
+	if (version == 340)
 		mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CMH"), CONTROL_TEXT_STRING, DT_CENTER));
 	else
 		mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CDMH"), CONTROL_TEXT_STRING, DT_CENTER));
@@ -356,6 +937,44 @@ inline TCHAR* GameDataProcess::GetActorJobString(int id) {
 	return L"(???)";
 }
 
+bool GameDataProcess::IsParseTarget(uint32_t id) {
+
+	struct PARTY_STRUCT {
+		struct {
+			uint8_t _u0[32];
+			uint32_t id;
+#ifdef _WIN64
+			uint8_t _u1[544 - 32 - 4];
+#else
+			uint8_t _u1[528 - 32 - 4];
+#endif
+		} members[24]; // 544 bytes
+		uint8_t _u0[20];
+		uint32_t partyFlag1;
+		uint32_t _u1;
+		int partySize;
+	};
+	if (!dll->hooks() || !dll->hooks()->GetOverlayRenderer() || dll->hooks()->GetOverlayRenderer()->mConfig.ParseFilter == 0) return true;
+
+	__try {
+		PARTY_STRUCT* ptr = (PARTY_STRUCT*) dll->memory()->Result.Data.PartyMap;
+		if (ptr == 0) return true;
+		if (id == mSelfId) return true;
+		if (dll->hooks()->GetOverlayRenderer()->mConfig.ParseFilter == 3) return false; // me only
+		for (int i = 0; i < 8 && i < ptr->partySize; i++)
+			if (ptr->members[i].id == id)
+				return true;
+		if (dll->hooks()->GetOverlayRenderer()->mConfig.ParseFilter == 2) return false; // party
+		for (int i = 8; i < 24 && i < ptr->partySize; i++)
+			if (ptr->members[i].id == id)
+				return true;
+		return false; // alliance
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+
+	return true; // show anyway if there was any error
+}
+
 void GameDataProcess::ResolveUsers() {
 	int limit = 1372;
 	mSelfId = 0;
@@ -399,7 +1018,7 @@ void GameDataProcess::CalculateDps(uint64_t timestamp) {
 }
 
 void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
-	if (GetActorType(dmg.source) == ACTOR_TYPE_PC) {
+	if (GetActorType(dmg.source) == ACTOR_TYPE_PC && IsParseTarget(dmg.source)) {
 
 		if (mLastAttack.timestamp < dmg.timestamp - mCombatResetTime) {
 			mDpsInfo.clear();
@@ -415,8 +1034,8 @@ void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 			mDpsInfo[dmg.source].totalDamage.def += dmg.dmg;
 			if (mDpsInfo[dmg.source].maxDamage.dmg < dmg.dmg)
 				mDpsInfo[dmg.source].maxDamage = dmg;
-				mDpsInfo[dmg.source].totalDamage.crit += dmg.dmg;
-			if (dmg.isCrit) 
+			mDpsInfo[dmg.source].totalDamage.crit += dmg.dmg;
+			if (dmg.isCrit)
 				mDpsInfo[dmg.source].critHits++;
 			if (dmg.isDirectHit)
 				mDpsInfo[dmg.source].directHits++;
@@ -542,12 +1161,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits));
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					if(version == 340)
+					if (version == 340)
 						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 					else
 						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].directHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					if(version == 400 && (max.isCrit || max.isDirectHit))
+					if (version == 400 && (max.isCrit || max.isDirectHit))
 						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s%s", max.dmg, max.isDirectHit ? L"." : L"", max.isCrit ? L"!" : L"");
 					else
 						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
@@ -825,9 +1444,20 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 
 			case 1: case 3: case 5: case 6:
 				dmg.dmg = info->attack[i].damage;
+				if (info->attack[i].mult10 & 4)
+					dmg.dmg *= 10;
 				dmg.isCrit = info->attack[i].isCrit;
 				dmg.isDirectHit = info->attack[i].isDirectHit;
+				if (dmg.dmg == 0 && info->attack[i].swingtype == 1)
+					dmg.isMiss = 1;
 				AddDamageInfo(dmg, true);
+				/*
+				if (dmg.source == mSelfId) {
+					char test[512];
+					sprintf(test, "/e %s: %d / %2X", debug_skillname(dmg.skill).c_str(), dmg.dmg, (int) info->attack[i]._u5);
+					dll->addChat(test);
+				}
+				//*/
 				break;
 			case 17:
 			case 18:
@@ -1257,11 +1887,6 @@ void GameDataProcess::UpdateInfoThread() {
 		ParsePacket(mSent, false);
 		ParsePacket(mRecv, true);
 		UpdateOverlayMessage();
-		/*
-		__try {
-		} __except (EXCEPTION_EXECUTE_HANDLER) {
-		}
-		//*/
 	}
 	TerminateThread(GetCurrentThread(), 0);
 }

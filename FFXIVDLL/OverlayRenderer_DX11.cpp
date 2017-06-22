@@ -145,7 +145,7 @@ void OverlayRendererDX11::TextDrawCallback(RenderInfo& ri) {
 		pFW->DrawString(pContext, ri.text, mConfig.fontSize, ri.x, ri.y, ri.color, ri.flags | FW1_RESTORESTATE);
 	else {
 		FW1_RECTF rf = { ri.x, ri.y, ri.x + ri.w, ri.y + ri.h };
-		pFW->DrawString(pContext, ri.text, mFontName, mConfig.fontSize, &rf, ri.color, NULL, NULL, ri.flags | FW1_RESTORESTATE);
+		pFW->DrawString(pContext, ri.text, mFontName, mConfig.fontSize, &rf, ri.color, &rf, NULL, ri.flags | FW1_RESTORESTATE | FW1_CLIPRECT | FW1_NOWORDWRAP);
 	}
 }
 
@@ -189,7 +189,7 @@ void OverlayRendererDX11::MeasureText(RECT &rc, TCHAR *text, int flags) {
 		rf.Bottom = rf.Top + 2000;
 	// Modified function - it uses GetMetrics instead of GetOverhangMetrics
 	rf2 = pFW->MeasureString(text, mFontName, mConfig.fontSize, &rf, flags);
-	rc = { rc.left, rc.top, (int) rf2.Right, (int) rf2.Bottom };
+	rc = { rc.left, rc.top, (int) rf2.Right + 2, (int) rf2.Bottom };
 	/*
 	char *utf8;
 	int len = WideCharToMultiByte(CP_UTF8, 0, text, -1, nullptr, 0, 0, 0);

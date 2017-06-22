@@ -45,6 +45,8 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"] = "Hide during cutscenes";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_NAME_LENGTH"] = "Max name width";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_SIMPLE_VIEW_THRESHOLD"] = "Simple view threshold";
+		loc[LANGUAGE_ENGLISH]["OPTION_DPS_PARSE_FILTER"] = "Parse filter";
+		loc[LANGUAGE_ENGLISH]["OPTION_DPS_PARSE_FILTER_CHOICES"] = std::string("Everyone\0Alliance\0Party\0Me\0\0", 29);
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_BOLD"] = "Bold text";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_SIZE"] = "Text size";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_NAME"] = "Font name";
@@ -91,6 +93,8 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_BOLD"] = u8"굵은 글자";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_NAME_LENGTH"] = u8"최대 이름 너비";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_SIMPLE_VIEW_THRESHOLD"] = u8"간략 보기 최소 인원";
+		loc[LANGUAGE_KOREAN]["OPTION_DPS_PARSE_FILTER"] = u8"보일 캐릭터";
+		loc[LANGUAGE_KOREAN]["OPTION_DPS_PARSE_FILTER_CHOICES"] = std::string(u8"모두\0연합\0파티\0혼자\0\0", 30);
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_SIZE"] = u8"글자 크기";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_NAME"] = u8"서체 이름";
 		loc[LANGUAGE_KOREAN]["OPTION_TEXT_BORDER"] = u8"글자 테두리";
