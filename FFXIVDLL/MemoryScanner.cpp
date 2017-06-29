@@ -25,13 +25,13 @@ textSectionFound:
 	if (kor) {
 		ActorMap.push_back(DataSignature("48c1e8033dffff0000742b3da80100007324488d0d", 21, true, 2, new int[2]{ 0, 0 }));
 		TargetMap.push_back(DataSignature("400fb6f684c0410f45f5488d0d", 13, true, 2, new int[2]{ 0, 184 }));
-		PartyMap.push_back(DataSignature("85d27508b0014883c4205bc3488d0d", 15, true, 2, new int[2]{ 0, 0 }));
+		PartyMap.push_back(DataSignature("85d27508b0014883c4205bc3488d0d", 15, true, 2, new int[2]{ 0, 16 }));
 		Struct.Actor = { 116, 48, 132, 138, 5336 };
 		Struct.Target = { 0, 32, 80 };
 	} else {
 		ActorMap.push_back(DataSignature("488b03488bcbff90a0000000888391000000488d0d", 21, true, 2, new int[2]{ 0, 0 }));
 		TargetMap.push_back(DataSignature("48896c2440488974244881fbf71c00000f85********488d0d", 25, true, 2, new int[2]{ 0, 192 }));
-		PartyMap.push_back(DataSignature("8bd78020fbf6db1ac980e1040808488d0d", 17, true, 2, new int[2]{ 0, 0 }));
+		PartyMap.push_back(DataSignature("8bd78020fbf6db1ac980e1040808488d0d", 17, true, 2, new int[2]{ 0, 16 }));
 		Struct.Actor = { 116, 48, 132, 140, 5826 };
 		Struct.Target = { 0, 80, 72 };
 	}
@@ -128,6 +128,7 @@ DWORD MemoryScanner::DoScan() {
 	if(!Result.Functions.HideFFXIVWindow)
 		Result.Functions.HideFFXIVWindow = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x40\x57\x48\x83\xEC\x20\x48\x8B\xF9\x48\x8B\x89\xC8\x00\x00\x00\x48\x85\xC9\x0F.....\x8B\x87\xB0\x01\x00\x00\xC1\xE8\x07\xA8\x01", "xxxxxxxxxxxxxxxxxxxx?????xxxxxxxxxxx");
 	Result.Functions.ShowFFXIVWindow = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x40\x53\x48\x83\xEC\x40\x48\x8B\x91\xC8\x00\x00\x00\x48\x8B\xD9\x48\x85\xD2", "xxxxxxxxxxxxxxxxxxx");
+	Result.Functions.OnNewChatItem = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x48\x89\x5C\x24\x08\x48\x89\x74\x24\x10\x57\x48\x83\xEC\x20\x48\x8B\xF9\x48\x83\xC1\x48\xE8....\x8B\x77\x14\x8D\x46\x01\x89\x47\x14\x81\xFE\x30\x75\x00\x00", "xxxxxxxxxxxxxxxxxxxxxxx????xxxxxxxxxxxxxxx");
 #else
 	Result.Functions.ProcessWindowMessage = (PVOID) Tools::FindPattern((DWORD) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x83\xEC\x1C\x53\x8B\x1D\x00\x00\x00\x00\x57\x6A\x00", "xxxxxxxxx????xxx");
 	if (Result.Functions.ProcessWindowMessage) { // v3.4
@@ -148,6 +149,7 @@ DWORD MemoryScanner::DoScan() {
 		Result.Functions.ProcessNewLine = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x81\xEC\xAC\x00\x00\x00\xA1....\x33\xC5\x89\x45\xFC\x53\x8B\x5D\x0C\x56\x8B\x75\x08\x57\x8B\x03\x8B\xF9\x83\xE0\x0F\x3C\x06", "xxxxxxxxxx" "????xxxxxxxxxxxxxxxxxxxxxxx");
 		Result.Functions.HideFFXIVWindow = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x8E\x80\x00\x00\x00\x85\xC9\x0F\x00\x00\x00\x00\x00\x8B\x86\x10\x01\x00\x00\xC1\xE8\x07\xA8\x01\x75\x7A", "xxxxxxxxxxxx?????xxxxxxxxxxxxx");
 		Result.Functions.ShowFFXIVWindow = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x56\x8B\xF1\x8B\x8E\x80\x00\x00\x00\x85\xC9\x0F\x00\x00\x00\x00\x00\x8B\x86\x10\x01\x00\x00\xC1\xE8\x07\xA8\x01\x0f\x85", "xxxxxxxxxxxx?????xxxxxxxxxxxxx");
+		Result.Functions.OnNewChatItem = (PVOID) Tools::FindPattern((DWORD_PTR) hGame + sectionHeaders->VirtualAddress, sectionHeaders->Misc.VirtualSize, (PBYTE) "\x55\x8B\xEC\x53\x56\x57\xFF\x75\x0C\x8B\xF9\xFF\x75\x08\x8D\x4F\x34", "xxxxxxxxxxxxxxxxx");
 	}
 #endif
 

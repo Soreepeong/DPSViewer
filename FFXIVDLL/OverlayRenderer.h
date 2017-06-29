@@ -45,6 +45,7 @@ class OverlayRenderer {
 	friend class Hooks;
 	friend class ImGuiConfigWindow;
 	friend class GameDataProcess;
+	friend class FFXIVDLL;
 public:
 
 	class Control {
@@ -127,12 +128,12 @@ public:
 		void removeAndDeleteAllChildren();
 		void addChild(OverlayRenderer::Control *c, CONTROL_CHILD_TYPE type);
 		void addChild(OverlayRenderer::Control *c);
-		OverlayRenderer::Control* getChild(int i, CONTROL_CHILD_TYPE type);
-		OverlayRenderer::Control* getChild(int i);
-		OverlayRenderer::Control* removeChild(int i, CONTROL_CHILD_TYPE type);
-		OverlayRenderer::Control* removeChild(int i);
-		int getChildCount(CONTROL_CHILD_TYPE type) const;
-		int getChildCount() const;
+		OverlayRenderer::Control* getChild(size_t i, CONTROL_CHILD_TYPE type);
+		OverlayRenderer::Control* getChild(size_t i);
+		OverlayRenderer::Control* removeChild(size_t i, CONTROL_CHILD_TYPE type);
+		OverlayRenderer::Control* removeChild(size_t i);
+		size_t getChildCount(CONTROL_CHILD_TYPE type) const;
+		size_t getChildCount() const;
 		Control* getParent() const;
 		void requestFront();
 		std::recursive_mutex& getLock();
@@ -162,6 +163,8 @@ protected:
 
 	virtual void CheckCapture() = 0;
 
+	void RenderOverlayMisc(int w, int h);
+
 	std::recursive_mutex mCaptureMutex;
 	bool mDoCapture = false;
 	HANDLE hSaverThread;
@@ -189,7 +192,7 @@ public:
 	OverlayRenderer(FFXIVDLL *dll);
 	virtual ~OverlayRenderer();
 
-	int GetFPS();
+	size_t GetFPS();
 
 	void CaptureScreen();
 

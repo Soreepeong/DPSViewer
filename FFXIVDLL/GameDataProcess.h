@@ -25,7 +25,13 @@ struct PER_USER_DMG {
 #define SOURCE_LIMIT_BREAK (NULL_ACTOR+1)
 
 enum ACTOR_TYPE : uint8_t {
-	ACTOR_TYPE_PC = 1
+	ACTOR_TYPE_PC = 1,
+	ACTOR_TYPE_MOB = 2,
+	ACTOR_TYPE_NPC = 3,
+	ACTOR_TYPE_AETHERLYTE = 5,
+	ACTOR_TYPE_GATHERING = 6,
+	ACTOR_TYPE_EOBJ = 7,
+	ACTOR_TYPE_MINION = 8
 };
 
 enum ATTACK_DAMAGE_TYPE : uint8_t {
@@ -54,34 +60,27 @@ struct ATTACK_INFO_EACH {
 	char swingtype;
 	ATTACK_DAMAGE_TYPE damagetype;
 	ATTACK_ELEMENT_TYPE elementtype;
-	char data0_rr;
-	short damage;
-	short data1_right;
+	char data1_rr;
+	uint16_t damage;
+	char _u4 : 6;
+	char mult10 : 1;
+	char _u1 : 1;
+	char _u3;
 };
 
 struct ATTACK_INFO_EACH_V4 {
-	union {
-		struct {
-			char swingtype;
-			char isCrit : 1;
-			char isDirectHit : 1;
-			char _u4 : 6;
-			ATTACK_ELEMENT_TYPE elementtype : 4;
-			ATTACK_DAMAGE_TYPE damagetype : 4;
-			char _u5;
-		};
-		uint32_t _data0;
-	};
-
+	char swingtype;
+	char isCrit : 1;
+	char isDirectHit : 1;
+	char _u0 : 6;
+	ATTACK_ELEMENT_TYPE elementtype : 4;
+	ATTACK_DAMAGE_TYPE damagetype : 4;
+	char _u1;
 	uint16_t damage;
-	union {
-		struct {
-			char mult10 : 4;
-			char _u1 : 4;
-		};
-		char _u2;
-	};
-	char _u3;
+	char _u2 : 6;
+	char mult10 : 1;
+	char _u3 : 1;
+	char _u4;
 };
 
 struct ATTACK_INFO {
@@ -115,7 +114,7 @@ struct TEMPDMG {
 		int skill;
 		int buffId;
 	};
-	int dmg;
+	int amount;
 	char isDoT : 1;
 	char isCrit : 1;
 	char isDirectHit : 1;
@@ -343,7 +342,7 @@ private:
 	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO_V4 *attacks);
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp);
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO_V4 *info, uint64_t timestamp);
-	void ProcessGameMessage(void *data, uint64_t timestamp, int len, bool setTimestamp);
+	void ProcessGameMessage(void *data, uint64_t timestamp, size_t len, bool setTimestamp);
 	void PacketErrorMessage(int signature, int length);
 	void ParsePacket(Tools::ByteQueue &p, bool setTimestamp);
 

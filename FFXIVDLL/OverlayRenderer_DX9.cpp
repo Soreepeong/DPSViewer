@@ -2,6 +2,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx9.h"
 #include "FFXIVDLL.h"
+#include "Hooks.h"
 #include <shlobj.h>
 #include <Shlwapi.h>
 #pragma comment(lib, "Shlwapi.lib")
@@ -195,6 +196,9 @@ void OverlayRendererDX9::RenderOverlay() {
 
 		__try {
 			ImGui_ImplDX9_NewFrame();
+			D3DVIEWPORT9 prt;
+			pDevice->GetViewport(&prt);
+			RenderOverlayMisc(prt.Width, prt.Height);
 			mConfig.Render();
 			ImGui::Render();
 		} __except (1) {}

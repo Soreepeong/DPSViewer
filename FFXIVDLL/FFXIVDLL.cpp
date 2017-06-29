@@ -3,92 +3,9 @@
 #include "GameDataProcess.h"
 #include "OverlayRenderer.h"
 #include "Tools.h"
+#include "ExternalPipe.h"
+#include "QueryHandles.h"
 
-#define NT_SUCCESS(x) (((x)) >= 0)
-#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
-
-#define SystemHandleInformation 16
-#define ObjectBasicInformation 0
-#define ObjectNameInformation 1
-#define ObjectTypeInformation 2
-
-typedef NTSTATUS (NTAPI *_NtQuerySystemInformation)(
-	ULONG SystemInformationClass,
-	PVOID SystemInformation,
-	ULONG SystemInformationLength,
-	PULONG ReturnLength
-	);
-typedef NTSTATUS (NTAPI *_NtDuplicateObject)(
-	HANDLE SourceProcessHandle,
-	HANDLE SourceHandle,
-	HANDLE TargetProcessHandle,
-	PHANDLE TargetHandle,
-	ACCESS_MASK DesiredAccess,
-	ULONG Attributes,
-	ULONG Options
-	);
-typedef NTSTATUS (NTAPI *_NtQueryObject)(
-	HANDLE ObjectHandle,
-	ULONG ObjectInformationClass,
-	PVOID ObjectInformation,
-	ULONG ObjectInformationLength,
-	PULONG ReturnLength
-	);
-
-typedef struct _UNICODE_STRING {
-	USHORT Length;
-	USHORT MaximumLength;
-	PWSTR Buffer;
-} UNICODE_STRING, *PUNICODE_STRING;
-
-typedef struct _SYSTEM_HANDLE {
-	ULONG ProcessId;
-	BYTE ObjectTypeNumber;
-	BYTE Flags;
-	USHORT Handle;
-	PVOID Object;
-	ACCESS_MASK GrantedAccess;
-} SYSTEM_HANDLE, *PSYSTEM_HANDLE;
-
-typedef struct _SYSTEM_HANDLE_INFORMATION {
-	ULONG HandleCount;
-	SYSTEM_HANDLE Handles[1];
-} SYSTEM_HANDLE_INFORMATION, *PSYSTEM_HANDLE_INFORMATION;
-
-typedef enum _POOL_TYPE {
-	NonPagedPool,
-	PagedPool,
-	NonPagedPoolMustSucceed,
-	DontUseThisType,
-	NonPagedPoolCacheAligned,
-	PagedPoolCacheAligned,
-	NonPagedPoolCacheAlignedMustS
-} POOL_TYPE, *PPOOL_TYPE;
-
-typedef struct _OBJECT_TYPE_INFORMATION {
-	UNICODE_STRING Name;
-	ULONG TotalNumberOfObjects;
-	ULONG TotalNumberOfHandles;
-	ULONG TotalPagedPoolUsage;
-	ULONG TotalNonPagedPoolUsage;
-	ULONG TotalNamePoolUsage;
-	ULONG TotalHandleTableUsage;
-	ULONG HighWaterNumberOfObjects;
-	ULONG HighWaterNumberOfHandles;
-	ULONG HighWaterPagedPoolUsage;
-	ULONG HighWaterNonPagedPoolUsage;
-	ULONG HighWaterNamePoolUsage;
-	ULONG HighWaterHandleTableUsage;
-	ULONG InvalidAttributes;
-	GENERIC_MAPPING GenericMapping;
-	ULONG ValidAccess;
-	BOOLEAN SecurityRequired;
-	BOOLEAN MaintainHandleCount;
-	USHORT MaintainTypeList;
-	POOL_TYPE PoolType;
-	ULONG PagedPoolUsage;
-	ULONG NonPagedPoolUsage;
-} OBJECT_TYPE_INFORMATION, *POBJECT_TYPE_INFORMATION;
 
 PVOID GetLibraryProcAddress(PSTR LibraryName, PSTR ProcName) {
 	return GetProcAddress(GetModuleHandleA(LibraryName), ProcName);
@@ -172,7 +89,7 @@ BOOL WINAPI FFXIVDLL::FindFFXIVWindow(HWND handle) {
 		TCHAR title[512];
 		GetWindowText(handle, title, 512);
 		if (wcscmp(title, L"FINAL FANTASY XIV") == 0 && IsWindowVisible(handle)) {
-			ffxivHwnd = handle;
+			hFFXIVWnd = handle;
 			return false;
 		}
 	}
@@ -180,7 +97,7 @@ BOOL WINAPI FFXIVDLL::FindFFXIVWindow(HWND handle) {
 }
 
 FFXIVDLL::FFXIVDLL(HMODULE instance) :
-	hInstance(instance)
+	mInstance(instance)
 {
 	RemoveFFXIVMutex();
 
@@ -190,20 +107,22 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 
 	hUnloadEvent = CreateEvent(NULL, true, false, NULL);
 
-	pDataProcess = new GameDataProcess(this, hUnloadEvent);
-	pHooks = new Hooks(this);
+	mPipe = new ExternalPipe(this, hUnloadEvent);
+	mDataProcess = new GameDataProcess(this, hUnloadEvent);
+	mHooks = new Hooks(this);
 
-	pHooks->Activate();
-	scanner.AddCallback([&] () {
+	mHooks->Activate();
+	mScanner.AddCallback([&] () {
 		char res[512];
-		sprintf(res, "/e Initialized"/*": PWM %llx, PNL %llx, SFW %llx, HFW %llx, Actor %llx, Party %llx, Target %llx",
+		sprintf(res, "/e Initialized" /*": PWM %llx, PNL %llx, SFW %llx, HFW %llx, ONCI %llx, Actor %llx, Party %llx, Target %llx",
 			(uint64_t) scanner.Result.Functions.ProcessWindowMessage, 
 			(uint64_t) scanner.Result.Functions.ProcessNewLine,
 			(uint64_t) scanner.Result.Functions.ShowFFXIVWindow,
 			(uint64_t) scanner.Result.Functions.HideFFXIVWindow,
+			(uint64_t) scanner.Result.Functions.OnNewChatItem,
 			(uint64_t) scanner.Result.Data.ActorMap,
 			(uint64_t) scanner.Result.Data.PartyMap,
-			(uint64_t) scanner.Result.Data.TargetMap*/);
+			(uint64_t) scanner.Result.Data.TargetMap /**/);
 		addChat(res);
 	});
 }
@@ -212,25 +131,69 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 FFXIVDLL::~FFXIVDLL()
 {
 
-	addChat("/e Unloading");
+	addChat("/e Unloading:FFXIVDLL");
 
 	SetEvent(hUnloadEvent);
 	
-	while (!pHooks->GetOverlayRenderer()->IsUnloadable())
+	while (!mHooks->GetOverlayRenderer()->IsUnloadable())
 		Sleep(50);
 
-
-	delete pHooks;
-	delete pDataProcess;
+	delete mHooks;
+	delete mDataProcess;
+	delete mPipe;
 
 	CloseHandle(hUnloadEvent);
 }
 
 DWORD WINAPI FFXIVDLL::SelfUnloaderThread(PVOID p) {
-	HINSTANCE inst = ((FFXIVDLL*)p)->hInstance;
+	HINSTANCE inst = ((FFXIVDLL*)p)->mInstance;
 	FreeLibraryAndExitThread(inst, 0);
 }
 
 void FFXIVDLL::spawnSelfUnloader() {
 	CloseHandle(CreateThread(NULL, NULL, FFXIVDLL::SelfUnloaderThread, this, NULL, NULL));
+}
+
+bool FFXIVDLL::isUnloading() {
+	return WAIT_OBJECT_0 == WaitForSingleObject(hUnloadEvent, 0);
+}
+
+ImGuiConfigWindow& FFXIVDLL::config() {
+	return mHooks->GetOverlayRenderer()->mConfig;
+}
+
+MemoryScanner* FFXIVDLL::memory() {
+	return &mScanner;
+}
+
+HWND FFXIVDLL::ffxiv() {
+	return hFFXIVWnd;
+}
+
+void FFXIVDLL::addChat(std::string s) {
+	if (isUnloading())
+		return;
+	mChatInjectQueue.push(s);
+}
+
+void FFXIVDLL::addChat(char* s) {
+	if (isUnloading())
+		return;
+	mChatInjectQueue.push(s);
+}
+
+void FFXIVDLL::sendPipe(char* msgtype, const char* data, size_t length) {
+	mPipe->SendInfo(std::string(msgtype) + (~length ? std::string(data, length) : std::string(data)));
+}
+
+Hooks* FFXIVDLL::hooks() {
+	return mHooks;
+}
+
+GameDataProcess* FFXIVDLL::process() {
+	return mDataProcess;
+}
+
+HINSTANCE FFXIVDLL::instance() {
+	return mInstance;
 }

@@ -12,6 +12,7 @@ public:
 		struct {
 			PVOID ProcessWindowMessage;
 			PVOID ProcessNewLine;
+			PVOID OnNewChatItem;
 			PVOID HideFFXIVWindow;
 			PVOID ShowFFXIVWindow;
 		} Functions;

@@ -109,3 +109,17 @@ bool Tools::TestValidString(char* p) {
 	}
 	return false;
 }
+
+#pragma optimize( "", off )
+bool Tools::TestValidPtr(void* p, int len) {
+	__try {
+		int i;
+		int a;
+		for (i = 0; i < len; i++)
+			a = ((char*) p)[i];
+		return true;
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+	}
+	return false;
+}
+#pragma optimize( "", on ) 

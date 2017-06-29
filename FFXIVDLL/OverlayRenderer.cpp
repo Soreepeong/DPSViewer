@@ -2,6 +2,7 @@
 #include "WindowControllerBase.h"
 #include <psapi.h>
 #include "Tools.h"
+#include "Hooks.h"
 #include "FFXIVDLL.h"
 #include "resource.h"
 #include "imgui/imgui.h"
@@ -26,7 +27,7 @@ OverlayRenderer::OverlayRenderer(FFXIVDLL *dll) :
 				if (0 != dwResourceSize) {
 					void * res = ImGui::GetIO().MemAllocFn(dwResourceSize);
 					memcpy(res, pLockedResource, dwResourceSize);
-					ImGui::GetIO().Fonts->AddFontFromMemoryTTF(res, dwResourceSize, 17, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
+					ImGui::GetIO().Fonts->AddFontFromMemoryTTF(res, dwResourceSize, 14, 0, ImGui::GetIO().Fonts->GetGlyphRangesKorean());
 				}
 			}
 		}
@@ -64,7 +65,7 @@ void OverlayRenderer::DoMainThreadOperation() {
 		mExternalDC.clear();
 		mUnloadable = true;
 	} else {
-		for (int i = mWindows.getChildCount() - 1; i >= 0; --i) {
+		for (size_t i = mWindows.getChildCount() - 1; i >= 0 && ~i != 0; --i) {
 			Control* c = mWindows.getChild(i);
 			if (mExternalWindows.count(c) == 0) {
 				int sx = GetSystemMetrics(SM_CXVIRTUALSCREEN);
@@ -114,7 +115,7 @@ LRESULT OverlayRenderer::ExternalWindowWndProc(HWND hWnd, UINT message, WPARAM w
 	return DefWindowProc(hWnd, message, w, l);
 }
 
-int OverlayRenderer::GetFPS() {
+size_t OverlayRenderer::GetFPS() {
 	return mFpsMeter.size();
 }
 void OverlayRenderer::SetUseDrawOverlay(bool b) {
@@ -157,7 +158,14 @@ WindowControllerBase* OverlayRenderer::GetWindowAt(int x, int y) {
 	return GetWindowAt(&mWindows, x, y);
 }
 
-int a = 0;
+void OverlayRenderer::RenderOverlayMisc(int w, int h){
+	/*
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(w, h), ImVec2(w, h));
+	// maybe add something?
+	ImGui::End();
+	//*/
+}
 
 void OverlayRenderer::DrawOverlay() {
 	mFpsMeter.push_back(GetTickCount64());
@@ -169,7 +177,6 @@ void OverlayRenderer::DrawOverlay() {
 
 	RenderExternalOverlay();
 	RenderOverlay();
-	__try {} __except (EXCEPTION_EXECUTE_HANDLER) {}
 }
 
 void OverlayRenderer::RenderExternalOverlay() {

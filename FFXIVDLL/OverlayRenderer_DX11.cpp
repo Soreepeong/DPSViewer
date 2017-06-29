@@ -2,6 +2,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx11.h"
 #include "FFXIVDLL.h"
+#include "Hooks.h"
 #include "DX11_TextureFromImage.h"
 #include <shlobj.h>
 #include <Shlwapi.h>
@@ -36,7 +37,7 @@ PDXTEXTURETYPE OverlayRendererDX11::GetTextureFromResource(TCHAR *resName) {
 	if (mResourceTextures.find(resName) != mResourceTextures.end())
 		return mResourceTextures[resName];
 
-	HRSRC hResource = FindResource(dll->instance(), resName, MAKEINTRESOURCE(RT_RCDATA));
+	HRSRC hResource = FindResource(dll->instance(), resName, RT_RCDATA);
 	if (hResource) {
 		HGLOBAL hLoadedResource = LoadResource(dll->instance(), hResource);
 		if (hLoadedResource) {
@@ -131,22 +132,28 @@ void OverlayRendererDX11::DrawBox(int x, int y, int w, int h, DWORD Color) {
 		OverlayRenderer::DrawBox(x, y, w, h, Color);
 		return;
 	}
+#pragma warning (push)
+#pragma warning (disable: 4244)
 	ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x, y), ImVec2(x + w, y + h), Color);
+#pragma warning (pop)
 }
 
 std::vector<OverlayRendererDX11::RenderInfo> OverlayRendererDX11::textRenderList;
 
 void OverlayRendererDX11::TextDrawCallbackExternal(const ImDrawList* parent_list, const ImDrawCmd* cmd) {
-	OverlayRendererDX11::RenderInfo ri = OverlayRendererDX11::textRenderList[reinterpret_cast<int>(cmd->UserCallbackData)];
+	OverlayRendererDX11::RenderInfo ri = OverlayRendererDX11::textRenderList[reinterpret_cast<size_t>(cmd->UserCallbackData)];
 	ri.rend->TextDrawCallback(ri);
 }
 void OverlayRendererDX11::TextDrawCallback(RenderInfo& ri) {
+#pragma warning (push)
+#pragma warning (disable: 4244 4838)
 	if(ri.w == -1)
 		pFW->DrawString(pContext, ri.text, mConfig.fontSize, ri.x, ri.y, ri.color, ri.flags | FW1_RESTORESTATE);
 	else {
 		FW1_RECTF rf = { ri.x, ri.y, ri.x + ri.w, ri.y + ri.h };
 		pFW->DrawString(pContext, ri.text, mFontName, mConfig.fontSize, &rf, ri.color, &rf, NULL, ri.flags | FW1_RESTORESTATE | FW1_CLIPRECT | FW1_NOWORDWRAP);
 	}
+#pragma warning (pop)
 }
 
 
@@ -175,13 +182,18 @@ void OverlayRendererDX11::DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE
 		OverlayRenderer::DrawTexture(x, y, w, h, tex);
 		return;
 	}
+#pragma warning (push)
+#pragma warning (disable: 4244)
 	ImGui::GetWindowDrawList()->AddImage((ImTextureID) tex, ImVec2(x, y), ImVec2(x + w, y + h));
+#pragma warning (pop)
 }
 void OverlayRendererDX11::MeasureText(RECT &rc, TCHAR *text, int flags) {
 	if (mUseDefaultRenderer) {
 		OverlayRenderer::MeasureText(rc, text, flags);
 		return;
 	}
+#pragma warning (push)
+#pragma warning (disable: 4244 4838)
 	FW1_RECTF rf = { rc.left, rc.top, rc.right, rc.bottom }, rf2;
 	if (rf.Right - rf.Left <= 0)
 		rf.Right = rf.Left + 2000;
@@ -189,6 +201,7 @@ void OverlayRendererDX11::MeasureText(RECT &rc, TCHAR *text, int flags) {
 		rf.Bottom = rf.Top + 2000;
 	// Modified function - it uses GetMetrics instead of GetOverhangMetrics
 	rf2 = pFW->MeasureString(text, mFontName, mConfig.fontSize, &rf, flags);
+#pragma warning (pop)
 	rc = { rc.left, rc.top, (int) rf2.Right + 2, (int) rf2.Bottom };
 	/*
 	char *utf8;
@@ -218,10 +231,14 @@ void OverlayRendererDX11::RenderOverlay() {
 
 		D3D11_TEXTURE2D_DESC desc;
 		pBackBuffer->GetDesc(&desc);
+#pragma warning (push)
+#pragma warning (disable: 4244 4838)
 		D3D11_VIEWPORT viewportf = {0, 0, desc.Width, desc.Height, 0, 1};
+#pragma warning (pop)
 
 		ImGui_ImplDX11_NewFrame();
 		textRenderList.clear();
+		RenderOverlayMisc(rect.right - rect.left, rect.bottom - rect.top);
 
 		if ((Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) && !mConfig.UseExternalWindow) {
 			mWindows.width = rect.right - rect.left;
@@ -233,8 +250,11 @@ void OverlayRendererDX11::RenderOverlay() {
 					(*it)->yF = min(1 - (*it)->calcHeight / (*it)->getParent()->height, max(0, (*it)->yF));
 				}
 			}
+#pragma warning (push)
+#pragma warning (disable: 4244 4838)
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
 			ImGui::SetNextWindowSizeConstraints(ImVec2(rect.right - rect.left, rect.bottom - rect.top), ImVec2(rect.right - rect.left, rect.bottom - rect.top));
+#pragma warning (pop)
 			bool open = true;
 			ImGui::Begin("CustomWindowOverlay", &open, ImVec2(0, 0), 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
 			mWindows.draw(this);

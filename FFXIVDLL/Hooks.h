@@ -2,7 +2,6 @@
 #include<windows.h>
 #include<map>
 #include<atomic>
-#include "FFXIVDLL.h"
 #include "WindowControllerBase.h"
 
 #ifdef _WIN64
@@ -21,6 +20,8 @@
    }
 #endif
 
+class FFXIVDLL;
+
 class Hooks {
 	friend class OverlayRenderer;
 public:
@@ -32,12 +33,13 @@ public:
 		short code;
 		short _u1;
 		char chat;
-} CHATITEM, *PCHATITEM;
+	} CHATITEM, *PCHATITEM;
 
 #ifdef _WIN64
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, DWORD*, char**, int);
 	static char __fastcall hook_ShowFFXIVWindow(void*);
 	static char __fastcall hook_HideFFXIVWindow(void*);
+	static int __fastcall hook_OnNewChatItem(void*, PCHATITEM, size_t);
 
 	typedef HRESULT(APIENTRY *Dx11SwapChain_Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
@@ -45,6 +47,7 @@ public:
 
 #else
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, void*, SIZE_T*, char**, int);
+	static int __fastcall hook_OnNewChatItem(void*, void*, PCHATITEM, size_t);
 
 	static char __fastcall hook_ShowFFXIVWindow(void*, void*);
 	static char __fastcall hook_HideFFXIVWindow(void*, void*);
@@ -60,6 +63,7 @@ public:
 	static HRESULT APIENTRY hook_Dx9Present(IDirect3DDevice9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion);
 
 #endif
+	typedef int(__thiscall *OnNewChatItem)(void*, PCHATITEM, size_t);
 	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
 	typedef char (__thiscall *ShowHideFFXIVWindow)(void*);
 	typedef char(*ProcessWindowMessage)();
@@ -79,6 +83,7 @@ public:
 		ProcessNewLine ProcessNewLine;
 		ShowHideFFXIVWindow ShowFFXIVWindow;
 		ShowHideFFXIVWindow HideFFXIVWindow;
+		OnNewChatItem OnNewChatItem;
 	}pfnOrig;
 
 	static struct HOOKS_BRIDGE_FN_SET {
@@ -86,6 +91,7 @@ public:
 		ProcessNewLine ProcessNewLine;
 		ShowHideFFXIVWindow ShowFFXIVWindow;
 		ShowHideFFXIVWindow HideFFXIVWindow;
+		OnNewChatItem OnNewChatItem;
 #ifdef _WIN64
 		Dx11SwapChain_Present Dx11SwapChainPresent;
 #else
@@ -106,7 +112,6 @@ private:
 	static LRESULT CALLBACK hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 	static bool mLockCursor;
-	static bool mHookStarted;
 	static std::atomic_int mHookedFunctionDepth;
 	static HMODULE hGame;
 #ifdef _WIN64
@@ -122,9 +127,9 @@ private:
 
 	template<typename T>
 	void applyRelativeHook(int delta, T *fn, PVOID fn_hook, T *fn_bridge) {
-		*fn = (T)((char *)hGame + delta);
+		*fn = (T) ((char *) hGame + delta);
 
-		MH_CreateHook(*fn, fn_hook, (LPVOID*)fn_bridge);
+		MH_CreateHook(*fn, fn_hook, (LPVOID*) fn_bridge);
 	}
 
 
@@ -132,6 +137,8 @@ public:
 	Hooks(FFXIVDLL *dll);
 	~Hooks();
 	void Activate();
+
+	static std::map<std::string, PVOID> WindowMap;
 
 	OverlayRenderer* GetOverlayRenderer() {
 		return pOverlayRenderer;

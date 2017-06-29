@@ -42,6 +42,7 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_EXTERNAL_WINDOW_REFRESH_RATE"] = "Ext. refresh rate";
 		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_HIDE_NAME"] = "Hide other names";
 		loc[LANGUAGE_ENGLISH]["OPTION_OTHERS_SHOW"] = "Show everyone";
+		loc[LANGUAGE_ENGLISH]["OPTION_MYNAME_AS_YOU"] = "Your name as YOU";
 		loc[LANGUAGE_ENGLISH]["OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"] = "Hide during cutscenes";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_NAME_LENGTH"] = "Max name width";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_SIMPLE_VIEW_THRESHOLD"] = "Simple view threshold";
@@ -89,6 +90,7 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_EXTERNAL_WINDOW_REFRESH_RATE"] = u8"외부 창 갱신 빈도";
 		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_HIDE_NAME"] = u8"다른 이름 숨기기";
 		loc[LANGUAGE_KOREAN]["OPTION_OTHERS_SHOW"] = u8"모두 보이기";
+		loc[LANGUAGE_KOREAN]["OPTION_MYNAME_AS_YOU"] = u8"내 이름 YOU로 보이기";
 		loc[LANGUAGE_KOREAN]["OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"] = u8"동영상 재생 시 숨기기";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_BOLD"] = u8"굵은 글자";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_NAME_LENGTH"] = u8"최대 이름 너비";

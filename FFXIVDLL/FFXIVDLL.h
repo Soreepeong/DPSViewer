@@ -1,24 +1,24 @@
 #pragma once
 #include<Windows.h>
-#include "Hooks.h"
-#include "GameDataProcess.h"
-#include "OverlayRenderer.h"
 #include "Tools.h"
 #include "MemoryScanner.h"
 
 class Hooks;
 class GameDataProcess;
 class OverlayRenderer;
+class ExternalPipe;
+class ImGuiConfigWindow;
 
 class FFXIVDLL
 {
 private:
-	HMODULE hInstance;
+	HMODULE mInstance;
 	HANDLE hUnloadEvent = INVALID_HANDLE_VALUE;
-	Hooks *pHooks;
-	GameDataProcess *pDataProcess;
-	HWND ffxivHwnd;
-	MemoryScanner scanner;
+	Hooks *mHooks;
+	GameDataProcess *mDataProcess;
+	HWND hFFXIVWnd;
+	MemoryScanner mScanner;
+	ExternalPipe *mPipe;
 
 	BOOL WINAPI FindFFXIVWindow(HWND h);
 	static BOOL WINAPI FindFFXIVWindow(HWND h, LPARAM l) {
@@ -29,35 +29,20 @@ public:
 	FFXIVDLL(HMODULE instance);
 	~FFXIVDLL();
 
-	Tools::bqueue<std::string> injectQueue;
+	Tools::bqueue<std::string> mChatInjectQueue;
 
-	bool isUnloading() {
-		return WAIT_OBJECT_0 == WaitForSingleObject(hUnloadEvent, 0);
-	}
+	void addChat(std::string s);
+	void addChat(char* s);
+	void sendPipe(char* msgtype, const char* data, size_t length);
 
-	MemoryScanner* memory() {
-		return &scanner;
-	}
+	bool isUnloading();
 
-	HWND ffxiv() {
-		return ffxivHwnd;
-	}
-
-	void addChat(std::string s) {
-		injectQueue.push(s);
-	}
-
-	Hooks* hooks() {
-		return pHooks;
-	}
-
-	GameDataProcess* process() {
-		return pDataProcess;
-	}
-
-	HINSTANCE instance() {
-		return hInstance;
-	}
+	ImGuiConfigWindow& config();
+	MemoryScanner* memory();
+	HWND ffxiv();
+	Hooks* hooks();
+	GameDataProcess* process();
+	HINSTANCE instance();
 
 	static DWORD WINAPI SelfUnloaderThread(PVOID p);
 	void spawnSelfUnloader();

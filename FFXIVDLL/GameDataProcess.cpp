@@ -606,7 +606,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	mLastIdleTime(0),
 	wDPS(*new DPSWindowController()),
 	wDOT(*new DOTWindowController()) {
-	mLastAttack.dmg = 0;
+	mLastAttack.amount = 0;
 	mLastAttack.timestamp = 0;
 
 	mLocalTimestamp = mServerTimestamp = Tools::GetLocalTimestamp();
@@ -870,6 +870,8 @@ inline int GameDataProcess::GetTargetId(int type) {
 inline std::string GameDataProcess::GetActorName(int id) {
 	if (id == SOURCE_LIMIT_BREAK)
 		return "(Limit Break)";
+	if (id == NULL_ACTOR)
+		return "(null)";
 	if (mActorPointers.find(id) == mActorPointers.end()) {
 		char t[256];
 		sprintf(t, "%08X", id);
@@ -941,31 +943,33 @@ bool GameDataProcess::IsParseTarget(uint32_t id) {
 
 	struct PARTY_STRUCT {
 		struct {
-			uint8_t _u0[32];
-			uint32_t id;
+			union {
+				struct {
+					uint32_t _u0[4];
+					uint32_t id;
+					uint32_t _u1[3];
+					char* name;
+				};
 #ifdef _WIN64
-			uint8_t _u1[544 - 32 - 4];
+				char _u[544];
 #else
-			uint8_t _u1[528 - 32 - 4];
-#endif
-		} members[24]; // 544 bytes
-		uint8_t _u0[20];
-		uint32_t partyFlag1;
-		uint32_t _u1;
-		int partySize;
+				char _u[528];
+#endif;
+			};
+		} members[24];
 	};
-	if (!dll->hooks() || !dll->hooks()->GetOverlayRenderer() || dll->hooks()->GetOverlayRenderer()->mConfig.ParseFilter == 0) return true;
-
+	if (id == 0 || id == NULL_ACTOR) return false;
+	if (!dll->hooks() || !dll->hooks()->GetOverlayRenderer() || dll->config().ParseFilter == 0) return true;
 	__try {
 		PARTY_STRUCT* ptr = (PARTY_STRUCT*) dll->memory()->Result.Data.PartyMap;
 		if (ptr == 0) return true;
 		if (id == mSelfId) return true;
-		if (dll->hooks()->GetOverlayRenderer()->mConfig.ParseFilter == 3) return false; // me only
-		for (int i = 0; i < 8 && i < ptr->partySize; i++)
+		if (dll->config().ParseFilter == 3) return false; // me only
+		for (int i = 0; i < 8; i++)
 			if (ptr->members[i].id == id)
 				return true;
-		if (dll->hooks()->GetOverlayRenderer()->mConfig.ParseFilter == 2) return false; // party
-		for (int i = 8; i < 24 && i < ptr->partySize; i++)
+		if (dll->config().ParseFilter == 2) return false; // party
+		for (int i = 8; i < 24; i++)
 			if (ptr->members[i].id == id)
 				return true;
 		return false; // alliance
@@ -983,7 +987,15 @@ void GameDataProcess::ResolveUsers() {
 	for (int i = 0; i < limit; i++) {
 		__try {
 			char* ptr = ((char**) dll->memory()->Result.Data.ActorMap)[i];
-			if (ptr == 0) continue;
+#ifdef _WIN64
+			if (~(size_t) ptr == 0 || (sizeof(char*) == 8 && (long long) ptr < 0x30000))
+				continue;
+#else
+			if (~(size_t) ptr == 0 || (sizeof(char*) == 4 && (int) ptr < 0x30000))
+				continue;
+#endif
+			if (!Tools::TestValidPtr(ptr, 4))
+				continue;
 			int id = *(int*) (ptr + dll->memory()->Struct.Actor.id);
 			int owner = *(int*) (ptr + dll->memory()->Struct.Actor.owner);
 			int type = *(char*) (ptr + dll->memory()->Struct.Actor.type);
@@ -1031,19 +1043,19 @@ void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
 		mActorInfo[dmg.source].job = GetActorJobString (dmg.source);
 
 		if (direct) {
-			mDpsInfo[dmg.source].totalDamage.def += dmg.dmg;
-			if (mDpsInfo[dmg.source].maxDamage.dmg < dmg.dmg)
+			mDpsInfo[dmg.source].totalDamage.def += dmg.amount;
+			if (mDpsInfo[dmg.source].maxDamage.amount < dmg.amount)
 				mDpsInfo[dmg.source].maxDamage = dmg;
-			mDpsInfo[dmg.source].totalDamage.crit += dmg.dmg;
+			mDpsInfo[dmg.source].totalDamage.crit += dmg.amount;
 			if (dmg.isCrit)
 				mDpsInfo[dmg.source].critHits++;
 			if (dmg.isDirectHit)
 				mDpsInfo[dmg.source].directHits++;
-			if (dmg.dmg == 0)
+			if (dmg.amount == 0)
 				mDpsInfo[dmg.source].missHits++;
 			mDpsInfo[dmg.source].totalHits++;
 		} else {
-			mDpsInfo[dmg.source].totalDamage.ind += dmg.dmg;
+			mDpsInfo[dmg.source].totalDamage.ind += dmg.amount;
 			mDpsInfo[dmg.source].dotHits++;
 			dmg.isCrit = 0;
 		}
@@ -1089,8 +1101,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 			Tools::MillisToLocalTime(timestamp, &s1);
 			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
 			if (mShowTimeInfo)
-				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %d / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
-					dll->hooks()->GetOverlayRenderer()->GetFPS(),
+				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %lld / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
+					(uint64_t) dll->hooks()->GetOverlayRenderer()->GetFPS(),
 					(int) s1.wHour, (int) s1.wMinute, (int) s1.wSecond,
 					(int) s2.wHour, (int) s2.wMinute, (int) s2.wSecond);
 			if (!mDpsInfo.empty()) {
@@ -1110,11 +1122,11 @@ void GameDataProcess::UpdateOverlayMessage() {
 			while (wTable.getChildCount() > 1) delete wTable.removeChild(1);
 			wTable24.removeAndDeleteAllChildren();
 
-			if (!mDpsInfo.empty()) {
+			if (!mDpsInfo.empty() && mLastAttack.timestamp > mLastIdleTime) {
 				uint32_t i = 0;
 				uint32_t disp = 0;
 				bool dispme = false;
-				uint32_t mypos = 0;
+				size_t mypos = 0;
 				if (mCalculatedDamages.size() > 8) {
 					for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it, mypos++)
 						if (it->first == mSelfId)
@@ -1147,11 +1159,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 
-					if (dll->hooks()->GetOverlayRenderer()->mConfig.hideOtherUserName && it->first != mSelfId)
+					if (dll->config().hideOtherUserName && it->first != mSelfId)
 						wcscpy(tmp, L"...");
-					else {
+					else if (dll->config().SelfNameAsYOU && it->first == mSelfId)
+						wcscpy(tmp, L"YOU");
+					else
 						MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-					}
 					auto uname = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT);
 					uname->maxWidth = wDPS.maxNameWidth;
 					wRow.addChild(uname);
@@ -1167,9 +1180,9 @@ void GameDataProcess::UpdateOverlayMessage() {
 						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].directHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					if (version == 400 && (max.isCrit || max.isDirectHit))
-						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s%s", max.dmg, max.isDirectHit ? L"." : L"", max.isCrit ? L"!" : L"");
+						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s%s", max.amount, max.isDirectHit ? L"." : L"", max.isCrit ? L"!" : L"");
 					else
-						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s", max.dmg, max.isCrit ? L"!" : L"");
+						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s", max.amount, max.isCrit ? L"!" : L"");
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", mDpsInfo[it->first].deaths);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
@@ -1188,11 +1201,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 						OverlayRenderer::Control &wCol24 = *(new OverlayRenderer::Control());
 						wCol24.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 						wCol24.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
-						if (dll->hooks()->GetOverlayRenderer()->mConfig.hideOtherUserName && it->first != mSelfId)
+						if (dll->config().hideOtherUserName && it->first != mSelfId)
 							wcscpy(tmp, L"...");
-						else {
+						else if (dll->config().SelfNameAsYOU && it->first == mSelfId)
+							wcscpy(tmp, L"YOU");
+						else
 							MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-						}
 						OverlayRenderer::Control *uname = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT);
 						uname->maxWidth = wDPS.maxNameWidth;
 						wCol24.addChild(uname);
@@ -1250,7 +1264,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 						return (a.target == hoverTarget ? 1 : 0) > (b.target == hoverTarget ? 1 : 0);
 					return a.expires < b.expires;
 				});
-				int i = 0;
+				size_t i = 0;
 				for (auto it = buff_sort.begin(); it != buff_sort.end(); ++it, i++) {
 					if (i > 9 && it->target != currentTarget && it->target != hoverTarget && it->target != focusTarget)
 						break;
@@ -1288,7 +1302,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d", i);
+					swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%zd", i);
 					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
 					wRow.addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_STRING, DT_CENTER));
 					wDOT.addChild(&wRow);
@@ -1338,14 +1352,23 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 			case 1:
 			case 10:
 				if (info->attack[i].damage == 0) {
-					dmg.dmg = 0;
+					dmg.amount = 0;
 					AddDamageInfo(dmg, true);
 				}
 				break;
 			case 5:
 				dmg.isCrit = true;
 			case 3:
-				dmg.dmg = info->attack[i].damage;
+				/*
+				{
+					char t[512];
+					sprintf(t, "/e attack %016llx", *(uint64_t*) &info->attack[i]);
+					dll->addChat(t);
+				}
+				//*/
+				dmg.amount = info->attack[i].damage;
+				if (info->attack[i].mult10)
+					dmg.amount *= 10;
 				AddDamageInfo(dmg, true);
 				break;
 			case 17:
@@ -1443,12 +1466,12 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		switch (info->attack[i].swingtype) {
 
 			case 1: case 3: case 5: case 6:
-				dmg.dmg = info->attack[i].damage;
-				if (info->attack[i].mult10 & 4)
-					dmg.dmg *= 10;
+				dmg.amount = info->attack[i].damage;
+				if (info->attack[i].mult10)
+					dmg.amount *= 10;
 				dmg.isCrit = info->attack[i].isCrit;
 				dmg.isDirectHit = info->attack[i].isDirectHit;
-				if (dmg.dmg == 0 && info->attack[i].swingtype == 1)
+				if (dmg.amount == 0 && info->attack[i].swingtype == 1)
 					dmg.isMiss = 1;
 				AddDamageInfo(dmg, true);
 				/*
@@ -1498,30 +1521,11 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 
 				break;
 			}
-			case 41:
-			{ // Probably contagion
-				if (skill == 795) { // it is contagion
-					auto it = mActiveDoT.begin();
-					while (it != mActiveDoT.end()) {
-						if (it->expires - mContagionApplyDelayEstimation.get() < timestamp) {
-							it = mActiveDoT.erase(it);
-						} else if (it->source == source && it->target == target) {
-							it->applied = timestamp;
-							it->expires += 15000;
-							it->simulated = 1;
-							it->contagioned = 1;
-							++it;
-						} else
-							++it;
-					}
-				}
-				break;
-			}
 		}
 	}
 }
 
-void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len, bool setTimestamp) {
+void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t len, bool setTimestamp) {
 
 	if (setTimestamp) {
 		mServerTimestamp = timestamp;
@@ -1530,7 +1534,6 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 		timestamp = mServerTimestamp;
 
 	GAME_MESSAGE *msg = (GAME_MESSAGE*) data;
-	char tss[512];
 	switch (msg->message_cat1) {
 		case GAME_MESSAGE::C1_Combat:
 		{
@@ -1553,7 +1556,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 										dmg.source = it->source;
 										dmg.buffId = it->buffid;
 										dmg.isDoT = true;
-										dmg.dmg = mine;
+										dmg.amount = mine;
 										if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
 											dmg.source = mDamageRedir[dmg.source];
 										AddDamageInfo(dmg, false);
@@ -1572,7 +1575,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 										dmg.source = it->source;
 										dmg.buffId = it->buffid;
 										dmg.isDoT = true;
-										dmg.dmg = mine;
+										dmg.amount = mine;
 										if (mDamageRedir.find(dmg.source) != mDamageRedir.end())
 											dmg.source = mDamageRedir[dmg.source];
 										AddDamageInfo(dmg, false);
@@ -1652,33 +1655,35 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, int len
 					}
 					break;
 				case GAME_MESSAGE::C2_UseAbility:
-					ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
+					if (version == 340)
+						ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
 					break;
 				case GAME_MESSAGE::C2_UseAbilityV4:
-					// sprintf(tss, "/e Ability %s / %d / %d", GetActorName(msg->actor), msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill); dll->addChat(tss);
-
-					ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbilityV4.skill, &msg->Combat.UseAbilityV4.attack, timestamp);
+					if(version == 400)
+						ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbilityV4.skill, &msg->Combat.UseAbilityV4.attack, timestamp);
 					break;
 				case GAME_MESSAGE::C2_UseAoEAbility:
-					if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
-						SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbility.targets, msg->Combat.UseAoEAbility.attack);
-					} else {
-						for (int i = 0; i < 16; i++)
-							if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
-								ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attack[i], timestamp);
-							}
+					if (version == 340) {
+						if (GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill == 174) { // Bane
+							SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbility.targets, msg->Combat.UseAoEAbility.attack);
+						} else {
+							for (int i = 0; i < 16; i++)
+								if (msg->Combat.UseAoEAbility.targets[i].target != 0) {
+									ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attack[i], timestamp);
+								}
+						}
 					}
 					break;
 				case GAME_MESSAGE::C2_UseAoEAbilityV4:
-					// sprintf(tss, "/e AoE %s / %d", GetActorName(msg->actor), msg->Combat.UseAoEAbility.skill); dll->addChat(tss);
-
-					if (GetActorName(msg->actor), msg->Combat.UseAoEAbilityV4.skill == 174) { // Bane
-						SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbilityV4.targets, msg->Combat.UseAoEAbilityV4.attack);
-					} else {
-						for (int i = 0; i < 16; i++)
-							if (msg->Combat.UseAoEAbilityV4.targets[i].target != 0) {
-								ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbilityV4.targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attack[i], timestamp);
-							}
+					if (version == 400) {
+						if (GetActorName(msg->actor), msg->Combat.UseAoEAbilityV4.skill == 174) { // Bane
+							SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbilityV4.targets, msg->Combat.UseAoEAbilityV4.attack);
+						} else {
+							for (int i = 0; i < 16; i++)
+								if (msg->Combat.UseAoEAbilityV4.targets[i].target != 0) {
+									ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbilityV4.targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attack[i], timestamp);
+								}
+						}
 					}
 					break;
 				default:
@@ -1872,6 +1877,7 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 			if (buf != nullptr) {
 				for (int i = 0; i < packet.message_count; i++) {
 					ProcessGameMessage(buf, packet.timestamp, ((char*) &packet.data - (char*) &packet), setTimestamp);
+					dll->sendPipe(setTimestamp ? "recv" : "send", (char*)buf, *((uint32_t*) buf));
 					buf += *((uint32_t*) buf);
 				}
 			}
@@ -1883,10 +1889,12 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 void GameDataProcess::UpdateInfoThread() {
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		WaitForSingleObject(hUpdateInfoThreadLock, 50);
-		ResolveUsers();
-		ParsePacket(mSent, false);
-		ParsePacket(mRecv, true);
-		UpdateOverlayMessage();
+		__try {
+			ResolveUsers();
+			ParsePacket(mSent, false);
+			ParsePacket(mRecv, true);
+			UpdateOverlayMessage();
+		} __except (1) {}
 	}
 	TerminateThread(GetCurrentThread(), 0);
 }

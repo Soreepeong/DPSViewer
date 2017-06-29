@@ -1,5 +1,6 @@
 #pragma once
 #include <Windows.h>
+#include <deque>
 #ifdef _WIN64
 #include "D3D11.h"
 
@@ -39,6 +40,8 @@ private:
 	TCHAR mSettingFilePath[1024];
 	char mLanguageChoice[8192];
 	std::string mAboutText;
+	std::deque<std::string> mDebugLog;
+	
 
 	int readIni(TCHAR *k1, TCHAR *k2, int def = 0, int min = 0x80000000, int max = 0x7fffffff);
 	float readIni(TCHAR *k1, TCHAR *k2, float def = 0, float min = -1, float max = 1);
@@ -65,6 +68,7 @@ public:
 	bool UseExternalWindow;
 	int ExternalWindowRefreshRate;
 	int ParseFilter;
+	bool SelfNameAsYOU;
 
 	bool showTimes;
 

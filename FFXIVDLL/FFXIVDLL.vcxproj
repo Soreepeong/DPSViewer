@@ -198,6 +198,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="ExternalPipe.h" />
     <ClInclude Include="ImGuiConfigWindow.h" />
     <ClInclude Include="DOTWindowController.h" />
     <ClInclude Include="DPSWindowController.h" />
@@ -231,6 +232,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="OverlayRenderer_DX9.h" />
+    <ClInclude Include="QueryHandles.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Tools.h" />
@@ -249,6 +251,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="ExternalPipe.cpp" />
     <ClCompile Include="ImGuiConfigWindow.cpp" />
     <ClCompile Include="DOTWindowController.cpp" />
     <ClCompile Include="DPSWindowController.cpp" />

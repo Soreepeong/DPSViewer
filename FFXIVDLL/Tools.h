@@ -14,6 +14,7 @@ namespace Tools {
 	bool BinaryCompare(const BYTE* pData, const BYTE* bMask, const char* szMask);
 	DWORD_PTR FindPattern(DWORD_PTR dwAddress, DWORD_PTR dwLen, BYTE *bMask, char * szMask);
 	bool TestValidString(char* p);
+	bool TestValidPtr(void* p, int len);
 	bool DirExists(const std::wstring& dirName_in);
 	class ByteQueue {
 	public:

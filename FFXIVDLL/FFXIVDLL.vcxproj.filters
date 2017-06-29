@@ -55,7 +55,6 @@
     <ClCompile Include="imgui\imgui_impl_dx11.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryScanner.cpp" />
     <ClCompile Include="OverlayRenderer_DX11.cpp">
       <Filter>DirectX</Filter>
     </ClCompile>
@@ -67,6 +66,12 @@
     </ClCompile>
     <ClCompile Include="DX11_ScreenGrab.cpp">
       <Filter>DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryScanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExternalPipe.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -130,7 +135,6 @@
     <ClInclude Include="imgui\imgui_impl_dx11.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryScanner.h" />
     <ClInclude Include="DX11_TextureFromImage.h">
       <Filter>DirectX</Filter>
     </ClInclude>
@@ -151,6 +155,15 @@
     </ClInclude>
     <ClInclude Include="DX11_ScreenGrab.h">
       <Filter>DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="QueryHandles.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryScanner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExternalPipe.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

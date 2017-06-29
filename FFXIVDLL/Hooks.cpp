@@ -4,10 +4,11 @@
 #include "imgui/imgui_impl_dx9.h"
 #include <Psapi.h>
 #include <windowsx.h>
+#include "Hooks.h"
 #include "FFXIVDLL.h"
+#include "GameDataProcess.h"
 #include "../TsudaKageyu-minhook/include/MinHook.h"
 
-bool Hooks::mHookStarted = false;
 std::atomic_int Hooks::mHookedFunctionDepth;
 HMODULE Hooks::hGame;
 OverlayRenderer *Hooks::pOverlayRenderer;
@@ -22,6 +23,7 @@ char *Hooks::chatPtrs[4] = { (char*) 0x06, 0, (char*) 0x06, 0 };
 Hooks::HOOKS_ORIG_FN_SET Hooks::pfnOrig = { 0 };
 Hooks::HOOKS_BRIDGE_FN_SET Hooks::pfnBridge = { 0 };
 bool Hooks::isFFXIVChatWindowOpen = true;
+std::map<std::string, PVOID> Hooks::WindowMap;
 
 #ifdef _WIN64
 PVOID *Hooks::pDX11SwapChainTable;
@@ -158,6 +160,7 @@ void Hooks::MemorySearchCompleteCallback() {
 	MH_CreateHook(pfnOrig.ProcessNewLine = (ProcessNewLine) dll->memory()->Result.Functions.ProcessNewLine, hook_ProcessNewLine, (PVOID*) &pfnBridge.ProcessNewLine);
 	MH_CreateHook(pfnOrig.HideFFXIVWindow = (ShowHideFFXIVWindow) dll->memory()->Result.Functions.HideFFXIVWindow, hook_HideFFXIVWindow, (PVOID*) &pfnBridge.HideFFXIVWindow);
 	MH_CreateHook(pfnOrig.ShowFFXIVWindow = (ShowHideFFXIVWindow) dll->memory()->Result.Functions.ShowFFXIVWindow, hook_ShowFFXIVWindow, (PVOID*) &pfnBridge.ShowFFXIVWindow);
+	MH_CreateHook(pfnOrig.OnNewChatItem = (OnNewChatItem) dll->memory()->Result.Functions.OnNewChatItem, hook_OnNewChatItem, (PVOID*) &pfnBridge.OnNewChatItem);
 
 	Activate();
 }
@@ -174,17 +177,35 @@ void Hooks::Activate() {
 }
 
 #ifdef _WIN64
+int __fastcall Hooks::hook_OnNewChatItem(void *pthis, PCHATITEM param, size_t n) {
+#else
+int __fastcall Hooks::hook_OnNewChatItem(void *pthis, void *unused, PCHATITEM param, size_t n) {
+#endif
+	mHookedFunctionDepth++;
+	dll->sendPipe("in__", (char*) param, n);
+	int res = pfnBridge.OnNewChatItem(pthis, param, n);
+	mHookedFunctionDepth--;
+	return res;
+}
+
+#ifdef _WIN64
 SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, DWORD *dw1, char **dw2, int n) {
 #else
 SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, DWORD *dw1, char **dw2, int n) {
 #endif
 	mHookedFunctionDepth++;
 	if (strncmp((char*) dw2[1], "/o:o", 3) == 0) {
-		dll->hooks()->GetOverlayRenderer()->mConfig.Show();
+		if (pOverlayRenderer != nullptr) {
+			pOverlayRenderer->SetUseDrawOverlay(true);
+			pOverlayRenderer->mConfig.Show();
+		}
 	} else if (strncmp((char*) dw2[1], "/o", 3) == 0) {
 		if (pOverlayRenderer != nullptr)
 			pOverlayRenderer->SetUseDrawOverlay(!pOverlayRenderer->GetUseDrawOverlay());
 	}
+
+	dll->sendPipe("out_", (char*) dw2[1], -1);
+
 	chatObject = pthis;
 	SIZE_T *res = pfnBridge.ProcessNewLine(pthis, dw1, dw2, n);
 	mHookedFunctionDepth--;
@@ -198,8 +219,9 @@ int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 
 	int alen = WSARecv(s, &buffer, 1, &result, &flags2, nullptr, nullptr) == 0 ? static_cast<int>(result) : SOCKET_ERROR;
 	__try {
-		if (alen > 0)
+		if (alen > 0) {
 			dll->process()->OnRecv(buf, alen);
+		}
 	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 	mHookedFunctionDepth--;
 	return alen;
@@ -212,8 +234,9 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 
 	int alen = WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == 0 ? static_cast<int>(result) : SOCKET_ERROR;
 	__try {
-		if (alen > 0)
+		if (alen > 0) {
 			dll->process()->OnSent(buf, alen);
+		}
 	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 	mHookedFunctionDepth--;
 	return alen;
@@ -224,8 +247,11 @@ char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis) {
 #else
 char __fastcall Hooks::hook_HideFFXIVWindow(void* pthis, void *_u) {
 #endif
-	if (strncmp((char*) pthis + sizeof(char*), "_Status", 7) == 0)
+	char *wname = (char*) pthis + sizeof(char*);
+	if (strncmp(wname, "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = false;
+	dll->sendPipe("wndh", wname, -1);
+	WindowMap[wname] = pthis;
 	return pfnBridge.HideFFXIVWindow(pthis);
 }
 
@@ -234,15 +260,13 @@ char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis) {
 #else
 char __fastcall Hooks::hook_ShowFFXIVWindow(void* pthis, void *_u) {
 #endif
-	if (strncmp((char*) pthis + sizeof(char*), "_Status", 7) == 0)
+	char *wname = (char*) pthis + sizeof(char*);
+	if (strncmp(wname, "_Status", 7) == 0)
 		isFFXIVChatWindowOpen = true;
-	else if (strncmp((char*) pthis + sizeof(char*), "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
+	else if (strncmp(wname, "ContentsFinderConfirm", 21) == 0 && GetForegroundWindow() != dll->ffxiv())
 		FlashWindow(dll->ffxiv(), true);
-	/*
-	char test[256];
-	sprintf(test, "/e Show: %s at %08x", (char*) pthis + 4, pthis);
-	dll->addChat(test);
-	//*/
+	dll->sendPipe("wnds", wname, -1);
+	WindowMap[(char*) pthis + sizeof(char*)] = pthis;
 	return pfnBridge.ShowFFXIVWindow(pthis);
 }
 
@@ -250,20 +274,12 @@ char Hooks::hook_ProcessWindowMessage() {
 	mHookedFunctionDepth++;
 	std::string chatMessage;
 	if (chatObject != 0) {
-		if (dll->injectQueue.tryPop(&chatMessage)) {
+		if (dll->mChatInjectQueue.tryPop(&chatMessage)) {
 			DWORD res;
 			chatPtrs[3] = chatPtrs[1] = (char*) chatMessage.c_str();
 			pfnOrig.ProcessNewLine(chatObject, &res, chatPtrs, 20);
 		}
 	}
-
-#ifdef _WIN64
-#else
-	if (pDX9Table != 0 && !mHookStarted) {
-		mHookStarted = true;
-		MH_EnableHook(MH_ALL_HOOKS);
-	}
-#endif
 
 	if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001)
 		pOverlayRenderer->CaptureScreen();
@@ -317,7 +333,7 @@ HRESULT APIENTRY Hooks::hook_Dx9EndScene(IDirect3DDevice9 *pDevice) {
 		pDevice->GetSwapChain(0, &sc);
 		void **vtable = *(void ***) sc;
 		MH_CreateHook((LPVOID) vtable[3], hook_Dx9SwapChain_Present, (LPVOID*) &pfnBridge.Dx9SwapChainPresent);
-		MH_EnableHook(MH_ALL_HOOKS);
+		MH_EnableHook((LPVOID) vtable[3]);
 		pOverlayRenderer = new OverlayRendererDX9(dll, pDevice);
 	}
 
@@ -498,7 +514,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 			}
 	}
 	if (callDef) {
-		HRESULT res = CallWindowProc(ffxivWndProc, hWnd, iMessage, wParam, lParam);
+		LRESULT res = CallWindowProc(ffxivWndProc, hWnd, iMessage, wParam, lParam);
 		mHookedFunctionDepth--;
 		return res;
 	}

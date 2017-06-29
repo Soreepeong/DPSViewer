@@ -6,6 +6,7 @@
 #include "FFXIVDLL.h"
 #include "DPSWindowController.h"
 #include "DOTWindowController.h"
+#include "GameDataProcess.h"
 #include "resource.h"
 
 #pragma comment(lib, "psapi.lib")
@@ -91,7 +92,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	for (int i = 0; i < Languages::_LANGUAGE_COUNT; i++) {
 		TCHAR *curw = Languages::getLanguageName(i);
 		WideCharToMultiByte(CP_UTF8, 0, curw, -1, cur, 512, 0, 0);
-		int len = strlen(cur);
+		size_t len = strlen(cur);
 		strncpy(ptr, cur, len);
 		ptr += len;
 		*(ptr++) = 0;
@@ -233,9 +234,10 @@ void ImGuiConfigWindow::Render() {
 			if (ImGui::Button(Languages::get("OPTION_DPS_RESET"))) {
 				dll->process()->ResetMeter();
 			}
-			ImGui::Checkbox(Languages::get("OPTION_SHOW_TIMES"), &showTimes);
-			ImGui::Checkbox(Languages::get("OPTION_OTHERS_SHOW"), &ShowEveryDPS); ImGui::SameLine();
-			ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName);
+			ImGui::Checkbox(Languages::get("OPTION_SHOW_TIMES"), &showTimes); ImGui::SameLine();
+			ImGui::Checkbox(Languages::get("OPTION_OTHERS_SHOW"), &ShowEveryDPS);
+			ImGui::Checkbox(Languages::get("OPTION_OTHERS_HIDE_NAME"), &hideOtherUserName); ImGui::SameLine();
+			ImGui::Checkbox(Languages::get("OPTION_MYNAME_AS_YOU"), &SelfNameAsYOU);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_RESET_TIME"), &combatResetTime, 5, 60);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_NAME_LENGTH"), &(dll->process()->wDPS.maxNameWidth), 16, 128);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), (int*)&(dll->process()->wDPS.simpleViewThreshold), 1, 24);

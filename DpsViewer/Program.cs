@@ -20,9 +20,13 @@ namespace DpsViewer {
 				}
 			});
 			if (processes.Count == 0) {
-				MessageBox.Show("FFXIV is not running.");
+				string k = "";
+				foreach (var p in Process.GetProcesses())
+					k += p.ProcessName + "\n";
+				MessageBox.Show("FFXIV is not running.\n" + k);
 			} else {
 				foreach (var p in processes) {
+					if (p.MainModule.FileName.Contains("KOREA")) continue;
 					IntPtr ffxivhWnd = IntPtr.Zero;
 					EnumWindows(new EnumWindowsProc((hWnd, lparam) => {
 						int size = GetWindowTextLength(hWnd);
@@ -44,12 +48,13 @@ namespace DpsViewer {
 						MessageBox.Show("FFXIV window not found");
 						return;
 					}
-					// MessageBox.Show("Entrypoint: " + p.MainModule.BaseAddress.ToString("X16")); return;
+					// 
 					string dllFN = "FFXIVDLL_" + (IntPtr.Size == 4 ? "x86" : "x64") + ".dll";
 
 					IntPtr h = OpenProcess(ProcessAccessFlags.All, false, p.Id);
 					if (h.ToInt32() != -1) {
 						ejectDll(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
+						// MessageBox.Show("Entrypoint: " + p.MainModule.BaseAddress.ToString("X16")); return;
 						InjectDLL(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
 						CloseHandle(h);
 						SetForegroundWindow(ffxivhWnd);

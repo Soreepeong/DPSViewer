@@ -136,30 +136,30 @@ void OverlayRenderer::Control::addChild(OverlayRenderer::Control *c) {
 	addChild(c, CHILD_TYPE_NORMAL);
 }
 
-OverlayRenderer::Control* OverlayRenderer::Control::getChild(int i, CONTROL_CHILD_TYPE type) {
+OverlayRenderer::Control* OverlayRenderer::Control::getChild(size_t i, CONTROL_CHILD_TYPE type) {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	return children[type][i];
 }
-OverlayRenderer::Control* OverlayRenderer::Control::getChild(int i) {
+OverlayRenderer::Control* OverlayRenderer::Control::getChild(size_t i) {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	return children[CHILD_TYPE_NORMAL][i];
 }
-int OverlayRenderer::Control::getChildCount(CONTROL_CHILD_TYPE type) const {
+size_t OverlayRenderer::Control::getChildCount(CONTROL_CHILD_TYPE type) const {
 	return children[type].size();
 }
-int OverlayRenderer::Control::getChildCount() const {
+size_t OverlayRenderer::Control::getChildCount() const {
 	return children[CHILD_TYPE_NORMAL].size();
 }
 OverlayRenderer::Control* OverlayRenderer::Control::getParent() const {
 	return parent;
 }
-OverlayRenderer::Control* OverlayRenderer::Control::removeChild(int i, CONTROL_CHILD_TYPE type) {
+OverlayRenderer::Control* OverlayRenderer::Control::removeChild(size_t i, CONTROL_CHILD_TYPE type) {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	OverlayRenderer::Control* c = *(children[type].begin() + i);
 	children[type].erase(children[type].begin() + i);
 	return c;
 }
-OverlayRenderer::Control*  OverlayRenderer::Control::removeChild(int i) {
+OverlayRenderer::Control*  OverlayRenderer::Control::removeChild(size_t i) {
 	std::lock_guard<std::recursive_mutex> _lock(layoutLock);
 	OverlayRenderer::Control* c = *(children[CHILD_TYPE_NORMAL].begin() + i);
 	children[CHILD_TYPE_NORMAL].erase(children[CHILD_TYPE_NORMAL].begin() + i);
@@ -295,7 +295,10 @@ void OverlayRenderer::Control::measure(OverlayRenderer *target, RECT &area, int 
 					int i = 0;
 					for (auto it = children[CHILD_TYPE_NORMAL].begin(); it != children[CHILD_TYPE_NORMAL].end(); ++it, ++i) {
 						int j = 0;
+#pragma warning (push)
+#pragma warning (disable: 4838)
 						RECT rt = { calcX + margin + border + padding, calcY + margin + border + padding + i * colHeight, colWidth*horz, colHeight };
+#pragma warning (pop)
 						(*it)->measure(target, rt, rt.right, rt.bottom, 1);
 						rt.right = colWidth;
 						for (auto it2 = (*it)->children[CHILD_TYPE_NORMAL].begin(); it2 != (*it)->children[CHILD_TYPE_NORMAL].end(); ++it2, ++j) {
