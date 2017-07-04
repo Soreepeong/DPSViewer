@@ -122,8 +122,8 @@ public:
 
 		void setPaddingRecursive(int p);
 
-		void measure(OverlayRenderer *target, RECT &area, int widthFixed, int heightFixed, int skipChildren);
-		void draw(OverlayRenderer *target);
+		virtual void measure(OverlayRenderer *target, RECT &area, int widthFixed, int heightFixed, int skipChildren);
+		virtual void draw(OverlayRenderer *target);
 		int hittest(int x, int y) const;
 		void removeAndDeleteAllChildren();
 		void addChild(OverlayRenderer::Control *c, CONTROL_CHILD_TYPE type);
@@ -154,11 +154,6 @@ protected:
 	Control mWindows;
 	ImGuiConfigWindow mConfig;
 
-	virtual void DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex);
-	virtual void DrawBox(int x, int y, int w, int h, DWORD Color);
-	virtual void MeasureText(RECT &rc, TCHAR *text, int flags);
-	virtual void DrawText(int x, int y, TCHAR *text, DWORD Color);
-	virtual void DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align);
 	virtual void RenderOverlay() = 0;
 
 	virtual void CheckCapture() = 0;
@@ -202,6 +197,12 @@ public:
 
 	bool IsUnloadable();
 	void DoMainThreadOperation();
+
+	virtual void DrawTexture(int x, int y, int w, int h, PDXTEXTURETYPE tex);
+	virtual void DrawBox(int x, int y, int w, int h, DWORD Color);
+	virtual void MeasureText(RECT &rc, TCHAR *text, int flags);
+	virtual void DrawText(int x, int y, TCHAR *text, DWORD Color);
+	virtual void DrawText(int x, int y, int width, int height, TCHAR *text, DWORD Color, int align);
 
 	void DrawOverlay();
 

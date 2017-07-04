@@ -71,7 +71,6 @@ PDXTEXTURETYPE OverlayRendererDX11::GetTextureFromFile(TCHAR *resName) {
 
 void OverlayRendererDX11::ReloadFromConfig() {
 	OverlayRenderer::ReloadFromConfig();
-	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	MultiByteToWideChar(CP_UTF8, 0, mConfig.fontName, -1, mFontName, 512);
 	FW1_FONTWRAPPERCREATEPARAMS createParams;
 	ZeroMemory(&createParams, sizeof(createParams));
@@ -94,7 +93,6 @@ void OverlayRendererDX11::ReloadFromConfig() {
 }
 
 void OverlayRendererDX11::OnLostDevice() {
-	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	ImGui_ImplDX11_InvalidateDeviceObjects();
 	if (pFW != nullptr) {
 		pFW->Release();
@@ -103,7 +101,6 @@ void OverlayRendererDX11::OnLostDevice() {
 }
 
 void OverlayRendererDX11::OnResetDevice() {
-	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	ImGui_ImplDX11_CreateDeviceObjects();
 
 
@@ -217,8 +214,6 @@ void OverlayRendererDX11::MeasureText(RECT &rc, TCHAR *text, int flags) {
 
 void OverlayRendererDX11::RenderOverlay() {
 	if (mConfig.UseDrawOverlay) {
-		std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
-
 		RECT rect;
 		GetClientRect(dll->ffxiv(), &rect);
 

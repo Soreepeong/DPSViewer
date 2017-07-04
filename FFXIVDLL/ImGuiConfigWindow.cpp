@@ -6,6 +6,7 @@
 #include "FFXIVDLL.h"
 #include "DPSWindowController.h"
 #include "DOTWindowController.h"
+#include "ChatWindowController.h"
 #include "GameDataProcess.h"
 #include "resource.h"
 
@@ -48,6 +49,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	if (readIni(L"Meters", L"Locked", 0, 0, 1)) {
 		dll->process()->wDOT.lock();
 		dll->process()->wDPS.lock();
+		dll->process()->wChat.lock();
 	}
 	transparency = readIni(L"Meters", L"Transparency", 100, 0, 255);
 	padding = readIni(L"Meters", L"Padding", 4, 0, 32);
@@ -59,6 +61,13 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDOT.visible = readIni(L"DOTMeter", L"Visible", 1, 0, 1);
 	dll->process()->wDOT.xF = readIni(L"DOTMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDOT.yF = readIni(L"DOTMeter", L"y", 0.1f, 0.f, 1.f);
+
+	dll->process()->wChat.visible = readIni(L"ChatViewer", L"Visible", 1, 0, 1);
+	dll->process()->wChat.xF = readIni(L"ChatViewer", L"x", 0.1f, 0.f, 1.f);
+	dll->process()->wChat.yF = readIni(L"ChatViewer", L"y", 0.1f, 0.f, 1.f);
+	dll->process()->wChat.width = readIni(L"ChatViewer", L"w", 320, 32, 640);
+	dll->process()->wChat.height = readIni(L"ChatViewer", L"h", 240, 32, 640);
+	readIni(L"ChatViewer", L"GoogleApiKey", "", dll->process()->wChat.mTranslateApiKey, sizeof(dll->process()->wChat.mTranslateApiKey));
 
 	dll->process()->wDPS.visible = readIni(L"DPSMeter", L"Visible", 1, 0, 1);
 	dll->process()->wDPS.maxNameWidth = readIni(L"DPSMeter", L"MaxNameWidth", 64, 16, 128);
@@ -132,6 +141,14 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"Meters", L"Locked", (int) dll->process()->wDOT.isLocked());
 	writeIni(L"Meters", L"Transparency", transparency);
 	writeIni(L"Meters", L"Padding", padding);
+
+	writeIni(L"ChatViewer", L"Visible", dll->process()->wChat.visible);
+	writeIni(L"ChatViewer", L"x", dll->process()->wChat.xF);
+	writeIni(L"ChatViewer", L"y", dll->process()->wChat.yF);
+	writeIni(L"ChatViewer", L"w", dll->process()->wChat.width);
+	writeIni(L"ChatViewer", L"h", dll->process()->wChat.height);
+	writeIni(L"ChatViewer", L"GoogleApiKey", dll->process()->wChat.mTranslateApiKey);
+
 
 	writeIni(L"DOTMeter", L"Visible", dll->process()->wDOT.visible);
 	writeIni(L"DOTMeter", L"x", dll->process()->wDOT.xF);
@@ -222,12 +239,16 @@ void ImGuiConfigWindow::Render() {
 			Languages::get("OPTION_LOCK"))) {
 			dll->process()->wDPS.lock();
 			dll->process()->wDOT.lock();
+			dll->process()->wChat.lock();
 		} ImGui::SameLine();
 		if (ImGui::Button(dll->process()->wDPS.visible ? Languages::get("OPTION_DPS_HIDE") : Languages::get("OPTION_DPS_SHOW"))) {
 			dll->process()->wDPS.toggleVisibility();
 		} ImGui::SameLine();
 		if (ImGui::Button(dll->process()->wDOT.visible ? Languages::get("OPTION_DOT_HIDE") : Languages::get("OPTION_DOT_SHOW"))) {
 			dll->process()->wDOT.toggleVisibility();
+		} ImGui::SameLine();
+		if (ImGui::Button(dll->process()->wChat.visible ? Languages::get("OPTION_CHAT_HIDE") : Languages::get("OPTION_CHAT_SHOW"))) {
+			dll->process()->wChat.toggleVisibility();
 		}
 
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_DPS"))) {
@@ -242,6 +263,9 @@ void ImGuiConfigWindow::Render() {
 			ImGui::SliderInt(Languages::get("OPTION_DPS_NAME_LENGTH"), &(dll->process()->wDPS.maxNameWidth), 16, 128);
 			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), (int*)&(dll->process()->wDPS.simpleViewThreshold), 1, 24);
 			ImGui::Combo(Languages::get("OPTION_DPS_PARSE_FILTER"), &ParseFilter, Languages::get("OPTION_DPS_PARSE_FILTER_CHOICES"));
+		}
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_CHAT"))) {
+			ImGui::InputText(Languages::get("OPTION_CHAT_GOOGLE_API_KEY"), dll->process()->wChat.mTranslateApiKey, sizeof(dll->process()->wChat.mTranslateApiKey));
 		}
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
 			ImGui::Checkbox(Languages::get("OPTION_USE_EXTERNAL_WINDOW"), &UseExternalWindow);
@@ -270,9 +294,11 @@ void ImGuiConfigWindow::Render() {
 
 		if (ImGui::Button(Languages::get("OPTION_APPLY"), ImVec2(90, 30))) {
 			dll->process()->wDPS.setTransparency(transparency);
-			dll->process()->wDOT.setTransparency(transparency);
 			dll->process()->wDPS.setPaddingRecursive(padding);
+			dll->process()->wDOT.setTransparency(transparency);
 			dll->process()->wDOT.setPaddingRecursive(padding);
+			dll->process()->wChat.setTransparency(transparency);
+			dll->process()->wChat.setPaddingRecursive(padding);
 			dll->process()->mCombatResetTime = combatResetTime * 1000;
 			dll->process()->mShowTimeInfo = showTimes;
 			mRenderer->ReloadFromConfig();

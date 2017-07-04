@@ -16,8 +16,6 @@ DPSWindowController::~DPSWindowController()
 {
 }
 
-extern FFXIVDLL *asdfd;;
-
 int DPSWindowController::callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	int x = GET_X_LPARAM(lparam);
 	int y = GET_Y_LPARAM(lparam);

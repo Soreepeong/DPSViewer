@@ -10,6 +10,7 @@
 #include "MedianCalculator.h"
 #include "DPSWindowController.h"
 #include "DOTWindowController.h"
+#include "ChatWindowController.h"
 #include "ImGuiConfigWindow.h"
 #include "OverlayRenderer.h"
 #include "Hooks.h"
@@ -605,7 +606,8 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	mRecv(1048576 * 8),
 	mLastIdleTime(0),
 	wDPS(*new DPSWindowController()),
-	wDOT(*new DOTWindowController()) {
+	wDOT(*new DOTWindowController()),
+	wChat(*new ChatWindowController(dll)){
 	mLastAttack.amount = 0;
 	mLastAttack.timestamp = 0;
 
@@ -669,11 +671,13 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 
 	wDPS.layoutDirection = LAYOUT_DIRECTION_VERTICAL;
 	wDPS.relativePosition = 1;
-	wDOT.relativePosition = 1;
 	wDOT.layoutDirection = LAYOUT_DIRECTION_VERTICAL_TABLE;
+	wDOT.relativePosition = 1;
+	wChat.relativePosition = 1;
 
 	wDPS.text = L"DPS";
 	wDOT.text = L"DOT";
+	wChat.text = L"Chat";
 
 	ReloadLocalization();
 }
@@ -1313,6 +1317,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 			mWindowsAdded = true;
 			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDPS);
 			dll->hooks()->GetOverlayRenderer()->AddWindow(&wDOT);
+			dll->hooks()->GetOverlayRenderer()->AddWindow(&wChat);
 		}
 		wDOT.setPaddingRecursive(wDOT.padding);
 	}
@@ -1889,12 +1894,10 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 void GameDataProcess::UpdateInfoThread() {
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		WaitForSingleObject(hUpdateInfoThreadLock, 50);
-		__try {
-			ResolveUsers();
-			ParsePacket(mSent, false);
-			ParsePacket(mRecv, true);
-			UpdateOverlayMessage();
-		} __except (1) {}
+		ResolveUsers();
+		ParsePacket(mSent, false);
+		ParsePacket(mRecv, true);
+		UpdateOverlayMessage();
 	}
 	TerminateThread(GetCurrentThread(), 0);
 }

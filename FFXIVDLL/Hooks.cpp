@@ -7,6 +7,7 @@
 #include "Hooks.h"
 #include "FFXIVDLL.h"
 #include "GameDataProcess.h"
+#include "ChatWindowController.h"
 #include "../TsudaKageyu-minhook/include/MinHook.h"
 
 std::atomic_int Hooks::mHookedFunctionDepth;
@@ -36,15 +37,6 @@ extern LRESULT ImGui_ImplDX9_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
-
-DWORD_PTR testRead(DWORD_PTR *p) {
-	__try {
-		return *p;
-	} __except (1) {
-		return 0;
-	}
-}
-
 Hooks::Hooks(FFXIVDLL *dll) {
 	if (MH_OK != MH_Initialize())
 		return;
@@ -177,21 +169,22 @@ void Hooks::Activate() {
 }
 
 #ifdef _WIN64
-int __fastcall Hooks::hook_OnNewChatItem(void *pthis, PCHATITEM param, size_t n) {
+int __fastcall Hooks::hook_OnNewChatItem(void *pthis, void* param, size_t n) {
 #else
-int __fastcall Hooks::hook_OnNewChatItem(void *pthis, void *unused, PCHATITEM param, size_t n) {
+int __fastcall Hooks::hook_OnNewChatItem(void *pthis, void *unused, void* param, size_t n) {
 #endif
 	mHookedFunctionDepth++;
 	dll->sendPipe("in__", (char*) param, n);
+	dll->process()->wChat.addChat(param);
 	int res = pfnBridge.OnNewChatItem(pthis, param, n);
 	mHookedFunctionDepth--;
 	return res;
 }
 
 #ifdef _WIN64
-SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, DWORD *dw1, char **dw2, int n) {
+SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, size_t *dw1, char **dw2, int n) {
 #else
-SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, DWORD *dw1, char **dw2, int n) {
+SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, size_t *dw1, char **dw2, int n) {
 #endif
 	mHookedFunctionDepth++;
 	if (strncmp((char*) dw2[1], "/o:o", 3) == 0) {
@@ -218,11 +211,9 @@ int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 	WSABUF buffer = { static_cast<ULONG>(len), buf };
 
 	int alen = WSARecv(s, &buffer, 1, &result, &flags2, nullptr, nullptr) == 0 ? static_cast<int>(result) : SOCKET_ERROR;
-	__try {
 		if (alen > 0) {
 			dll->process()->OnRecv(buf, alen);
 		}
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 	mHookedFunctionDepth--;
 	return alen;
 }
@@ -233,11 +224,9 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 	WSABUF buffer = { static_cast<ULONG>(len), const_cast<CHAR *>(buf) };
 
 	int alen = WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == 0 ? static_cast<int>(result) : SOCKET_ERROR;
-	__try {
 		if (alen > 0) {
 			dll->process()->OnSent(buf, alen);
 		}
-	} __except (EXCEPTION_EXECUTE_HANDLER) {}
 	mHookedFunctionDepth--;
 	return alen;
 }
@@ -275,7 +264,7 @@ char Hooks::hook_ProcessWindowMessage() {
 	std::string chatMessage;
 	if (chatObject != 0) {
 		if (dll->mChatInjectQueue.tryPop(&chatMessage)) {
-			DWORD res;
+			size_t res;
 			chatPtrs[3] = chatPtrs[1] = (char*) chatMessage.c_str();
 			pfnOrig.ProcessNewLine(chatObject, &res, chatPtrs, 20);
 		}

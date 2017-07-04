@@ -186,6 +186,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="ChatWindowController.h" />
     <ClInclude Include="DX11_ScreenGrab.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -221,6 +222,7 @@
     <ClInclude Include="imgui\stb_rect_pack.h" />
     <ClInclude Include="imgui\stb_textedit.h" />
     <ClInclude Include="imgui\stb_truetype.h" />
+    <ClInclude Include="json.hpp" />
     <ClInclude Include="Languages.h" />
     <ClInclude Include="MedianCalculator.h" />
     <ClInclude Include="MemoryScanner.h" />
@@ -239,6 +241,7 @@
     <ClInclude Include="WindowControllerBase.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ChatWindowController.cpp" />
     <ClCompile Include="DX11_ScreenGrab.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>

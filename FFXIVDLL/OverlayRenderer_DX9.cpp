@@ -42,7 +42,6 @@ PDXTEXTURETYPE OverlayRendererDX9::GetTextureFromFile(TCHAR *resName) {
 }
 
 void OverlayRendererDX9::ReloadFromConfig() {
-	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	OverlayRenderer::ReloadFromConfig();
 	if (mFont != nullptr) {
 		mFont->Release();
@@ -54,7 +53,6 @@ void OverlayRendererDX9::ReloadFromConfig() {
 }
 
 void OverlayRendererDX9::OnLostDevice() {
-	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	if (mFont != nullptr) {
 		mFont->Release();
 		mFont = nullptr;
@@ -71,7 +69,6 @@ void OverlayRendererDX9::OnLostDevice() {
 }
 
 void OverlayRendererDX9::OnResetDevice() {
-	std::lock_guard<std::recursive_mutex> lock(mWindows.layoutLock);
 	ImGui_ImplDX9_CreateDeviceObjects();
 
 	D3DXCreateSprite(pDevice, &mSprite);
@@ -163,7 +160,6 @@ void OverlayRendererDX9::MeasureText(RECT &rc, TCHAR *text, int flags) {
 }
 
 void OverlayRendererDX9::RenderOverlayWindow() {
-	std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
 	D3DVIEWPORT9 prt;
 	pDevice->GetViewport(&prt);
 #pragma warning( push )
@@ -190,18 +186,14 @@ void OverlayRendererDX9::RenderOverlay() {
 	if (mConfig.UseDrawOverlay && mFont != nullptr) {
 		pDevice->BeginScene();
 
-		__try {
 			RenderOverlayWindow();
-		} __except (1) {}
 
-		__try {
 			ImGui_ImplDX9_NewFrame();
 			D3DVIEWPORT9 prt;
 			pDevice->GetViewport(&prt);
 			RenderOverlayMisc(prt.Width, prt.Height);
 			mConfig.Render();
 			ImGui::Render();
-		} __except (1) {}
 
 		pDevice->EndScene();
 	}

@@ -13,6 +13,7 @@ class FFXIVDLL;
 class MedianCalculator;
 class DPSWindowController;
 class DOTWindowController;
+class ChatWindowController;
 
 struct PER_USER_DMG {
 	int def;
@@ -329,6 +330,8 @@ private:
 	bool mWindowsAdded = false;
 	DPSWindowController &wDPS;
 	DOTWindowController &wDOT;
+	ChatWindowController &wChat;
+
 
 	z_stream inflater;
 	unsigned char inflateBuffer[DEFLATE_CHUNK_SIZE];

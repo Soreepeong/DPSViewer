@@ -26,7 +26,6 @@ namespace DpsViewer {
 				MessageBox.Show("FFXIV is not running.\n" + k);
 			} else {
 				foreach (var p in processes) {
-					if (p.MainModule.FileName.Contains("KOREA")) continue;
 					IntPtr ffxivhWnd = IntPtr.Zero;
 					EnumWindows(new EnumWindowsProc((hWnd, lparam) => {
 						int size = GetWindowTextLength(hWnd);

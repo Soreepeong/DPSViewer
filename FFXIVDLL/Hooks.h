@@ -28,26 +28,19 @@ public:
 
 	static bool isFFXIVChatWindowOpen;
 
-	typedef struct _CHATITEM {
-		int timestamp;
-		short code;
-		short _u1;
-		char chat;
-	} CHATITEM, *PCHATITEM;
-
 #ifdef _WIN64
 	static SIZE_T* __fastcall hook_ProcessNewLine(void*, DWORD*, char**, int);
 	static char __fastcall hook_ShowFFXIVWindow(void*);
 	static char __fastcall hook_HideFFXIVWindow(void*);
-	static int __fastcall hook_OnNewChatItem(void*, PCHATITEM, size_t);
+	static int __fastcall hook_OnNewChatItem(void*, void*, size_t);
 
 	typedef HRESULT(APIENTRY *Dx11SwapChain_Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
 	static HRESULT APIENTRY hook_Dx11SwapChain_Present(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
 #else
-	static SIZE_T* __fastcall hook_ProcessNewLine(void*, void*, SIZE_T*, char**, int);
-	static int __fastcall hook_OnNewChatItem(void*, void*, PCHATITEM, size_t);
+	static SIZE_T* __fastcall hook_ProcessNewLine(void*, void*, size_t*, char**, int);
+	static int __fastcall hook_OnNewChatItem(void*, void*, void*, size_t);
 
 	static char __fastcall hook_ShowFFXIVWindow(void*, void*);
 	static char __fastcall hook_HideFFXIVWindow(void*, void*);
@@ -63,8 +56,8 @@ public:
 	static HRESULT APIENTRY hook_Dx9Present(IDirect3DDevice9 *pSwapChain, const RECT    *pSourceRect, const RECT    *pDestRect, HWND    hDestWindowOverride, const RGNDATA *pDirtyRegion);
 
 #endif
-	typedef int(__thiscall *OnNewChatItem)(void*, PCHATITEM, size_t);
-	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, DWORD*, char**, int);
+	typedef int(__thiscall *OnNewChatItem)(void*, void*, size_t);
+	typedef SIZE_T* (__thiscall *ProcessNewLine)(void*, size_t*, char**, int);
 	typedef char (__thiscall *ShowHideFFXIVWindow)(void*);
 	typedef char(*ProcessWindowMessage)();
 	typedef HCURSOR(WINAPI *WinApiSetCursor)(HCURSOR hCursor);

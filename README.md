@@ -48,6 +48,7 @@ GPLv3
 Referenced projects / 참조 프로젝트
 ----
 - FFXIV.Memory and FFXIV_ACT_Plugin for signatures
+- nlohmann/json
 - MinHook
 - zlib
 - imgui
