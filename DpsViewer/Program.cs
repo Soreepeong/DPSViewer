@@ -52,11 +52,13 @@ namespace DpsViewer {
 
 					IntPtr h = OpenProcess(ProcessAccessFlags.All, false, p.Id);
 					if (h.ToInt32() != -1) {
-						ejectDll(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
-						// MessageBox.Show("Entrypoint: " + p.MainModule.BaseAddress.ToString("X16")); return;
-						InjectDLL(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
-						CloseHandle(h);
-						SetForegroundWindow(ffxivhWnd);
+						if (GetModulePtr(h, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN) == IntPtr.Zero) {
+							// ejectDll(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
+							// MessageBox.Show("Entrypoint: " + p.MainModule.BaseAddress.ToString("X16")); return;
+							InjectDLL(p.Handle, AppDomain.CurrentDo‌​main.BaseDirectory + dllFN);
+							CloseHandle(h);
+							SetForegroundWindow(ffxivhWnd);
+						}
 					}
 				}
 			}

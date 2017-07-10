@@ -607,7 +607,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	mLastIdleTime(0),
 	wDPS(*new DPSWindowController()),
 	wDOT(*new DOTWindowController()),
-	wChat(*new ChatWindowController(dll)){
+	wChat(*new ChatWindowController(dll)) {
 	mLastAttack.amount = 0;
 	mLastAttack.timestamp = 0;
 
@@ -688,18 +688,21 @@ void GameDataProcess::ReloadLocalization() {
 
 	OverlayRenderer::Control *mTableHeaderDef = new OverlayRenderer::Control();
 	mTableHeaderDef->layoutDirection = LAYOUT_DIRECTION_HORIZONTAL;
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_RESNAME, DT_CENTER));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(L"#", CONTROL_TEXT_STRING, DT_CENTER));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_NAME"), CONTROL_TEXT_STRING, DT_LEFT));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DPS"), CONTROL_TEXT_STRING, DT_CENTER));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_TOTAL"), CONTROL_TEXT_STRING, DT_CENTER));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CRITICAL"), CONTROL_TEXT_STRING, DT_CENTER));
-	if (version == 340)
-		mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CMH"), CONTROL_TEXT_STRING, DT_CENTER));
-	else
-		mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CDMH"), CONTROL_TEXT_STRING, DT_CENTER));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_MAX"), CONTROL_TEXT_STRING, DT_CENTER));
-	mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DEATH"), CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.jicon) mTableHeaderDef->addChild(new OverlayRenderer::Control(L"", CONTROL_TEXT_RESNAME, DT_CENTER));
+	if (wDPS.DpsColumns.uidx) mTableHeaderDef->addChild(new OverlayRenderer::Control(L"#", CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.uname) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_NAME"), CONTROL_TEXT_STRING, DT_LEFT));
+	if (wDPS.DpsColumns.dps) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DPS"), CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.total) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_TOTAL"), CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.crit) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CRITICAL"), CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.dh && version == 400) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DH"), CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.cdmh) {
+		if (version == 340)
+			mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CMH"), CONTROL_TEXT_STRING, DT_CENTER));
+		else
+			mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_CDMH"), CONTROL_TEXT_STRING, DT_CENTER)); \
+	}
+	if (wDPS.DpsColumns.max) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_MAX"), CONTROL_TEXT_STRING, DT_CENTER));
+	if (wDPS.DpsColumns.death) mTableHeaderDef->addChild(new OverlayRenderer::Control(Languages::get(L"DPSTABLE_DEATH"), CONTROL_TEXT_STRING, DT_CENTER));
 	wDPS.getChild(1)->addChild(mTableHeaderDef);
 	wDPS.getChild(1)->setPaddingRecursive(wDPS.padding);
 	mTableHeaderDef = new OverlayRenderer::Control();
@@ -753,6 +756,8 @@ int GameDataProcess::getDoTPotency(int dot) {
 		}
 	} else if (version == 400) {
 		switch (dot) {
+			case 0xf8: return 30;
+			case 0xf6: return 50;
 			case 0x76: return 35;
 			case 0x7c: return 40;
 			case 0x81: return 50;
@@ -760,25 +765,22 @@ int GameDataProcess::getDoTPotency(int dot) {
 			case 0x90: return 50;
 			case 0xa1: return 40;
 			case 0xa2: return 30;
+			case 0x2d5: return 60;
+			case 0x4b0: return 45;
+			case 0x4b1: return 55;
+			case 0x31e: return 40;
 			case 0xa3: return 40;
+			case 0x4ba: return 30;
 			case 0xb3: return 40;
 			case 0xb4: return 35;
 			case 0xbd: return 35;
-			case 0xf6: return 50;
-			case 0xf8: return 30;
-			case 0x13a: return 20;
+			case 0x4be: return 40;
+			case 0x4bf: return 40;
 			case 0x1fc: return 40;
-			case 0x2d5: return 60;
-			case 0x31e: return 40;
 			case 0x346: return 40;
 			case 0x34b: return 50;
-			case 0x4b5: return 60;
-			case 0x4ba: return 30;
-			case 0x527: return 35;
-			case 0x529: return 45;
-			case 0x52a: return 55;
-			case 0x52e: return 40;
-			case 0x52f: return 40;
+			case 0xec: return 20;
+			case 0x13a: return 20;
 		}
 	}
 	return 0;
@@ -817,6 +819,8 @@ int GameDataProcess::getDoTDuration(int skill) {
 		}
 	} else if (version == 400) {
 		switch (skill) {
+			case 0xf8: return 15000;
+			case 0xf6: return 18000;
 			case 0x76: return 30000;
 			case 0x7c: return 18000;
 			case 0x81: return 18000;
@@ -824,25 +828,20 @@ int GameDataProcess::getDoTDuration(int skill) {
 			case 0x90: return 18000;
 			case 0xa1: return 18000;
 			case 0xa2: return 21000;
+			case 0x4b0: return 30000;
+			case 0x4b1: return 30000;
+			case 0x31e: return 24000;
 			case 0xa3: return 24000;
+			case 0x4ba: return 18000;
 			case 0xb3: return 18000;
 			case 0xb4: return 24000;
 			case 0xbd: return 30000;
-			case 0xf6: return 18000;
-			case 0xf8: return 15000;
-			case 0x13a: return 15000;
-			case 0x1fc: return 21000;
-			case 0x2d5: return 21000;
-			case 0x31e: return 24000;
+			case 0x4be: return 30000;
+			case 0x4bf: return 30000;
 			case 0x346: return 18000;
 			case 0x34b: return 30000;
-			case 0x4b5: return 10000;
-			case 0x4ba: return 18000;
-			case 0x527: return 60000;
-			case 0x529: return 30000;
-			case 0x52a: return 30000;
-			case 0x52e: return 30000;
-			case 0x52f: return 30000;
+			case 0xec: return 18000;
+			case 0x13a: return 15000;
 		}
 	}
 	return 0;
@@ -945,39 +944,71 @@ inline TCHAR* GameDataProcess::GetActorJobString(int id) {
 
 bool GameDataProcess::IsParseTarget(uint32_t id) {
 
-	struct PARTY_STRUCT {
-		struct {
-			union {
-				struct {
-					uint32_t _u0[4];
-					uint32_t id;
-					uint32_t _u1[3];
-					char* name;
-				};
-#ifdef _WIN64
-				char _u[544];
-#else
-				char _u[528];
-#endif;
-			};
-		} members[24];
-	};
-	if (id == 0 || id == NULL_ACTOR) return false;
+	if (id == SOURCE_LIMIT_BREAK && dll->config().ParseFilter != 3) return true;
+	if (id == 0 || id == NULL_ACTOR || GetActorType(id) != ACTOR_TYPE_PC) return false;
 	if (!dll->hooks() || !dll->hooks()->GetOverlayRenderer() || dll->config().ParseFilter == 0) return true;
-	__try {
-		PARTY_STRUCT* ptr = (PARTY_STRUCT*) dll->memory()->Result.Data.PartyMap;
-		if (ptr == 0) return true;
-		if (id == mSelfId) return true;
-		if (dll->config().ParseFilter == 3) return false; // me only
-		for (int i = 0; i < 8; i++)
-			if (ptr->members[i].id == id)
-				return true;
-		if (dll->config().ParseFilter == 2) return false; // party
-		for (int i = 8; i < 24; i++)
-			if (ptr->members[i].id == id)
-				return true;
-		return false; // alliance
-	} __except (EXCEPTION_EXECUTE_HANDLER) {
+	if (version == 340) {
+		struct PARTY_STRUCT {
+			struct {
+				union {
+					struct {
+						uint32_t _u0[4];
+						uint32_t id;
+						uint32_t _u1[3];
+						char* name;
+					};
+#ifdef _WIN64
+					char _u[544];
+#else
+					char _u[528];
+#endif;
+				};
+			} members[24];
+		};
+		__try {
+			PARTY_STRUCT* ptr = (PARTY_STRUCT*) ((size_t) dll->memory()->Result.Data.PartyMap);
+			if (ptr == 0) return true;
+			if (id == mSelfId) return true;
+			if (dll->config().ParseFilter == 3) return false; // me only
+			for (int i = 0; i < 8; i++)
+				if (ptr->members[i].id == id)
+					return true;
+			if (dll->config().ParseFilter == 2) return false; // party
+			for (int i = 8; i < 24; i++)
+				if (ptr->members[i].id == id)
+					return true;
+			return false; // alliance
+		} __except (EXCEPTION_EXECUTE_HANDLER) {
+		}
+	} else {
+		struct PARTY_STRUCT {
+			struct {
+				union {
+					struct {
+						uint64_t _u0[4];
+						uint32_t id;
+						uint32_t _u1[3];
+						char* name;
+					};
+					char _u[544];
+				} members[24];
+			};
+		};
+		__try {
+			PARTY_STRUCT* ptr = (PARTY_STRUCT*) ((size_t) dll->memory()->Result.Data.PartyMap);
+			if (ptr == 0) return true;
+			if (id == mSelfId) return true;
+			if (dll->config().ParseFilter == 3) return false; // me only
+			for (int i = 0; i < 8; i++)
+				if (ptr->members[i].id == id)
+					return true;
+			if (dll->config().ParseFilter == 2) return false; // party
+			for (int i = 8; i < 24; i++)
+				if (ptr->members[i].id == id)
+					return true;
+			return false; // alliance
+		} __except (EXCEPTION_EXECUTE_HANDLER) {
+		}
 	}
 
 	return true; // show anyway if there was any error
@@ -1106,7 +1137,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
 			if (mShowTimeInfo)
 				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"FPS %lld / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
-					(uint64_t) dll->hooks()->GetOverlayRenderer()->GetFPS(),
+				(uint64_t) dll->hooks()->GetOverlayRenderer()->GetFPS(),
 					(int) s1.wHour, (int) s1.wMinute, (int) s1.wSecond,
 					(int) s2.wHour, (int) s2.wMinute, (int) s2.wSecond);
 			if (!mDpsInfo.empty()) {
@@ -1114,8 +1145,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 				int total = 0;
 				for (auto it = mCalculatedDamages.begin(); it != mCalculatedDamages.end(); ++it)
 					total += it->second;
-				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"%02d:%02d.%03d / %.2f (%d)",
+				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"%02d:%02d.%03d%s / %.2f (%d)",
 					(int) ((dur / 60000) % 60), (int) ((dur / 1000) % 60), (int) (dur % 1000),
+					mLastAttack.timestamp < timestamp - mCombatResetTime ? L"" : (
+						GetTickCount() % 600 < 200 ? L".  " :
+						GetTickCount() % 600 < 400 ? L".. " : L"..."
+						),
 					total * 1000. / (mLastAttack.timestamp - mLastIdleTime), (int) mCalculatedDamages.size());
 			} else {
 				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"00:00:000 / 0 (0)");
@@ -1152,45 +1187,62 @@ void GameDataProcess::UpdateOverlayMessage() {
 					float curDps = (float) (it->second * 1000. / (mLastAttack.timestamp - mLastIdleTime));
 
 					wRow.layoutDirection = CONTROL_LAYOUT_DIRECTION::LAYOUT_DIRECTION_HORIZONTAL;
-
-					wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
+					if (wDPS.DpsColumns.jicon)
+						wRow.addChild(new OverlayRenderer::Control(mActorInfo[it->first].job, CONTROL_TEXT_RESNAME, DT_CENTER));
 					if (maxDps > 0) {
 						wRow.addChild(new OverlayRenderer::Control(curDps / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x10), CHILD_TYPE_BACKGROUND);
 						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.def * 1000.f / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x20), CHILD_TYPE_BACKGROUND);
 						wRow.addChild(new OverlayRenderer::Control((mDpsInfo[it->first].totalDamage.crit * 1000.f / (mLastAttack.timestamp - mLastIdleTime)) / maxDps, 1, LIGHTER_COLOR((mClassColors[mActorInfo[it->first].job] & 0xFFFFFF) | 0x70000000, 0x30), CHILD_TYPE_BACKGROUND);
 					}
-
-					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-
-					if (dll->config().hideOtherUserName && it->first != mSelfId)
-						wcscpy(tmp, L"...");
-					else if (dll->config().SelfNameAsYOU && it->first == mSelfId)
-						wcscpy(tmp, L"YOU");
-					else
-						MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
-					auto uname = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT);
-					uname->maxWidth = wDPS.maxNameWidth;
-					wRow.addChild(uname);
-					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f", curDps);
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", it->second);
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits));
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					if (version == 340)
-						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
-					else
-						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].directHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					if (version == 400 && (max.isCrit || max.isDirectHit))
-						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s%s", max.amount, max.isDirectHit ? L"." : L"", max.isCrit ? L"!" : L"");
-					else
-						swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s", max.amount, max.isCrit ? L"!" : L"");
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-					swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", mDpsInfo[it->first].deaths);
-					wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
-
+					if (wDPS.DpsColumns.uidx) {
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", i);
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.uname) {
+						if (dll->config().hideOtherUserName && it->first != mSelfId)
+							wcscpy(tmp, L"...");
+						else if (dll->config().SelfNameAsYOU && it->first == mSelfId)
+							wcscpy(tmp, L"YOU");
+						else
+							MultiByteToWideChar(CP_UTF8, 0, mActorInfo[it->first].name.c_str(), -1, tmp, sizeof(tmp) / sizeof(TCHAR));
+						auto uname = new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_LEFT);
+						uname->maxWidth = wDPS.maxNameWidth;
+						wRow.addChild(uname);
+					}
+					if (wDPS.DpsColumns.dps) {
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f", curDps);
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.total) {
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", it->second);
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.crit) {
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].critHits / mDpsInfo[it->first].totalHits));
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.dh && version == 400) {
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%.2f%%", mDpsInfo[it->first].totalHits == 0 ? 0.f : (100.f * mDpsInfo[it->first].directHits / mDpsInfo[it->first].totalHits));
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.cdmh) {
+						if (version == 340)
+							swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
+						else
+							swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d/%d/%d/%d", mDpsInfo[it->first].critHits, mDpsInfo[it->first].directHits, mDpsInfo[it->first].missHits, mDpsInfo[it->first].totalHits + mDpsInfo[it->first].dotHits);
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.max) {
+						if (version == 400 && (max.isCrit || max.isDirectHit))
+							swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s%s", max.amount, max.isDirectHit ? L"." : L"", max.isCrit ? L"!" : L"");
+						else
+							swprintf(tmp, sizeof(tmp) / sizeof(tmp[0]), L"%d%s", max.amount, max.isCrit ? L"!" : L"");
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
+					if (wDPS.DpsColumns.death) {
+						swprintf(tmp, sizeof (tmp) / sizeof (tmp[0]), L"%d", mDpsInfo[it->first].deaths);
+						wRow.addChild(new OverlayRenderer::Control(tmp, CONTROL_TEXT_STRING, DT_CENTER));
+					}
 					wTable.addChild(&wRow);
 				}
 				wTable.setPaddingRecursive(wDPS.padding);
@@ -1325,6 +1377,12 @@ void GameDataProcess::UpdateOverlayMessage() {
 
 void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp) {
 	switch (skill) {
+		case 0xc8:
+		case 0xc9:
+		case 0xcb:
+		case 0xcc:
+		case 0x1eb5:
+		case 0x1eb6:
 		case 0xc7:
 		case 0x1090:
 		case 0x1091:
@@ -1406,6 +1464,9 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 					b.source = source;
 					b.target = target;
 					b.applied = timestamp;
+					b.potency = info->attack[i].buffAmount;
+					b.critRate = info->attack[i].critAmount / 1000.f;
+					b.potency = (int) (b.potency * (1 + b.critRate));
 					b.expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[buffId].get();
 					b.potency = getDoTPotency(b.buffid);
 					b.simulated = 1;
@@ -1440,6 +1501,12 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 
 void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO_V4 *info, uint64_t timestamp) {
 	switch (skill) {
+		case 0xc8:
+		case 0xc9:
+		case 0xcb:
+		case 0xcc:
+		case 0x1eb5:
+		case 0x1eb6:
 		case 0xc7:
 		case 0x1090:
 		case 0x1091:
@@ -1478,6 +1545,11 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				dmg.isDirectHit = info->attack[i].isDirectHit;
 				if (dmg.amount == 0 && info->attack[i].swingtype == 1)
 					dmg.isMiss = 1;
+				if (dmg.amount > 10000) {
+					char test[512];
+					sprintf(test, "/e [%s] %d/%s: %d / %16llX", GetActorName(dmg.source).c_str(), info->attack[i].swingtype, debug_skillname(dmg.skill).c_str(), dmg.amount, *reinterpret_cast<uint64_t*>(&(info->attack[i])));
+					dll->addChat(test);
+				}
 				AddDamageInfo(dmg, true);
 				/*
 				if (dmg.source == mSelfId) {
@@ -1487,15 +1559,24 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				}
 				//*/
 				break;
-			case 17:
-			case 18:
+			case 15:
+			case 16:
+			case 51:
 			{
 				int buffId = info->attack[i].damage;
-				dmg.buffId = buffId;
-				dmg.isDoT = true;
 
 				if (getDoTPotency(buffId) == 0)
 					continue; // not an attack buff
+
+				/*{
+					char test[512];
+					sprintf(test, "/e %s: %d %d %d %d", debug_skillname(skill).c_str()
+						, (int) info->attack[i].buffAmount
+						, (int) info->attack[i].critAmount
+						, (int) info->attack[i]._u1
+						, (int) info->attack[i]._u4);
+					dll->addChat(test);
+				}//*/
 
 				bool add = true;
 				for (auto it = mActiveDoT.begin(); it != mActiveDoT.end(); ) {
@@ -1518,7 +1599,9 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 					b.target = target;
 					b.applied = timestamp;
 					b.expires = timestamp + getDoTDuration(buffId) + mDotApplyDelayEstimation[buffId].get();
-					b.potency = getDoTPotency(b.buffid);
+					b.potency = info->attack[i].buffAmount;
+					b.critRate = info->attack[i].critAmount / 1000.f;
+					b.potency = (int) (b.potency * (1 + b.critRate));
 					b.simulated = 1;
 					b.contagioned = 0;
 					mActiveDoT.push_back(b);
@@ -1599,7 +1682,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 					} else if (msg->Combat.Info1.c1 == 6) {
 						// death
 						int who = msg->Combat.Info1.c5;
-						if (GetActorType(msg->actor) == ACTOR_TYPE_PC)
+						if (IsParseTarget(msg->actor))
 							mDpsInfo[msg->actor].deaths++;
 						/*
 						sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
@@ -1655,17 +1738,17 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 							b.contagioned = 0;
 							b.simulated = 0;
 							mActiveDoT.push_back(b);
-							// sprintf(tss, "/e AddBuff %s->%s / %d (%.2f)", GetActorName(msg->Combat.AddBuff.buffs[i].actorID).c_str(), GetActorName(msg->actor).c_str(), (int) b.buffid, msg->Combat.AddBuff.buffs[i].duration); dll->addChat(tss);
+							/*
+							char tss[512];
+							sprintf(tss, "/e AddBuff %s->%s / %d (%.2f) %04X %04X %04x", GetActorName(msg->Combat.AddBuff.buffs[i].actorID).c_str(), GetActorName(msg->actor).c_str(), (int) b.buffid, msg->Combat.AddBuff.buffs[i].duration, (int) msg->Combat.AddBuff.buffs[i]._u1, (int) msg->Combat.AddBuff.buffs[i]._u2, (int) msg->Combat.AddBuff.buffs[i].extra);
+							dll->addChat(tss);
+							//*/
 						}
 					}
 					break;
 				case GAME_MESSAGE::C2_UseAbility:
 					if (version == 340)
 						ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
-					break;
-				case GAME_MESSAGE::C2_UseAbilityV4:
-					if(version == 400)
-						ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbilityV4.skill, &msg->Combat.UseAbilityV4.attack, timestamp);
 					break;
 				case GAME_MESSAGE::C2_UseAoEAbility:
 					if (version == 340) {
@@ -1679,8 +1762,42 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 						}
 					}
 					break;
-				case GAME_MESSAGE::C2_UseAoEAbilityV4:
+				case GAME_MESSAGE::C2_UseAbilityV4T1:
+				case GAME_MESSAGE::C2_UseAbilityV4T8:
+				case GAME_MESSAGE::C2_UseAbilityV4T16:
+				case GAME_MESSAGE::C2_UseAbilityV4T24:
+				case GAME_MESSAGE::C2_UseAbilityV4T32:
 					if (version == 400) {
+						int count = msg->Combat.UseAoEAbilityV4.attackCount;
+						TARGET_STRUCT *targets;
+						switch (msg->message_cat2) {
+							case GAME_MESSAGE::C2_UseAbilityV4T1:
+								count = max(count, 1);
+								targets = (TARGET_STRUCT*) ((char*) msg + 34 * 4);
+								break;
+							case GAME_MESSAGE::C2_UseAbilityV4T8:
+								count = max(count, 8);
+								targets = (TARGET_STRUCT*) ((char*) msg + 146 * 4);
+								break;
+							case GAME_MESSAGE::C2_UseAbilityV4T16:
+								count = max(count, 16);
+								targets = (TARGET_STRUCT*) ((char*) msg + 274 * 4);
+								break;
+							case GAME_MESSAGE::C2_UseAbilityV4T24:
+								count = max(count, 24);
+								targets = (TARGET_STRUCT*) ((char*) msg + 402 * 4);
+								break;
+							case GAME_MESSAGE::C2_UseAbilityV4T32:
+								count = max(count, 32);
+								targets = (TARGET_STRUCT*) ((char*) msg + 530 * 4);
+								break;
+						}
+						for (int i = 0; i < msg->Combat.UseAoEAbilityV4.attackCount; i++) {
+							if (targets[i].target != 0 && targets[i].target != NULL_ACTOR) {
+								ProcessAttackInfo(msg->actor, targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attack[i], timestamp);
+							}
+						}
+						/*
 						if (GetActorName(msg->actor), msg->Combat.UseAoEAbilityV4.skill == 174) { // Bane
 							SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbilityV4.targets, msg->Combat.UseAoEAbilityV4.attack);
 						} else {
@@ -1689,6 +1806,7 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 									ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbilityV4.targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attack[i], timestamp);
 								}
 						}
+						//*/
 					}
 					break;
 				default:
@@ -1882,7 +2000,7 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 			if (buf != nullptr) {
 				for (int i = 0; i < packet.message_count; i++) {
 					ProcessGameMessage(buf, packet.timestamp, ((char*) &packet.data - (char*) &packet), setTimestamp);
-					dll->sendPipe(setTimestamp ? "recv" : "send", (char*)buf, *((uint32_t*) buf));
+					dll->sendPipe(setTimestamp ? "recv" : "send", (char*) buf, *((uint32_t*) buf));
 					buf += *((uint32_t*) buf);
 				}
 			}
@@ -1894,10 +2012,14 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &p, bool setTimestamp) {
 void GameDataProcess::UpdateInfoThread() {
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		WaitForSingleObject(hUpdateInfoThreadLock, 50);
-		ResolveUsers();
-		ParsePacket(mSent, false);
-		ParsePacket(mRecv, true);
-		UpdateOverlayMessage();
+		__try {
+			ResolveUsers();
+			ParsePacket(mSent, false);
+			ParsePacket(mRecv, true);
+			UpdateOverlayMessage();
+		} __except (1) {
+			dll->addChat("/e UpdateInfoThread Error");
+		}
 	}
 	TerminateThread(GetCurrentThread(), 0);
 }

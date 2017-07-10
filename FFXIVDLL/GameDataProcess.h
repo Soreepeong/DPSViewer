@@ -59,9 +59,17 @@ enum ATTACK_ELEMENT_TYPE : uint8_t {
 
 struct ATTACK_INFO_EACH {
 	char swingtype;
-	ATTACK_DAMAGE_TYPE damagetype;
-	ATTACK_ELEMENT_TYPE elementtype;
-	char data1_rr;
+	union {
+		struct {
+			uint8_t buffAmount;
+			uint8_t critAmount;
+		};
+		struct {
+			ATTACK_DAMAGE_TYPE damagetype;
+			ATTACK_ELEMENT_TYPE elementtype;
+			char data1_rr;
+		};
+	};
 	uint16_t damage;
 	char _u4 : 6;
 	char mult10 : 1;
@@ -71,11 +79,19 @@ struct ATTACK_INFO_EACH {
 
 struct ATTACK_INFO_EACH_V4 {
 	char swingtype;
-	char isCrit : 1;
-	char isDirectHit : 1;
-	char _u0 : 6;
-	ATTACK_ELEMENT_TYPE elementtype : 4;
-	ATTACK_DAMAGE_TYPE damagetype : 4;
+	union {
+		struct {
+			char isCrit : 1;
+			char isDirectHit : 1;
+			char _u0 : 6;
+			ATTACK_ELEMENT_TYPE elementtype : 4;
+			ATTACK_DAMAGE_TYPE damagetype : 4;
+		};
+		struct{
+			uint8_t buffAmount;
+			uint8_t critAmount;
+		};
+	};
 	char _u1;
 	uint16_t damage;
 	char _u2 : 6;
@@ -102,6 +118,7 @@ struct TEMPBUFF {
 	int target;
 	int buffid;
 	int potency;
+	float critRate;
 	uint64_t applied;
 	uint64_t expires;
 	int simulated : 1;
@@ -149,8 +166,11 @@ struct GAME_MESSAGE {
 		MatchFound = 0x339
 		*/
 		C2_DelBuff = 0x00EC,
-		C2_UseAbilityV4 = 0x00F1,
-		C2_UseAoEAbilityV4 = 0x00F4,
+		C2_UseAbilityV4T1 = 0x00F1,
+		C2_UseAbilityV4T8 = 0x00F4,
+		C2_UseAbilityV4T16 = 0x00F5,
+		C2_UseAbilityV4T24 = 0x00F6,
+		C2_UseAbilityV4T32 = 0x00F7,
 		C2_StartCasting = 0x0110,
 		C2_AddBuff = 0x0141,
 		C2_Info1 = 0x0142,
@@ -195,13 +215,6 @@ struct GAME_MESSAGE {
 				ATTACK_INFO attack;
 			} UseAbility;
 			struct {
-				uint32_t target; // 32
-				uint8_t _u1[4]; // 36
-				uint32_t skill; // 40
-				uint8_t _u3[28]; // 44
-				ATTACK_INFO_V4 attack; // 72
-			} UseAbilityV4;
-			struct {
 				uint8_t _u1[12]; // 32
 				uint32_t skill; // 44
 				uint8_t _u2[20]; // 48
@@ -216,7 +229,6 @@ struct GAME_MESSAGE {
 				uint8_t attackCount; // 67
 				uint8_t _u3[4]; // 68
 				ATTACK_INFO_V4 attack[8]; // 72
-				TARGET_STRUCT targets[8]; // 584
 			} UseAoEAbilityV4;
 			struct {
 				uint8_t _u1[12]; // 32
@@ -234,7 +246,7 @@ struct GAME_MESSAGE {
 					uint16_t _u2;
 					float duration;
 					uint32_t actorID;
-				}buffs[3]; // 60
+				}buffs[4]; // 60
 			} AddBuff;
 			struct {
 				uint8_t _u1[4]; // 32

@@ -15,35 +15,34 @@
 ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll(dll),
 	mRenderer(renderer),
-	mConfigVisibility(true)
-{
+	mConfigVisibility(true) {
 	int i = 0, h = 0;
 	GetModuleFileNameEx(GetCurrentProcess(), NULL, mSettingFilePath, MAX_PATH);
 	for (i = 0; i < 128 && mSettingFilePath[i * 2] && mSettingFilePath[i * 2 + 1]; i++)
-		h ^= ((int*)mSettingFilePath)[i];
+		h ^= ((int*) mSettingFilePath)[i];
 	ExpandEnvironmentStrings(L"%APPDATA%", mSettingFilePath, MAX_PATH);
 	wsprintf(mSettingFilePath + wcslen(mSettingFilePath), L"\\ffxiv_overlay_config_%d.txt", h);
 
 	Languages::language = (Languages::LANGUAGE)readIni(L"UI", L"Language", 0, 0, Languages::_LANGUAGE_COUNT);
 	UseDrawOverlay = readIni(L"UI", L"UseOverlay", 1, 0, 1);
 	fontSize = readIni(L"UI", L"FontSize", 17, 9, 36);
-	bold = readIni(L"UI", L"FontBold", 1, 0, 1)?true:false;
+	bold = readIni(L"UI", L"FontBold", 1, 0, 1) ? true : false;
 	border = readIni(L"UI", L"FontBorder", 0, 0, 3);
 	ShowOnlyWhenChatWindowOpen = readIni(L"UI", L"ShowOnlyWhenChatWindowOpen", 1, 0, 1) ? true : false;
 	UseExternalWindow = readIni(L"UI", L"UseExternalWindow", 1, 0, 1) ? true : false;
 	ExternalWindowRefreshRate = readIni(L"UI", L"ExternalWindowRefreshRate", 5, 1, 25);
 	readIni(L"UI", L"FontName", "Segoe UI", fontName, sizeof(fontName));
 
-	
+
 	readIni(L"Capture", L"Path", "", capturePath, sizeof(capturePath));
 	captureFormat = readIni(L"Capture", L"Format", D3DXIFF_BMP);
 	switch (captureFormat) {
-	case D3DXIFF_BMP:
-	case D3DXIFF_PNG:
-	case D3DXIFF_JPG:
-		break;
-	default:
-		captureFormat = D3DXIFF_BMP;
+		case D3DXIFF_BMP:
+		case D3DXIFF_PNG:
+		case D3DXIFF_JPG:
+			break;
+		default:
+			captureFormat = D3DXIFF_BMP;
 	}
 
 	if (readIni(L"Meters", L"Locked", 0, 0, 1)) {
@@ -74,6 +73,11 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDPS.simpleViewThreshold = readIni(L"DPSMeter", L"SimpleViewThreshold", 8, 1, 24);
 	dll->process()->wDPS.xF = readIni(L"DPSMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDPS.yF = readIni(L"DPSMeter", L"y", 0.1f, 0.f, 1.f);
+	for (int i = 0; i < sizeof(dll->process()->wDPS.DpsColumnsInts) / sizeof(int); i++) {
+		TCHAR kn[64];
+		swprintf(kn, L"Column%d", i);
+		dll->process()->wDPS.DpsColumnsInts[i] = readIni(L"DPSMeter", kn, -1);
+	}
 	ShowEveryDPS = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
 	ParseFilter = readIni(L"DPSMeter", L"ParseFilter", 0, 0, 3);
 	hideOtherUserName = readIni(L"DPSMeter", L"HideOtherUserName", 0, 0, 1);
@@ -159,6 +163,11 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"SimpleViewThreshold", (int) dll->process()->wDPS.simpleViewThreshold);
 	writeIni(L"DPSMeter", L"x", dll->process()->wDPS.xF);
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
+	for (int i = 0; i < sizeof(dll->process()->wDPS.DpsColumnsInts) / sizeof(int); i++) {
+		TCHAR kn[64];
+		swprintf(kn, L"Column%d", i);
+		writeIni(L"DPSMeter", kn, dll->process()->wDPS.DpsColumnsInts[i]);
+	}
 	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);
 	writeIni(L"DPSMeter", L"ParseFilter", ParseFilter);
 	writeIni(L"DPSMeter", L"HideOtherUserName", hideOtherUserName);

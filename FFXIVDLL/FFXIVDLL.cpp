@@ -114,15 +114,15 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 	mHooks->Activate();
 	mScanner.AddCallback([&] () {
 		char res[512];
-		sprintf(res, "/e Initialized" /*": PWM %llx, PNL %llx, SFW %llx, HFW %llx, ONCI %llx, Actor %llx, Party %llx, Target %llx",
-			(uint64_t) scanner.Result.Functions.ProcessWindowMessage, 
-			(uint64_t) scanner.Result.Functions.ProcessNewLine,
-			(uint64_t) scanner.Result.Functions.ShowFFXIVWindow,
-			(uint64_t) scanner.Result.Functions.HideFFXIVWindow,
-			(uint64_t) scanner.Result.Functions.OnNewChatItem,
-			(uint64_t) scanner.Result.Data.ActorMap,
-			(uint64_t) scanner.Result.Data.PartyMap,
-			(uint64_t) scanner.Result.Data.TargetMap /**/);
+		sprintf(res, "/e Initialized" ": PWM %llx, PNL %llx, SFW %llx, HFW %llx, ONCI %llx, Actor %llx, Party %llx, Target %llx",
+			(uint64_t) mScanner.Result.Functions.ProcessWindowMessage, 
+			(uint64_t) mScanner.Result.Functions.ProcessNewLine,
+			(uint64_t) mScanner.Result.Functions.ShowFFXIVWindow,
+			(uint64_t) mScanner.Result.Functions.HideFFXIVWindow,
+			(uint64_t) mScanner.Result.Functions.OnNewChatItem,
+			(uint64_t) mScanner.Result.Data.ActorMap,
+			(uint64_t) mScanner.Result.Data.PartyMap,
+			(uint64_t) mScanner.Result.Data.TargetMap /**/);
 		addChat(res);
 	});
 }

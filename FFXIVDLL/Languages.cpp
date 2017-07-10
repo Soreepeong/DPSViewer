@@ -73,6 +73,7 @@ namespace Languages {
 		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_DPS"] = L"DPS";
 		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_TOTAL"] = L"Total";
 		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_CRITICAL"] = L"Crit";
+		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_DH"] = L"DH";
 		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_CMH"] = L"C/M/H";
 		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_CDMH"] = L"C/D/M/H";
 		loc2[LANGUAGE_ENGLISH][L"DPSTABLE_MAX"] = L"Max";
@@ -125,6 +126,7 @@ namespace Languages {
 		loc2[LANGUAGE_KOREAN][L"DPSTABLE_DPS"] = L"DPS";
 		loc2[LANGUAGE_KOREAN][L"DPSTABLE_TOTAL"] = L"전체";
 		loc2[LANGUAGE_KOREAN][L"DPSTABLE_CRITICAL"] = L"극대";
+		loc2[LANGUAGE_KOREAN][L"DPSTABLE_DH"] = L"직격";
 		loc2[LANGUAGE_KOREAN][L"DPSTABLE_CMH"] = L"극/빗/전";
 		loc2[LANGUAGE_KOREAN][L"DPSTABLE_CDMH"] = L"극/직/빗/전";
 		loc2[LANGUAGE_KOREAN][L"DPSTABLE_MAX"] = L"최대";
@@ -207,10 +209,11 @@ namespace Languages {
 					case 0x4b5: return L"Flamethrower";
 					case 0x4ba: return L"Thunder IV";
 					case 0x527: return L"Higanbana";
-					case 0x529: return L"Caustic Bite";
-					case 0x52a: return L"Stormbite";
-					case 0x52e: return L"Bio III";
-					case 0x52f: return L"Miasma III";
+					case 0x4b0: return L"Caustic Bite";
+					case 0x4b1: return L"Stormbite";
+					case 0x4be: return L"Bio III";
+					case 0x4bf: return L"Miasma III";
+
 				}
 		}
 		TCHAR def[256];

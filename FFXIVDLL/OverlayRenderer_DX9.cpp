@@ -168,6 +168,7 @@ void OverlayRendererDX9::RenderOverlayWindow() {
 #pragma warning( pop )
 
 	if ((Hooks::isFFXIVChatWindowOpen || !mConfig.ShowOnlyWhenChatWindowOpen) && !mConfig.UseExternalWindow) {
+		std::lock_guard<std::recursive_mutex> guard(mWindows.getLock());
 		mWindows.width = prt.Width;
 		mWindows.height = prt.Height;
 		mWindows.measure(this, rect, rect.right - rect.left, rect.bottom - rect.top, false);
@@ -186,14 +187,14 @@ void OverlayRendererDX9::RenderOverlay() {
 	if (mConfig.UseDrawOverlay && mFont != nullptr) {
 		pDevice->BeginScene();
 
-			RenderOverlayWindow();
+		RenderOverlayWindow();
 
-			ImGui_ImplDX9_NewFrame();
-			D3DVIEWPORT9 prt;
-			pDevice->GetViewport(&prt);
-			RenderOverlayMisc(prt.Width, prt.Height);
-			mConfig.Render();
-			ImGui::Render();
+		ImGui_ImplDX9_NewFrame();
+		D3DVIEWPORT9 prt;
+		pDevice->GetViewport(&prt);
+		RenderOverlayMisc(prt.Width, prt.Height);
+		mConfig.Render();
+		ImGui::Render();
 
 		pDevice->EndScene();
 	}

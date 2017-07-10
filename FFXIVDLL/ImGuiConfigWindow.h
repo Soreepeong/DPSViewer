@@ -41,7 +41,19 @@ private:
 	char mLanguageChoice[8192];
 	std::string mAboutText;
 	std::deque<std::string> mDebugLog;
-	
+
+	struct {
+		bool jicon;
+		bool uidx;
+		bool uname;
+		bool dps;
+		bool total;
+		bool crit;
+		bool dh;
+		bool cdmh;
+		bool max;
+		bool death;
+	}mDpsColumns;
 
 	int readIni(TCHAR *k1, TCHAR *k2, int def = 0, int min = 0x80000000, int max = 0x7fffffff);
 	float readIni(TCHAR *k1, TCHAR *k2, float def = 0, float min = -1, float max = 1);
