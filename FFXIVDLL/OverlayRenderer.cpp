@@ -147,7 +147,7 @@ WindowControllerBase* OverlayRenderer::GetWindowAt(Control *in, int x, int y) {
 			if ((*it)->hittest(x, y)) {
 				if ((*it)->hasCallback()) {
 					WindowControllerBase *w = (WindowControllerBase*) *it;
-					if (!w->isLocked())
+					if (!w->isClickthrough())
 						return w;
 				}
 			}

@@ -175,7 +175,7 @@ int __fastcall Hooks::hook_OnNewChatItem(void *pthis, void *unused, void* param,
 #endif
 	mHookedFunctionDepth++;
 	dll->sendPipe("in__", (char*) param, n);
-	dll->process()->wChat.addChat(param);
+	dll->process()->wChat.addChat(param, n);
 	int res = pfnBridge.OnNewChatItem(pthis, param, n);
 	mHookedFunctionDepth--;
 	return res;

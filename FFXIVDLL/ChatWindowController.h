@@ -60,9 +60,11 @@ public:
 	ChatWindowController(FFXIVDLL *dll);
 	~ChatWindowController();
 
+	bool isClickthrough() const override;
+
 	char mTranslateApiKey[512];
 
-	void addChat(void *p);
+	void addChat(void *p, size_t n);
 
 	virtual void draw(OverlayRenderer *target) override;
 

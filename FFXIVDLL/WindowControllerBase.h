@@ -15,6 +15,8 @@ public:
 	bool hasCallback() const override {
 		return true;
 	}
+	
+	virtual bool isClickthrough() const;
 
 	void lock();
 	void toggleVisibility();

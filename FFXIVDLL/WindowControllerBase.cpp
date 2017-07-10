@@ -15,6 +15,10 @@ WindowControllerBase::~WindowControllerBase()
 {
 }
 
+bool WindowControllerBase::isClickthrough() const{
+	return mLocked;
+}
+
 int WindowControllerBase::isLocked() {
 	return mLocked;
 }

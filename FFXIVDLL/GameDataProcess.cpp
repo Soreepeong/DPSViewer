@@ -1065,7 +1065,7 @@ void GameDataProcess::CalculateDps(uint64_t timestamp) {
 }
 
 void GameDataProcess::AddDamageInfo(TEMPDMG dmg, bool direct) {
-	if (GetActorType(dmg.source) == ACTOR_TYPE_PC && IsParseTarget(dmg.source)) {
+	if (IsParseTarget(dmg.source)) {
 
 		if (mLastAttack.timestamp < dmg.timestamp - mCombatResetTime) {
 			mDpsInfo.clear();
@@ -1545,11 +1545,6 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 				dmg.isDirectHit = info->attack[i].isDirectHit;
 				if (dmg.amount == 0 && info->attack[i].swingtype == 1)
 					dmg.isMiss = 1;
-				if (dmg.amount > 10000) {
-					char test[512];
-					sprintf(test, "/e [%s] %d/%s: %d / %16llX", GetActorName(dmg.source).c_str(), info->attack[i].swingtype, debug_skillname(dmg.skill).c_str(), dmg.amount, *reinterpret_cast<uint64_t*>(&(info->attack[i])));
-					dll->addChat(test);
-				}
 				AddDamageInfo(dmg, true);
 				/*
 				if (dmg.source == mSelfId) {

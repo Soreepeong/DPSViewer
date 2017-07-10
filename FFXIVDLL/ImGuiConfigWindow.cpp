@@ -75,7 +75,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDPS.yF = readIni(L"DPSMeter", L"y", 0.1f, 0.f, 1.f);
 	for (int i = 0; i < sizeof(dll->process()->wDPS.DpsColumnsInts) / sizeof(int); i++) {
 		TCHAR kn[64];
-		swprintf(kn, L"Column%d", i);
+		swprintf(kn, 64, L"Column%d", i);
 		dll->process()->wDPS.DpsColumnsInts[i] = readIni(L"DPSMeter", kn, -1);
 	}
 	ShowEveryDPS = readIni(L"DPSMeter", L"ShowEveryone", 1, 0, 1);
@@ -165,7 +165,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DPSMeter", L"y", dll->process()->wDPS.yF);
 	for (int i = 0; i < sizeof(dll->process()->wDPS.DpsColumnsInts) / sizeof(int); i++) {
 		TCHAR kn[64];
-		swprintf(kn, L"Column%d", i);
+		swprintf(kn, 64, L"Column%d", i);
 		writeIni(L"DPSMeter", kn, dll->process()->wDPS.DpsColumnsInts[i]);
 	}
 	writeIni(L"DPSMeter", L"ShowEveryone", ShowEveryDPS);

@@ -23,6 +23,7 @@ ChatWindowController::ChatWindowController(FFXIVDLL *dll) :
 	dll(dll) {
 	width = 320;
 	height = 240;
+	/*
 	{
 		PCHATITEM_CUSTOM itm = new CHATITEM_CUSTOM;
 		itm->by = L"A"; itm->text = L"This is a test text!";
@@ -44,9 +45,13 @@ ChatWindowController::ChatWindowController(FFXIVDLL *dll) :
 		itm->obj = this;
 		mLines.push_back(itm);
 	}
+	//*/
 	mScrollPos = mLines.size() - 1;
 }
 
+bool ChatWindowController::isClickthrough() const {
+	return false;
+}
 
 ChatWindowController::~ChatWindowController() {
 	for (auto i = mLines.begin(); i != mLines.end(); i++)
@@ -90,36 +95,40 @@ void ChatWindowController::draw(OverlayRenderer *target) {
 		PCHATITEM_CUSTOM itm = mLines[i];
 		RECT rc = { margin + border + padding,
 			margin + border + padding,
-			calcWidth - 2 * (margin + border + padding) - 3 * BORDER_BOX_SIZE,
+			calcWidth - 2 * (margin + border + padding) - BORDER_BOX_SIZE - 2 * LINE_BUTTON_SIZE,
 			calcHeight - 2 * (margin + border + padding) };
 		TCHAR *type = L"";
 		int pos;
 		DWORD color = 0xFFFFFFFF;
 		const wchar_t *text = itm->text.c_str();
 		switch (itm->code2) {
-			case 11: color = 0xFFEB984E; break;
-			case 12: type = L">>"; break;
-			case 13: type = L"<<"; break;
-			case 14: type = L"P"; break;
-			case 16: type = L"[1]"; break;
-			case 17: type = L"[2]"; break;
-			case 18: type = L"[3]"; break;
-			case 19: type = L"[4]"; break;
-			case 20: type = L"[5]"; break;
-			case 21: type = L"[6]"; break;
-			case 22: type = L"[7]"; break;
-			case 23: type = L"[8]"; break;
-			case 24: type = L"[FC]"; break;
-			case 29: color = 0xFFDDDDDD; break;
-			case 30: color = 0xFFF9E79F; break;
-			case 61: case 68: color = 0xFF00FF00; break;
+			case 10: color = 0xFFf7f7f7; break; // say
+			case 11: color = 0xFFffa666; break; // shout
+			case 12: color = 0xFFffb8de; type = L">>"; break;
+			case 13: color = 0xFFffb8de; type = L"<<"; break;
+			case 14: color = 0xFF66e5ff; type = L"[P]"; break;
+			case 16: color = 0xFFd4ff7d; type = L"[1]"; break;
+			case 17: color = 0xFFd4ff7d; type = L"[2]"; break;
+			case 18: color = 0xFFd4ff7d; type = L"[3]"; break;
+			case 19: color = 0xFFd4ff7d; type = L"[4]"; break;
+			case 20: color = 0xFFd4ff7d; type = L"[5]"; break;
+			case 21: color = 0xFFd4ff7d; type = L"[6]"; break;
+			case 22: color = 0xFFd4ff7d; type = L"[7]"; break;
+			case 23: color = 0xFFd4ff7d; type = L"[8]"; break;
+			case 24: color = 0xFFabdbe5;  type = L"[FC]"; break;
+			case 29: color = 0xFFbafff0; break; // Expression
+			case 30: color = 0xFFffff00; break; // Yell
+			case 56: color = 0xFFcccccc; break; // Echo
+			case 61: case 68: color = 0xFFabd647; break; // npc dialogue
 		}
 		if (itm->translationStatus == TRANSLATE_DONE || (itm->translationStatus == TRANSLATE_ERROR && !itm->translated.empty()))
 			text = itm->translated.c_str();
+		time_t time_raw = itm->timestamp;
+		auto time = std::localtime(&time_raw);
 		if(itm->by.empty())
-			pos = swprintf(buf, L"%s%s", type, text);
+			pos = swprintf(buf, sizeof(buf)/sizeof(TCHAR), L"[%02d:%02d] %s%s", time->tm_hour, time->tm_min, type, text);
 		else
-			pos = swprintf(buf, L"%s%s: %s", type, itm->by.c_str(), text);
+			pos = swprintf(buf, sizeof(buf) / sizeof(TCHAR), L"[%02d:%02d] %s%s: %s", time->tm_hour, time->tm_min, type, itm->by.c_str(), text);
 		
 		target->MeasureText(rc, buf, DT_WORDBREAK);
 		curY -= rc.bottom - rc.top;
@@ -129,9 +138,10 @@ void ChatWindowController::draw(OverlayRenderer *target) {
 		target->DrawText(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, buf, color, DT_LEFT | DT_WORDBREAK);
 
 		// buttons
-		rc.right = rc.left + calcWidth - 2 * (margin + border + padding) - BORDER_BOX_SIZE;
+		rc.left = calcX + (margin + border + padding);
+		rc.right = calcX + calcWidth - 2*(margin + border + padding) - BORDER_BOX_SIZE;
 		mClickMap[rc] = i;
-		if (PtInRect(&rc, mCursor)) {
+		if (PtInRect(&rc, mCursor) && statusFlag[CONTROL_STATUS_HOVER]) {
 			rc.left = calcX + calcWidth - 2 * (margin + border + padding) - BORDER_BOX_SIZE - LINE_BUTTON_SIZE * 2;
 			rc.right = rc.left + LINE_BUTTON_SIZE;
 			if (PtInRect(&rc, mCursor) && statusFlag[CONTROL_STATUS_HOVER] && !mDragging) {
@@ -147,7 +157,7 @@ void ChatWindowController::draw(OverlayRenderer *target) {
 	}
 }
 
-void ChatWindowController::addChat(void *p_) {
+void ChatWindowController::addChat(void *p_, size_t len) {
 	PCHATITEM p = (PCHATITEM) p_;
 	if (p->code1 == 0) {
 		PCHATITEM_CUSTOM n = new CHATITEM_CUSTOM;
@@ -155,23 +165,50 @@ void ChatWindowController::addChat(void *p_) {
 		n->code = p->code;
 		n->translationStatus = TRANSLATE_NONE;
 		n->obj = this;
+
+		char *clean = new char[len*8];
+		int clen = 0;
+		for (int i = 0; i < len - offsetof(CHATITEM, chat); i++) {
+			switch (p->chat[i]) {
+				case 2: {
+					int len = p->chat[i + 2];
+					if (len > 1) {
+						i += len + 2;
+					} else {
+						i += 4;
+						// clen += sprintf(clean + clen, "%02x", (int) p->chat[i]);
+						clean[clen++] = p->chat[i];
+					}
+					break;
+				}
+				default:
+					// clen += sprintf(clean + clen, "%02x", (int) p->chat[i]);
+					clean[clen++] = p->chat[i];
+			}
+		}
+		clean[clen++] = 0;
+
 		TCHAR *conv;
-		int len = MultiByteToWideChar(CP_UTF8, 0, p->chat, -1, 0, 0);
+		int len = MultiByteToWideChar(CP_UTF8, 0, clean, clen, 0, 0);
 		conv = new TCHAR[len];
-		MultiByteToWideChar(CP_UTF8, 0, p->chat, -1, conv, len);
+		MultiByteToWideChar(CP_UTF8, 0, clean, clen, conv, len);
 		if (conv[1] == ':') {
 			n->text = std::wstring(conv + 2);
 		} else {
 			TCHAR *pos = wcsstr(conv + 1, L":");
-			n->by = std::wstring(conv + 1, pos - conv - 1);
-			n->text = std::wstring(pos + 1);
+			if (pos) {
+				n->by = std::wstring(conv + 1, pos - conv - 1);
+				n->text = std::wstring(pos + 1);
+			}else
+				n->text = std::wstring(conv);
 		}
 		delete conv;
+		delete clean;
 
 		mLines.push_back(n);
 		if (mLines.size() > 100)
 			mLines.pop_front();
-		if (!mDragging && (mScrollPos == mLines.size() - 2 || mLines.size() == 1))
+		if (!mDragging && (mScrollPos >= mLines.size() - 2 || mLines.size() == 1))
 			mScrollPos = mLines.size() - 1;
 	}
 }
@@ -282,14 +319,17 @@ int ChatWindowController::callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lp
 			if (mDragging == 1) {
 				if (abs(x - mLastX) >= 5 || abs(y - mLastY) >= 5) {
 					if (mLastX >= calcX + calcWidth - BORDER_BOX_SIZE) {
-						if (mLastY >= calcY + calcHeight - BORDER_BOX_SIZE)
-							mDragging = 3;
-						else if (mLines.size() >= 2) {
+						if (mLastY >= calcY + calcHeight - BORDER_BOX_SIZE) {
+							if (!mLocked)
+								mDragging = 3;
+						} else if (mLines.size() >= 2) {
 							mDragging = 4;
 							mLastScrollY = mLastY;
 						}
-					} else
-						mDragging = 2;
+					} else {
+						if(!mLocked)
+							mDragging = 2;
+					}
 				}
 				return 3; // capture and eat
 			} else if (mDragging == 2) {
