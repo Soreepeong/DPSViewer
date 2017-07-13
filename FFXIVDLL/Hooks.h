@@ -29,7 +29,7 @@ public:
 	static bool isFFXIVChatWindowOpen;
 
 #ifdef _WIN64
-	static SIZE_T* __fastcall hook_ProcessNewLine(void*, DWORD*, char**, int);
+	static SIZE_T* __fastcall hook_ProcessNewLine(void*, size_t*, char**, int);
 	static char __fastcall hook_ShowFFXIVWindow(void*);
 	static char __fastcall hook_HideFFXIVWindow(void*);
 	static int __fastcall hook_OnNewChatItem(void*, void*, size_t);
@@ -61,12 +61,13 @@ public:
 	typedef char (__thiscall *ShowHideFFXIVWindow)(void*);
 	typedef char(*ProcessWindowMessage)();
 	typedef HCURSOR(WINAPI *WinApiSetCursor)(HCURSOR hCursor);
-	typedef int(__thiscall *OnRecv)(SOCKET, char*, int, int);
-	typedef int(__thiscall *OnSend)(SOCKET, char*, int, int);
+	typedef int(WINAPI *SocketSelect)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timeval *timeout);
 
 	static char hook_ProcessWindowMessage();
 	static int WINAPI hook_socket_recv(SOCKET s, char* buf, int len, int flags);
 	static int WINAPI hook_socket_send(SOCKET s, const char* buf, int len, int flags);
+	static int WINAPI hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timeval *timeout);
+
 	static HCURSOR WINAPI hook_WinApiSetCursor(HCURSOR hCursor);
 
 	void MemorySearchCompleteCallback();
@@ -94,6 +95,7 @@ public:
 		Dx9SwapChainPresent Dx9SwapChainPresent;
 #endif
 		WinApiSetCursor WinApiSetCursor;
+		SocketSelect SocketSelect;
 	}pfnBridge;
 private:
 

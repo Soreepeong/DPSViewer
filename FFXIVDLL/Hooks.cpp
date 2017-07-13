@@ -50,6 +50,7 @@ Hooks::Hooks(FFXIVDLL *dll) {
 	MH_CreateHook(recv, hook_socket_recv, NULL);
 	MH_CreateHook(send, hook_socket_send, NULL);
 	MH_CreateHook(SetCursor, hook_WinApiSetCursor, (LPVOID*) &pfnBridge.WinApiSetCursor);
+	MH_CreateHook(select, hook_socket_select, (LPVOID*) &pfnBridge.SocketSelect);
 
 #ifdef _WIN64
 
@@ -126,6 +127,18 @@ clear_dx_alloc:
 }
 
 Hooks::~Hooks() {
+
+	std::map<SOCKET, Tools::ByteQueue> *queues[] = { &dll->process()->mToRecv,
+		&dll->process()->mRecv,
+		&dll->process()->mToSend,
+		&dll->process()->mSent };
+
+	int stallTime = GetTickCount() + 6000;
+	for (int i = 0; i < sizeof(queues) / sizeof(queues[0]); i++) {
+		for (auto j = queues[i]->begin(); j != queues[i]->end(); ++j)
+			while (!j->second.isEmpty() && !j->second.isStall(stallTime - GetTickCount() + 100))
+				Sleep(0);
+	}
 
 	SetWindowLongPtr(dll->ffxiv(), GWLP_WNDPROC, (LONG_PTR) ffxivWndProc);
 
@@ -205,30 +218,164 @@ SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, size_t 
 	return res;
 }
 
-int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
-	mHookedFunctionDepth++;
-	DWORD result = 0, flags2 = flags;
-	WSABUF buffer = { static_cast<ULONG>(len), buf };
-
-	int alen = WSARecv(s, &buffer, 1, &result, &flags2, nullptr, nullptr) == 0 ? static_cast<int>(result) : SOCKET_ERROR;
-		if (alen > 0) {
-			dll->process()->OnRecv(buf, alen);
-		}
-	mHookedFunctionDepth--;
-	return alen;
-}
-
 int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags) {
 	mHookedFunctionDepth++;
-	DWORD result = 0;
-	WSABUF buffer = { static_cast<ULONG>(len), const_cast<CHAR *>(buf) };
+	DWORD result;
+	auto &snd = dll->process()->mToSend;
+	auto &sendq = dll->process()->mSent;
 
-	int alen = WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == 0 ? static_cast<int>(result) : SOCKET_ERROR;
-		if (alen > 0) {
-			dll->process()->OnSent(buf, alen);
+	if (dll->isUnloading()) {
+		if (sendq[s].getUsed() > 0) {
+			int buf2len = sendq[s].getUsed();
+			char* buf2 = new char[buf2len];
+			sendq[s].read(buf2, buf2len);
+			snd[s].write(buf2, buf2len);
+			delete[] buf2;
 		}
+		if (len > 0)
+			snd[s].write(buf, len);
+	} else {
+		if (len > 0) {
+			sendq[s].write(buf, len);
+			dll->process()->ParsePacket(sendq[s], snd[s], false);
+		}
+	}
+
+	if (snd[s].getUsed() > 0) {
+		int buf2len = snd[s].getUsed();
+		char* buf2 = new char[buf2len];
+		snd[s].read(buf2, buf2len);
+		WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
+		if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) != 0)
+			len = SOCKET_ERROR;
+		delete[] buf2;
+	}
+
+	for (auto i = snd.begin(); i != snd.end(); ) {
+		if (i->second.isStall())
+			i = snd.erase(i);
+		else
+			++i;
+	}
+
+	for (auto i = sendq.begin(); i != sendq.end(); ) {
+		if (i->second.isStall())
+			i = sendq.erase(i);
+		else
+			++i;
+	}
+
 	mHookedFunctionDepth--;
-	return alen;
+	return len;
+}
+
+int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
+	mHookedFunctionDepth++;
+	auto &rcv = dll->process()->mToRecv[s];
+	DWORD recvlen = 0, dflags = 0;
+
+	if (dll->isUnloading() && rcv.isEmpty()) {
+		WSABUF buffer = { static_cast<ULONG>(len), buf };
+		if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR)
+			recvlen = -1;
+		Tools::DebugPrint(L"Unloading: recv %d\n", (int) s);
+	} else {
+		if (ioctlsocket(s, FIONREAD, &recvlen) == SOCKET_ERROR)
+			recvlen = SOCKET_ERROR;
+		else if (recvlen > 0) {
+			int i = 5;
+			do {
+				WSABUF buffer = { static_cast<ULONG>(len), buf };
+				if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR) {
+					if (WSAGetLastError() == WSAEWOULDBLOCK)
+						recvlen = 0;
+					else {
+						recvlen = SOCKET_ERROR;
+						Tools::DebugPrint(L"WSARecv in recv %d: Error %d\n", (int) s, WSAGetLastError());
+					}
+				} else if (recvlen > 0) {
+					dll->process()->OnRecv(s, buf, recvlen);
+					Tools::DebugPrint(L"WSARecv in recv %d: %d\n", (int) s, recvlen);
+				}
+			} while (recvlen && recvlen != SOCKET_ERROR && --i > 0);
+		}
+
+		if (recvlen == 0) {
+			recvlen = static_cast<int>(min(rcv.getUsed(), static_cast<size_t>(len)));
+			Tools::DebugPrint(L"buffer pull %d: %d\n", (int) s, recvlen);
+			if (recvlen) {
+				rcv.read(buf, recvlen);
+			} else
+				WSASetLastError(WSAEWOULDBLOCK);
+		}
+	}
+
+	mHookedFunctionDepth--;
+	return recvlen;
+}
+
+int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, const struct timeval *timeout) {
+	mHookedFunctionDepth++;
+	fd_set readfds1 = *readfds;
+	int res = pfnBridge.SocketSelect(nfds, readfds, writefds, exceptfds, timeout);
+	if (res != SOCKET_ERROR) {
+		bool take = false;
+		if (dll->isUnloading()) {
+			for (size_t i = 0; i < readfds1.fd_count && !take; i++) {
+				SOCKET &s = readfds1.fd_array[i];
+				if (dll->process()->mRecv.find(s) == dll->process()->mRecv.end())
+					continue;
+				if (!dll->process()->mRecv[s].isEmpty())
+					take = true;
+				else if (!dll->process()->mToRecv[s].isEmpty())
+					take = true;
+			}
+		} else
+			take = true;
+		if (take) {
+			if (readfds->fd_count) {
+				res -= readfds->fd_count;
+				FD_ZERO(readfds);
+				if (!dll->isUnloading()) {
+					for (size_t i = 0; i < readfds1.fd_count; i++) {
+						SOCKET &s = readfds1.fd_array[i];
+						DWORD recvlen = 0, flags = 0;
+						char buf[8192];
+						WSABUF buffer = { sizeof(buf), buf };
+						int j = 5;
+						do {
+							if (WSARecv(s, &buffer, 1, &recvlen, &flags, nullptr, nullptr) == SOCKET_ERROR) {
+								if (WSAGetLastError() == WSAEWOULDBLOCK)
+									recvlen = 0;
+								else {
+									res = SOCKET_ERROR;
+									Tools::DebugPrint(L"WSARecv in select %d: Error %d\n", (int) s, WSAGetLastError());
+								}
+							} else if (recvlen > 0) {
+								dll->process()->OnRecv(s, buf, recvlen);
+								Tools::DebugPrint(L"WSARecv in select %d: %d\n", (int) s, recvlen);
+							}
+						} while (recvlen && res != SOCKET_ERROR && --j > 0);
+					}
+				}
+			}
+			for (size_t i = 0; i < readfds1.fd_count; i++) {
+				SOCKET &s = readfds1.fd_array[i];
+				if (dll->process()->mToRecv[s].getUsed() && res != SOCKET_ERROR) {
+					Tools::DebugPrint(L"select read avail %d: %d\n", s, (int) dll->process()->mToRecv[s].getUsed());
+					FD_SET(s, readfds);
+					res++;
+				}
+			}
+		} else {
+			for (size_t i = 0; i < readfds1.fd_count; i++) {
+				SOCKET &s = readfds1.fd_array[i];
+				Tools::DebugPrint(L"Unloading: select %d\n", (int) s);
+			}
+		}
+	}
+	mHookedFunctionDepth--;
+	return res;
 }
 
 #ifdef _WIN64

@@ -113,8 +113,7 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 
 	mHooks->Activate();
 	mScanner.AddCallback([&] () {
-		char res[512];
-		sprintf(res, "/e Initialized" ": PWM %llx, PNL %llx, SFW %llx, HFW %llx, ONCI %llx, Actor %llx, Party %llx, Target %llx",
+		Tools::DebugPrint(L"Initialized: PWM %llx, PNL %llx, SFW %llx, HFW %llx, ONCI %llx, Actor %llx, Party %llx, Target %llx\n",
 			(uint64_t) mScanner.Result.Functions.ProcessWindowMessage, 
 			(uint64_t) mScanner.Result.Functions.ProcessNewLine,
 			(uint64_t) mScanner.Result.Functions.ShowFFXIVWindow,
@@ -123,7 +122,7 @@ FFXIVDLL::FFXIVDLL(HMODULE instance) :
 			(uint64_t) mScanner.Result.Data.ActorMap,
 			(uint64_t) mScanner.Result.Data.PartyMap,
 			(uint64_t) mScanner.Result.Data.TargetMap /**/);
-		addChat(res);
+		addChat("/e Initialized");
 	});
 }
 
@@ -176,10 +175,16 @@ void FFXIVDLL::addChat(std::string s) {
 	mChatInjectQueue.push(s);
 }
 
-void FFXIVDLL::addChat(char* s) {
+void FFXIVDLL::addChat(char* s, ...) {
 	if (isUnloading())
 		return;
-	mChatInjectQueue.push(s);
+	va_list args;
+	va_start(args, s);
+	int nBuf;
+	char szBuffer[8192]; // get rid of this hard-coded buffer
+	nBuf = vsnprintf(szBuffer, sizeof(szBuffer) - 1, s, args);
+	mChatInjectQueue.push(szBuffer);
+	va_end(args);
 }
 
 void FFXIVDLL::sendPipe(char* msgtype, const char* data, size_t length) {

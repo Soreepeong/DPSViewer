@@ -7,8 +7,6 @@
 #include "FFXIVDLL.h"
 #include "MedianCalculator.h"
 
-#define DEFLATE_CHUNK_SIZE (1 << 18)
-
 class FFXIVDLL;
 class MedianCalculator;
 class DPSWindowController;
@@ -166,6 +164,8 @@ struct GAME_MESSAGE {
 		MatchFound = 0x339
 		*/
 		C2_DelBuff = 0x00EC,
+		C2_UseAbilityRequestV3 = 0xF7,
+		C2_UseAbilityRequestV4 = 0x10B,
 		C2_UseAbilityV4T1 = 0x00F1,
 		C2_UseAbilityV4T8 = 0x00F4,
 		C2_UseAbilityV4T16 = 0x00F5,
@@ -174,6 +174,7 @@ struct GAME_MESSAGE {
 		C2_StartCasting = 0x0110,
 		C2_AddBuff = 0x0141,
 		C2_Info1 = 0x0142,
+		C2_AbilityResponse = 0x0143,
 		C2_TargetMarker = 0x0144,
 		C2_ActorInfo = 0x0145,
 		C2_UseAbility = 0x0146,
@@ -184,6 +185,20 @@ struct GAME_MESSAGE {
 	union {
 		uint8_t data[65536];
 		union {
+			struct {
+				uint32_t _u1;
+				uint32_t skill;
+			}AbilityRequest;
+			struct {
+				uint32_t u1;
+				uint32_t u2;
+				uint32_t skill;
+				uint32_t duration;
+				uint32_t u3;
+				uint32_t u4;
+				uint32_t u5;
+				uint32_t u6;
+			}AbilityResponse;
 			struct {
 				uint16_t c1; // 32
 				uint16_t _u1;
@@ -288,6 +303,22 @@ struct GAME_MESSAGE {
 		} Combat;
 	};
 };
+
+struct GAME_PACKET {
+	union {
+		uint32_t signature;		// 0 ~ 3		0x41A05252
+		uint64_t signature_2[2];
+	};
+	uint64_t timestamp;		// 16 ~ 23
+	uint32_t length;		// 24 ~ 27
+	uint16_t _u2;			// 28 ~ 29
+	uint16_t message_count;	// 30 ~ 31
+	uint8_t _u3;			// 32
+	uint8_t is_gzip;		// 33
+	uint16_t _u4;			// 34 ~ 35
+	uint32_t _u5;			// 36 ~ 39;
+	uint8_t data[1];
+};
 #pragma pack(pop)
 
 #define EORZEA_CONSTANT 20.571428571428573
@@ -304,11 +335,18 @@ private:
 
 	std::map<std::wstring, DWORD> mClassColors;
 
-	Tools::ByteQueue mSent, mRecv;
+	std::map<SOCKET, Tools::ByteQueue> mSent, mRecv;
+	std::map<SOCKET, Tools::ByteQueue> mToSend, mToRecv;
+	Tools::bqueue<GAME_MESSAGE> mRecvAdd;
+	std::map<int, GAME_MESSAGE> mSkillTemplate;
+	GAME_PACKET mOutboundPacketTemplate;
+	std::map<int, uint64_t> mSkillLastUse;
+	uint64_t mLatency = 0; int mLatencySample = 0;
 
 	int mSelfId;
 	std::deque<TEMPBUFF> mActiveDoT;
 	TEMPDMG mLastAttack;
+	std::recursive_mutex mActorMutex;
 	std::map<int, int> mDamageRedir;
 	std::map<int, PVOID> mActorPointers;
 	struct DPS_METER_TEMP_INFO {
@@ -335,6 +373,7 @@ private:
 
 	uint64_t mServerTimestamp;
 	uint64_t mLocalTimestamp;
+	uint64_t mLastRecv;
 
 	FFXIVDLL *dll;
 	HANDLE hUnloadEvent;
@@ -344,11 +383,8 @@ private:
 	DOTWindowController &wDOT;
 	ChatWindowController &wChat;
 
-
-	z_stream inflater;
-	unsigned char inflateBuffer[DEFLATE_CHUNK_SIZE];
-
 	void ResolveUsers();
+	void ResolveUsersInternal();
 	bool IsParseTarget(uint32_t id);
 	void AddDamageInfo(TEMPDMG dmg, bool direct);
 	void CalculateDps(uint64_t timestamp);
@@ -359,7 +395,7 @@ private:
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO_V4 *info, uint64_t timestamp);
 	void ProcessGameMessage(void *data, uint64_t timestamp, size_t len, bool setTimestamp);
 	void PacketErrorMessage(int signature, int length);
-	void ParsePacket(Tools::ByteQueue &p, bool setTimestamp);
+	void ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, bool setTimestamp);
 
 	HANDLE hUpdateInfoThread;
 	HANDLE hUpdateInfoThreadLock;
@@ -378,14 +414,9 @@ public:
 	void ResetMeter();
 	void ReloadLocalization();
 
-	void OnRecv(char* buf, int len) {
-		mRecv.write(buf, len);
-		if (mRecv.getUsed() >= 28)
-			SetEvent(hUpdateInfoThreadLock);
-	}
-	void OnSent(const char* buf, int len) {
-		mSent.write(buf, len);
-		if (mSent.getUsed() >= 28)
+	void OnRecv(SOCKET s, char* buf, int len) {
+		mRecv[s].write(buf, len);
+		if (mRecv[s].getUsed() >= 28)
 			SetEvent(hUpdateInfoThreadLock);
 	}
 };

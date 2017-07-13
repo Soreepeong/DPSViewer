@@ -82,6 +82,9 @@ public:
 	int ParseFilter;
 	bool SelfNameAsYOU;
 
+	int LatencySkillDelay;
+	int LatencyTimestampDelay;
+
 	bool showTimes;
 
 	int combatResetTime;

@@ -52,7 +52,7 @@ private:
 	POINT mCursor;
 	std::deque<PCHATITEM_CUSTOM> mLines;
 	std::map<RECT, int, RectComparator> mClickMap;
-	int mScrollPos;
+	size_t mScrollPos;
 	uint64_t mFadeOutAt;
 	FFXIVDLL *dll;
 

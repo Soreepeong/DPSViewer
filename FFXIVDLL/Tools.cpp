@@ -112,6 +112,11 @@ bool Tools::TestValidString(char* p) {
 
 #pragma optimize( "", off )
 bool Tools::TestValidPtr(void* p, int len) {
+	char *p2 = new char[len];
+	DWORD l2;
+	ReadProcessMemory(GetCurrentProcess(), p, p2, len, &l2);
+	return l2 == len;
+	/*
 	__try {
 		int i;
 		int a;
@@ -121,5 +126,16 @@ bool Tools::TestValidPtr(void* p, int len) {
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 	}
 	return false;
+	//*/
 }
 #pragma optimize( "", on ) 
+
+void Tools::DebugPrint(LPCTSTR lpszFormat, ...) {
+	va_list args;
+	va_start(args, lpszFormat);
+	int nBuf;
+	TCHAR szBuffer[8192]; // get rid of this hard-coded buffer
+	nBuf = _vsnwprintf(szBuffer, sizeof(szBuffer)-1, lpszFormat, args);
+	::OutputDebugString(szBuffer);
+	va_end(args);
+}

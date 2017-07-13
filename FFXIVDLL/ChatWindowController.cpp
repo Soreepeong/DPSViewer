@@ -80,7 +80,7 @@ void ChatWindowController::draw(OverlayRenderer *target) {
 	if (statusFlag[CONTROL_STATUS_HOVER] || mDragging)
 		mFadeOutAt = GetTickCount64() + FADE_OUT_DURATION * 2;
 	if (mFadeOutAt > GetTickCount64()) {
-		uint32_t tr = min(255, 255 * (mFadeOutAt - GetTickCount64()) / FADE_OUT_DURATION);
+		uint32_t tr = static_cast<uint32_t>(min(255, 255 * (mFadeOutAt - GetTickCount64()) / FADE_OUT_DURATION));
 		tr <<= 24;
 		target->DrawBox(calcX + calcWidth - BORDER_BOX_SIZE, calcY + calcHeight - BORDER_BOX_SIZE, BORDER_BOX_SIZE, BORDER_BOX_SIZE, 0x0000FF | tr);
 		if (mLines.size() >= 2) {
@@ -104,8 +104,8 @@ void ChatWindowController::draw(OverlayRenderer *target) {
 		switch (itm->code2) {
 			case 10: color = 0xFFf7f7f7; break; // say
 			case 11: color = 0xFFffa666; break; // shout
-			case 12: color = 0xFFffb8de; type = L">>"; break;
-			case 13: color = 0xFFffb8de; type = L"<<"; break;
+			case 12: color = 0xFFffb8de; type = L"<<"; break;
+			case 13: color = 0xFFffb8de; type = L">>"; break;
 			case 14: color = 0xFF66e5ff; type = L"[P]"; break;
 			case 16: color = 0xFFd4ff7d; type = L"[1]"; break;
 			case 17: color = 0xFFd4ff7d; type = L"[2]"; break;
@@ -168,7 +168,7 @@ void ChatWindowController::addChat(void *p_, size_t len) {
 
 		char *clean = new char[len*8];
 		int clen = 0;
-		for (int i = 0; i < len - offsetof(CHATITEM, chat); i++) {
+		for (size_t i = 0; i < len - offsetof(CHATITEM, chat); i++) {
 			switch (p->chat[i]) {
 				case 2: {
 					int len = p->chat[i + 2];

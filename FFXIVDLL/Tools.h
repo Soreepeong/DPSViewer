@@ -16,12 +16,19 @@ namespace Tools {
 	bool TestValidString(char* p);
 	bool TestValidPtr(void* p, int len);
 	bool DirExists(const std::wstring& dirName_in);
+	void DebugPrint(LPCTSTR lpszFormat, ...);
 	class ByteQueue {
+	private:
+		std::recursive_mutex              d_mutex;
+		uint64_t mLastUse;
 	public:
 		ByteQueue(size_t capacity) : _capacity(capacity) { init(); }
+		ByteQueue() : _capacity(1048576*8) { init(); }
 		~ByteQueue() { delete[] _buf; }
 		size_t read(void* data, size_t bytes)
 		{
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			mLastUse = GetTickCount64();
 			bytes = min(bytes, getUsed());
 			const size_t bytes_read1 = min(bytes, _capacity - _rptr);
 			memcpy(data, _buf + _rptr, bytes_read1);
@@ -32,6 +39,8 @@ namespace Tools {
 
 		size_t peek(void* data, size_t bytes)
 		{
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			mLastUse = GetTickCount64();
 			bytes = min(bytes, getUsed());
 			const size_t bytes_read1 = min(bytes, _capacity - _rptr);
 			memcpy(data, _buf + _rptr, bytes_read1);
@@ -41,6 +50,8 @@ namespace Tools {
 
 		size_t waste(size_t bytes)
 		{
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			mLastUse = GetTickCount64();
 			bytes = min(bytes, getUsed());
 			const size_t bytes_read1 = min(bytes, _capacity - _rptr);
 			updateIndex(_rptr, bytes);
@@ -49,6 +60,8 @@ namespace Tools {
 
 		size_t write(const void* data, size_t bytes)
 		{
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			mLastUse = GetTickCount64();
 			bytes = min(bytes, getFree());
 			const size_t bytes_write1 = min(bytes, _capacity - _wptr);
 			memcpy(_buf + _wptr, data, bytes_write1);
@@ -60,12 +73,24 @@ namespace Tools {
 		bool isEmpty() { return _wptr == _rptr; }
 		size_t getUsed()
 		{
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			mLastUse = GetTickCount64();
 			return (_capacity - _rptr + _wptr) % _capacity;
 		}
 
 		size_t getFree()
 		{
+			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+			mLastUse = GetTickCount64();
 			return (_capacity - 1 - _wptr + _rptr) % _capacity;
+		}
+
+		bool isStall(int dur) {
+			return GetTickCount64() - mLastUse > dur;
+		}
+
+		bool isStall() {
+			return isStall(30000); // 30 sec
 		}
 	private:
 		//only _capacity-1 is used, one is to identify full or empty.

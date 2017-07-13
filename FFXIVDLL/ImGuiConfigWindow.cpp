@@ -84,6 +84,9 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
 	showTimes = readIni(L"DPSMeter", L"ShowTimes", 1, 0, 1);
 
+	LatencySkillDelay = readIni(L"Tools", L"LatencySkillDelay", 0, 0, 15);
+	LatencyTimestampDelay = readIni(L"Tools", L"LatencyTimestampDelay", 0, 0, 2000);
+
 	char buf[8192];
 	readIni(L"DOT", L"Contagion", "", buf, sizeof(buf));
 	dll->process()->mContagionApplyDelayEstimation.load(buf);
@@ -153,6 +156,8 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"ChatViewer", L"h", dll->process()->wChat.height);
 	writeIni(L"ChatViewer", L"GoogleApiKey", dll->process()->wChat.mTranslateApiKey);
 
+	writeIni(L"Tools", L"LatencySkillDelay", LatencySkillDelay);
+	writeIni(L"Tools", L"LatencyTimestampDelay", LatencyTimestampDelay);
 
 	writeIni(L"DOTMeter", L"Visible", dll->process()->wDOT.visible);
 	writeIni(L"DOTMeter", L"x", dll->process()->wDOT.xF);
@@ -234,7 +239,15 @@ void ImGuiConfigWindow::Render() {
 		dll->addChat(inj);
 	}
 	mConfigVisibilityPrev = mConfigVisibility;
-	if (mConfigVisibility) {
+	if (dll->isUnloading()) {
+		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, 0.75);
+		ImGui::SetNextWindowSize(ImVec2(100, 32), ImGuiSetCond_FirstUseEver);
+		ImGui::SetNextWindowPosCenter();
+		bool open = true;
+		ImGui::Begin("UnloadInfo", &open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs);
+		ImGui::Text("Unloading...");
+		ImGui::End();
+	}else if (mConfigVisibility) {
 		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0, 0, 0, transparency/255.f);
 		ImGui::SetNextWindowSize(ImVec2(320, 240), ImGuiSetCond_FirstUseEver);
 		ImGui::Begin(Languages::get("OPTION_WINDOW_TITLE"), &mConfigVisibility, ImGuiWindowFlags_AlwaysAutoResize);
@@ -286,6 +299,10 @@ void ImGuiConfigWindow::Render() {
 			ImGui::SliderInt(Languages::get("OPTION_TRANSPARENCY"), &transparency, 0, 255);
 			ImGui::InputText(Languages::get("OPTION_FONT_NAME"), fontName, sizeof(fontName));
 			ImGui::SliderInt(Languages::get("OPTION_METER_PADDING"), &padding, 0, 32);
+		}
+		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_TOOLS"))) {
+			ImGui::SliderInt(Languages::get("OPTION_TOOLS_SKILL_DELAY"), &LatencySkillDelay, 0, 15);
+			ImGui::SliderInt(Languages::get("OPTION_TOOLS_TIMESTAMP_DELAY"), &LatencyTimestampDelay, 0, 2000);
 		}
 
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_CAPTURE"))) {

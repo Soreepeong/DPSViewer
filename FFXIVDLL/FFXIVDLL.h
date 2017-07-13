@@ -32,7 +32,7 @@ public:
 	Tools::bqueue<std::string> mChatInjectQueue;
 
 	void addChat(std::string s);
-	void addChat(char* s);
+	void addChat(char* s, ...);
 	void sendPipe(char* msgtype, const char* data, size_t length);
 
 	bool isUnloading();
