@@ -351,8 +351,8 @@ private:
 	std::map<std::wstring, DWORD> mClassColors;
 
 	std::recursive_mutex mSocketMapLock;
-	std::map<SOCKET, Tools::ByteQueue> mSent, mRecv;
-	std::map<SOCKET, Tools::ByteQueue> mToSend, mToRecv;
+	std::map<SOCKET, Tools::ByteQueue*> mSent, mRecv;
+	std::map<SOCKET, Tools::ByteQueue*> mToSend, mToRecv;
 	std::map<SOCKET, Tools::bqueue<GAME_MESSAGE>> mRecvAdd;
 	GAME_PACKET mInboundPacketTemplate;
 	int mInboundSequenceId;
@@ -434,8 +434,30 @@ public:
 	int GetVersion();
 
 	void OnRecv(SOCKET s, char* buf, int len) {
-		mRecv[s].write(buf, len);
-		if (mRecv[s].getUsed() >= 28)
+		Tools::ByteQueue *bq;
+		{
+			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			if (mRecv[s] == nullptr)
+				bq = mRecv[s] = new Tools::ByteQueue();
+			else
+				bq = mRecv[s];
+		}
+		bq->write(buf, len);
+		if (bq->getUsed() >= 28)
+			SetEvent(hUpdateInfoThreadLock);
+	}
+
+	void OnSend(SOCKET s, const char* buf, int len) {
+		Tools::ByteQueue *bq;
+		{
+			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			if (mSent[s] == nullptr)
+				bq = mSent[s] = new Tools::ByteQueue();
+			else
+				bq = mSent[s];
+		}
+		bq->write(buf, len);
+		if (bq->getUsed() >= 28)
 			SetEvent(hUpdateInfoThreadLock);
 	}
 };

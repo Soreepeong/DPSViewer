@@ -1211,7 +1211,7 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 							if (msg->Combat.AbilityResponse.skill > 7 &&
 								msg->Combat.AbilityResponse.duration_or_skid >= 10 &&
 								msg->Combat.AbilityResponse.duration_or_skid <= 60000 * 8 &&
-								msg->actor == mSelfId && 
+								msg->actor == mSelfId &&
 								FFXIVResources::IsKnownSkill(msg->Combat.AbilityResponse.skill) &&
 								IsInCombat()
 								) {
@@ -1535,22 +1535,69 @@ void GameDataProcess::TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out
 }
 
 void GameDataProcess::UpdateInfoThread() {
+	int mapClearer = 0;
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		WaitForSingleObject(hUpdateInfoThreadLock, 50);
 		ResolveUsers();
+		std::map<SOCKET, int> availSocks;
 		{
 			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			for (auto i = mRecv.cbegin(); i != mRecv.cend(); ++i)
+				if (!i->second->isEmpty())
+					availSocks[i->first] |= 1;
+			for (auto i = mSent.cbegin(); i != mSent.cend(); ++i)
+				if (!i->second->isEmpty())
+					availSocks[i->first] |= 2;
+		}
+		for (auto s = availSocks.cbegin(); s != availSocks.cend(); ++s) {
+			Tools::ByteQueue *need_process;
+			if ((s->second & 1) && !(need_process = mRecv[s->first])->isEmpty()) {
+				Tools::ByteQueue *torecv;
+				{
+					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+					torecv = mToRecv[s->first] ? mToRecv[s->first] : (mToRecv[s->first] = new Tools::ByteQueue());
+				}
+				TryParsePacket(*need_process, *(torecv), s->first, true);
+			}
+			if ((s->second & 2) && !(need_process = mSent[s->first])->isEmpty()) {
+				Tools::ByteQueue *tosend;
+				{
+					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+					tosend = mToSend[s->first] ? mToSend[s->first] : (mToSend[s->first] = new Tools::ByteQueue());
+				}
+				TryParsePacket(*need_process, *(tosend), s->first, false);
+			}
+		}
+		if (++mapClearer > 100) {
+			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			mapClearer = 0;
 			for (auto i = mRecv.begin(); i != mRecv.end(); ) {
-				TryParsePacket(i->second, mToRecv[i->first], i->first, true);
-				if (i->second.isStall())
+				if (i->second->isStall()) {
+					delete i->second;
 					i = mRecv.erase(i);
-				else
+				} else
 					++i;
 			}
 			for (auto i = mToRecv.begin(); i != mToRecv.end(); ) {
-				if (i->second.isStall())
+				if (i->second->isStall()) {
+					delete i->second;
 					i = mToRecv.erase(i);
-				else
+				} else
+					++i;
+			}
+			for (auto i = mSent.begin(); i != mSent.end(); ) {
+				if (i->second->isStall()) {
+					delete i->second;
+					i = mSent.erase(i);
+				} else
+					++i;
+			}
+
+			for (auto i = mToSend.begin(); i != mToSend.end(); ) {
+				if (i->second->isStall()) {
+					delete i->second;
+					i = mToSend.erase(i);
+				} else
 					++i;
 			}
 		}

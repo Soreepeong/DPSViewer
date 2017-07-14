@@ -97,6 +97,7 @@ namespace Tools {
 		void init() {
 			_buf = new unsigned char[_capacity];
 			_wptr = 0; _rptr = 0; _used_size = 0;
+			mLastUse = GetTickCount64();
 		}
 		unsigned char* _buf;
 		size_t _capacity, _wptr, _rptr, _used_size;

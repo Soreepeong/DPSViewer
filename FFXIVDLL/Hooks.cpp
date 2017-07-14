@@ -128,16 +128,18 @@ clear_dx_alloc:
 
 Hooks::~Hooks() {
 
-	std::map<SOCKET, Tools::ByteQueue> *queues[] = { &dll->process()->mToRecv,
+	std::map<SOCKET, Tools::ByteQueue*> *queues[] = { &dll->process()->mToRecv,
 		&dll->process()->mRecv,
 		&dll->process()->mToSend,
 		&dll->process()->mSent };
 
 	int stallTime = GetTickCount() + 6000;
 	for (int i = 0; i < sizeof(queues) / sizeof(queues[0]); i++) {
-		for (auto j = queues[i]->begin(); j != queues[i]->end(); ++j)
-			while (!j->second.isEmpty() && !j->second.isStall(stallTime - GetTickCount() + 100))
-				Sleep(0);
+		for (auto j = queues[i]->begin(); j != queues[i]->end(); ++j) {
+			if (j->second)
+				while (!j->second->isEmpty() && !j->second->isStall(stallTime - GetTickCount() + 100))
+					Sleep(0);
+		}
 	}
 
 	SetWindowLongPtr(dll->ffxiv(), GWLP_WNDPROC, (LONG_PTR) ffxivWndProc);
@@ -158,6 +160,12 @@ Hooks::~Hooks() {
 
 	if (pOverlayRenderer != nullptr)
 		delete pOverlayRenderer;
+
+	for (int i = 0; i < sizeof(queues) / sizeof(queues[0]); i++) {
+		for (auto j = queues[i]->begin(); j != queues[i]->end(); ++j) {
+			delete j->second;
+		}
+	}
 }
 
 void Hooks::MemorySearchCompleteCallback() {
@@ -220,97 +228,74 @@ SIZE_T* __fastcall Hooks::hook_ProcessNewLine(void *pthis, void *unused, size_t 
 
 int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags) {
 	mHookedFunctionDepth++;
-	DWORD result;
-	auto &snd = dll->process()->mToSend;
-	auto &sendq = dll->process()->mSent;
-	std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
+	{
+		DWORD result;
+		std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
+		Tools::ByteQueue *snd = dll->process()->mToSend[s];
+		Tools::ByteQueue *sndq = dll->process()->mSent[s];
+		if (snd == nullptr) snd = dll->process()->mToSend[s] = new Tools::ByteQueue();
+		if (sndq == nullptr) sndq = dll->process()->mSent[s] = new Tools::ByteQueue();
 
-	if (dll->isUnloading()) {
-		if (sendq[s].getUsed() > 0) {
-			int buf2len = sendq[s].getUsed();
-			char* buf2 = new char[buf2len];
-			sendq[s].read(buf2, buf2len);
-			snd[s].write(buf2, buf2len);
-			delete[] buf2;
-		}
-		if (len > 0)
-			snd[s].write(buf, len);
-	} else {
-		if (len > 0) {
-			sendq[s].write(buf, len);
-			dll->process()->ParsePacket(sendq[s], snd[s], s, false);
+		if (dll->isUnloading() && snd->isEmpty() && sndq->isEmpty()) {
+			WSABUF buffer = { static_cast<ULONG>(len), const_cast<CHAR *>(buf) };
+			if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) != 0)
+				len = SOCKET_ERROR;
+			Tools::DebugPrint(L"Unloading: send %d\n", (int) s);
+		} else {
+			Tools::DebugPrint(L"send buffer put %d: %d\n", (int) s, len);
+			dll->process()->OnSend(s, buf, len);
 		}
 	}
-
-	if (snd[s].getUsed() > 0) {
-		int buf2len = snd[s].getUsed();
-		char* buf2 = new char[buf2len];
-		snd[s].read(buf2, buf2len);
-		WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
-		if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) != 0)
-			len = SOCKET_ERROR;
-		delete[] buf2;
-	}
-	for (auto i = snd.begin(); i != snd.end(); ) {
-		if (i->second.isStall())
-			i = snd.erase(i);
-		else
-			++i;
-	}
-
-	for (auto i = sendq.begin(); i != sendq.end(); ) {
-		if (i->second.isStall())
-			i = sendq.erase(i);
-		else
-			++i;
-	}
-
 	mHookedFunctionDepth--;
 	return len;
 }
 
 int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 	mHookedFunctionDepth++;
-	auto &rcv = dll->process()->mToRecv[s];
 	DWORD recvlen = 0, dflags = 0;
-	std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
+	{
+		std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
+		Tools::ByteQueue *rcv = dll->process()->mToRecv[s];
 
-	if (dll->isUnloading() && rcv.isEmpty()) {
-		WSABUF buffer = { static_cast<ULONG>(len), buf };
-		if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR)
-			recvlen = -1;
-		Tools::DebugPrint(L"Unloading: recv %d\n", (int) s);
-	} else {
-		if (ioctlsocket(s, FIONREAD, &recvlen) == SOCKET_ERROR)
-			recvlen = SOCKET_ERROR;
-		else if (recvlen > 0) {
-			int i = 5;
-			do {
-				WSABUF buffer = { static_cast<ULONG>(len), buf };
-				if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR) {
-					if (WSAGetLastError() == WSAEWOULDBLOCK)
-						recvlen = 0;
-					else {
-						recvlen = SOCKET_ERROR;
-						Tools::DebugPrint(L"WSARecv in recv %d: Error %d\n", (int) s, WSAGetLastError());
+		if (rcv == nullptr)
+			rcv = dll->process()->mToRecv[s] = new Tools::ByteQueue();
+
+		if (dll->isUnloading() && rcv->isEmpty()) {
+			WSABUF buffer = { static_cast<ULONG>(len), buf };
+			if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR)
+				recvlen = -1;
+			Tools::DebugPrint(L"Unloading: recv %d\n", (int) s);
+		} else {
+			if (ioctlsocket(s, FIONREAD, &recvlen) == SOCKET_ERROR)
+				recvlen = SOCKET_ERROR;
+			else if (recvlen > 0) {
+				int i = 5;
+				do {
+					WSABUF buffer = { static_cast<ULONG>(len), buf };
+					if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR) {
+						if (WSAGetLastError() == WSAEWOULDBLOCK)
+							recvlen = 0;
+						else {
+							recvlen = SOCKET_ERROR;
+							Tools::DebugPrint(L"WSARecv in recv %d: Error %d\n", (int) s, WSAGetLastError());
+						}
+					} else if (recvlen > 0) {
+						dll->process()->OnRecv(s, buf, recvlen);
+						Tools::DebugPrint(L"WSARecv in recv %d: %d\n", (int) s, recvlen);
 					}
-				} else if (recvlen > 0) {
-					dll->process()->OnRecv(s, buf, recvlen);
-					Tools::DebugPrint(L"WSARecv in recv %d: %d\n", (int) s, recvlen);
-				}
-			} while (recvlen && recvlen != SOCKET_ERROR && --i > 0);
-		}
+				} while (recvlen && recvlen != SOCKET_ERROR && --i > 0);
+			}
 
-		if (recvlen == 0) {
-			recvlen = static_cast<int>(min(rcv.getUsed(), static_cast<size_t>(len)));
-			Tools::DebugPrint(L"buffer pull %d: %d\n", (int) s, recvlen);
-			if (recvlen) {
-				rcv.read(buf, recvlen);
-			} else
-				WSASetLastError(WSAEWOULDBLOCK);
+			if (recvlen == 0) {
+				recvlen = static_cast<int>(min(rcv->getUsed(), static_cast<size_t>(len)));
+				Tools::DebugPrint(L"recv buffer pull %d: %d\n", (int) s, recvlen);
+				if (recvlen) {
+					rcv->read(buf, recvlen);
+				} else
+					WSASetLastError(WSAEWOULDBLOCK);
+			}
 		}
 	}
-
 	mHookedFunctionDepth--;
 	return recvlen;
 }
@@ -319,20 +304,56 @@ int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds
 	mHookedFunctionDepth++;
 	fd_set readfds1 = *readfds;
 	int res = pfnBridge.SocketSelect(nfds, readfds, writefds, exceptfds, timeout);
+	bool err = false;
 	if (res != SOCKET_ERROR) {
+		std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
 		bool take = false;
 		if (dll->isUnloading()) {
 			for (size_t i = 0; i < readfds1.fd_count && !take; i++) {
 				SOCKET &s = readfds1.fd_array[i];
-				if (dll->process()->mRecv.find(s) == dll->process()->mRecv.end())
-					continue;
-				if (!dll->process()->mRecv[s].isEmpty())
-					take = true;
-				else if (!dll->process()->mToRecv[s].isEmpty())
-					take = true;
+				if (dll->process()->mRecv.find(s) != dll->process()->mRecv.end()) {
+					if (!dll->process()->mRecv[s]->isEmpty())
+						take = true;
+					else if (dll->process()->mToRecv.find(s) != dll->process()->mToRecv.end() && !dll->process()->mToRecv[s]->isEmpty())
+						take = true;
+				}
 			}
 		} else
 			take = true;
+
+		for (auto ss = dll->process()->mToSend.cbegin(); ss != dll->process()->mToSend.cend(); ++ss) {
+			SOCKET s = ss->first;
+			Tools::ByteQueue *snd = ss->second;
+			
+			if (snd->getUsed() > 0) {
+				DWORD result = 0, flags = 0;
+				int buf2len = snd->getUsed();
+				char* buf2 = new char[buf2len];
+				snd->read(buf2, buf2len);
+				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
+				Tools::DebugPrint(L"WSASend in select %d: %d\n", (int) s, buf2len);
+				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
+					if (WSAGetLastError() != WSAEWOULDBLOCK)
+						err = true;
+				}
+				delete[] buf2;
+			}
+			if (dll->isUnloading() && dll->process()->mSent.find(s) != dll->process()->mSent.end()) {
+				snd = dll->process()->mSent[s];
+				DWORD result = 0, flags = 0;
+				int buf2len = snd->getUsed();
+				char* buf2 = new char[buf2len];
+				snd->read(buf2, buf2len);
+				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
+				Tools::DebugPrint(L"WSASend in select %d: %d\n", (int) s, buf2len);
+				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
+					if (WSAGetLastError() != WSAEWOULDBLOCK)
+						err = true;
+				}
+				delete[] buf2;
+			}
+		}
+
 		if (take) {
 			if (readfds->fd_count) {
 				res -= readfds->fd_count;
@@ -350,33 +371,31 @@ int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds
 									recvlen = 0;
 								else {
 									res = SOCKET_ERROR;
+									err = true;
 									Tools::DebugPrint(L"WSARecv in select %d: Error %d\n", (int) s, WSAGetLastError());
 								}
 							} else if (recvlen > 0) {
 								dll->process()->OnRecv(s, buf, recvlen);
 								Tools::DebugPrint(L"WSARecv in select %d: %d\n", (int) s, recvlen);
 							}
-						} while (recvlen && res != SOCKET_ERROR && --j > 0);
+						} while (recvlen && res != SOCKET_ERROR && !err && --j > 0);
 					}
 				}
 			}
 			for (size_t i = 0; i < readfds1.fd_count; i++) {
 				SOCKET &s = readfds1.fd_array[i];
-				if (dll->process()->mToRecv[s].getUsed() && res != SOCKET_ERROR) {
-					Tools::DebugPrint(L"select read avail %d: %d\n", s, (int) dll->process()->mToRecv[s].getUsed());
+				if (dll->process()->mToRecv.find(s) == dll->process()->mToRecv.end())
+					continue;
+				if (dll->process()->mToRecv[s]->getUsed() && res != SOCKET_ERROR) {
+					Tools::DebugPrint(L"select read avail %d: %d\n", s, (int) dll->process()->mToRecv[s]->getUsed());
 					FD_SET(s, readfds);
 					res++;
 				}
 			}
-		} else {
-			for (size_t i = 0; i < readfds1.fd_count; i++) {
-				SOCKET &s = readfds1.fd_array[i];
-				Tools::DebugPrint(L"Unloading: select %d\n", (int) s);
-			}
 		}
 	}
 	mHookedFunctionDepth--;
-	return res;
+	return err ? SOCKET_ERROR : res;
 }
 
 #ifdef _WIN64
@@ -617,7 +636,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 		case WM_KEYUP:
 		case WM_CHAR:
 			if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001) {
-				if(iMessage == WM_KEYDOWN)
+				if (iMessage == WM_KEYDOWN)
 					pOverlayRenderer->CaptureScreen();
 			} else if (io.WantCaptureKeyboard || io.WantTextInput)
 				break;
