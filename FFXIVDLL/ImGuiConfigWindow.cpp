@@ -23,7 +23,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	ExpandEnvironmentStrings(L"%APPDATA%", mSettingFilePath, MAX_PATH);
 	wsprintf(mSettingFilePath + wcslen(mSettingFilePath), L"\\ffxiv_overlay_config_%d.txt", h);
 
-	Languages::language = (Languages::LANGUAGE)readIni(L"UI", L"Language", 0, 0, Languages::_LANGUAGE_COUNT);
+	Languages::language = (Languages::LANGUAGE)readIni(L"UI", L"Language", dll->process()->GetVersion() == 340 ? 1 : 0, 0, Languages::_LANGUAGE_COUNT);
 	UseDrawOverlay = readIni(L"UI", L"UseOverlay", 1, 0, 1);
 	fontSize = readIni(L"UI", L"FontSize", 17, 9, 36);
 	bold = readIni(L"UI", L"FontBold", 1, 0, 1) ? true : false;
@@ -35,6 +35,7 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 
 
 	readIni(L"Capture", L"Path", "", capturePath, sizeof(capturePath));
+	UseCapture = readIni(L"Capture", L"UseCapture", 0, 0, 1) ? true : false;
 	captureFormat = readIni(L"Capture", L"Format", D3DXIFF_BMP);
 	switch (captureFormat) {
 		case D3DXIFF_BMP:
@@ -57,16 +58,19 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	dll->process()->wDOT.setPaddingRecursive(padding);
 	dll->process()->wDPS.setPaddingRecursive(padding);
 
-	dll->process()->wDOT.visible = readIni(L"DOTMeter", L"Visible", 1, 0, 1);
+	dll->process()->wDOT.visible = readIni(L"DOTMeter", L"Visible", 0, 0, 1);
 	dll->process()->wDOT.xF = readIni(L"DOTMeter", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wDOT.yF = readIni(L"DOTMeter", L"y", 0.1f, 0.f, 1.f);
 
-	dll->process()->wChat.visible = readIni(L"ChatViewer", L"Visible", 1, 0, 1);
+	dll->process()->wChat.visible = readIni(L"ChatViewer", L"Visible", 0, 0, 1);
+	if (dll->process()->GetVersion() == 340)
+		dll->process()->wChat.visible = 0;
 	dll->process()->wChat.xF = readIni(L"ChatViewer", L"x", 0.1f, 0.f, 1.f);
 	dll->process()->wChat.yF = readIni(L"ChatViewer", L"y", 0.1f, 0.f, 1.f);
 	dll->process()->wChat.width = readIni(L"ChatViewer", L"w", 320, 32, 640);
 	dll->process()->wChat.height = readIni(L"ChatViewer", L"h", 240, 32, 640);
 	readIni(L"ChatViewer", L"GoogleApiKey", "", dll->process()->wChat.mTranslateApiKey, sizeof(dll->process()->wChat.mTranslateApiKey));
+	readIni(L"ChatViewer", L"TranslateTo", "ko", dll->process()->wChat.mTranslateTo, sizeof(dll->process()->wChat.mTranslateTo));
 
 	dll->process()->wDPS.visible = readIni(L"DPSMeter", L"Visible", 1, 0, 1);
 	dll->process()->wDPS.maxNameWidth = readIni(L"DPSMeter", L"MaxNameWidth", 64, 16, 128);
@@ -84,8 +88,8 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	combatResetTime = readIni(L"DPSMeter", L"CombatResetTime", 10, 5, 60);
 	showTimes = readIni(L"DPSMeter", L"ShowTimes", 1, 0, 1);
 
-	LatencySkillDelay = readIni(L"Tools", L"LatencySkillDelay", 0, 0, 15);
-	LatencyTimestampDelay = readIni(L"Tools", L"LatencyTimestampDelay", 0, 0, 2000);
+	ForceCancelEverySkill = readIni(L"Tools", L"ForceCancelEverySkill", 0, 0, 1) ? true : false;
+	ShowDamageDealtTwice = readIni(L"Tools", L"ShowDamageDealtTwice", 0, 0, 1) ? true : false;
 
 	char buf[8192];
 	readIni(L"DOT", L"Contagion", "", buf, sizeof(buf));
@@ -143,6 +147,7 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"UI", L"ExternalWindowRefreshRate", ExternalWindowRefreshRate);
 
 	writeIni(L"Capture", L"Path", capturePath);
+	writeIni(L"Capture", L"UseCapture", UseCapture);
 	writeIni(L"Capture", L"Format", captureFormat);
 
 	writeIni(L"Meters", L"Locked", (int) dll->process()->wDOT.isLocked());
@@ -155,9 +160,10 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"ChatViewer", L"w", dll->process()->wChat.width);
 	writeIni(L"ChatViewer", L"h", dll->process()->wChat.height);
 	writeIni(L"ChatViewer", L"GoogleApiKey", dll->process()->wChat.mTranslateApiKey);
+	writeIni(L"ChatViewer", L"TranslateTo", dll->process()->wChat.mTranslateTo);
 
-	writeIni(L"Tools", L"LatencySkillDelay", LatencySkillDelay);
-	writeIni(L"Tools", L"LatencyTimestampDelay", LatencyTimestampDelay);
+	writeIni(L"Tools", L"ForceCancelEverySkill", (int) ForceCancelEverySkill);
+	writeIni(L"Tools", L"ShowDamageDealtTwice", (int) ShowDamageDealtTwice);
 
 	writeIni(L"DOTMeter", L"Visible", dll->process()->wDOT.visible);
 	writeIni(L"DOTMeter", L"x", dll->process()->wDOT.xF);
@@ -286,8 +292,11 @@ void ImGuiConfigWindow::Render() {
 			ImGui::SliderInt(Languages::get("OPTION_DPS_SIMPLE_VIEW_THRESHOLD"), (int*)&(dll->process()->wDPS.simpleViewThreshold), 1, 24);
 			ImGui::Combo(Languages::get("OPTION_DPS_PARSE_FILTER"), &ParseFilter, Languages::get("OPTION_DPS_PARSE_FILTER_CHOICES"));
 		}
-		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_CHAT"))) {
-			ImGui::InputText(Languages::get("OPTION_CHAT_GOOGLE_API_KEY"), dll->process()->wChat.mTranslateApiKey, sizeof(dll->process()->wChat.mTranslateApiKey));
+		if (dll->process()->GetVersion() == 400) {
+			if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_CHAT"))) {
+				ImGui::InputText(Languages::get("OPTION_CHAT_GOOGLE_API_KEY"), dll->process()->wChat.mTranslateApiKey, sizeof(dll->process()->wChat.mTranslateApiKey));
+				ImGui::InputText(Languages::get("OPTION_CHAT_TRANSLATE_TO"), dll->process()->wChat.mTranslateTo, sizeof(dll->process()->wChat.mTranslateTo));
+			}
 		}
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_APPEARANCE"))) {
 			ImGui::Checkbox(Languages::get("OPTION_USE_EXTERNAL_WINDOW"), &UseExternalWindow);
@@ -301,11 +310,14 @@ void ImGuiConfigWindow::Render() {
 			ImGui::SliderInt(Languages::get("OPTION_METER_PADDING"), &padding, 0, 32);
 		}
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_TOOLS"))) {
-			ImGui::SliderInt(Languages::get("OPTION_TOOLS_SKILL_DELAY"), &LatencySkillDelay, 0, 15);
-			ImGui::SliderInt(Languages::get("OPTION_TOOLS_TIMESTAMP_DELAY"), &LatencyTimestampDelay, 0, 2000);
+			ImGui::Checkbox(Languages::get("OPTION_TOOLS_FORCE_CANCEL_EVERY_SKILL"), &ForceCancelEverySkill);
+			ImGui::Text(Languages::get("OPTION_TOOLS_FORCE_CANCEL_EVERY_SKILL_DESCR"));
+			ImGui::Checkbox(Languages::get("OPTION_TOOLS_SHOW_DAMAGE_DEALT_TWICE"), &ShowDamageDealtTwice);
+			ImGui::Text(Languages::get("OPTION_TOOLS_SHOW_DAMAGE_DEALT_TWICE_DESCR"));
 		}
 
 		if (ImGui::CollapsingHeader(Languages::get("OPTION_HEADER_CAPTURE"))) {
+			ImGui::Checkbox(Languages::get("OPTION_CAPTURE_USE"), &UseCapture);
 			ImGui::InputText(Languages::get("OPTION_CAPTURE_PATH"), capturePath, sizeof(capturePath));
 			ImGui::RadioButton("BMP", &captureFormat, D3DXIFF_BMP);
 			ImGui::SameLine();

@@ -76,14 +76,15 @@ public:
 	bool hideOtherUserName = 0;
 	char capturePath[512] = "";
 	int captureFormat = D3DXIFF_BMP;
+	bool UseCapture;
 	char fontName[512] = "Segoe UI";
 	bool UseExternalWindow;
 	int ExternalWindowRefreshRate;
 	int ParseFilter;
 	bool SelfNameAsYOU;
 
-	int LatencySkillDelay;
-	int LatencyTimestampDelay;
+	bool ForceCancelEverySkill;
+	bool ShowDamageDealtTwice;
 
 	bool showTimes;
 

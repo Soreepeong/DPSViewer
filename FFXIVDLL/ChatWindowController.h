@@ -63,6 +63,7 @@ public:
 	bool isClickthrough() const override;
 
 	char mTranslateApiKey[512];
+	char mTranslateTo[64];
 
 	void addChat(void *p, size_t n);
 

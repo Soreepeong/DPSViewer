@@ -223,6 +223,7 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 	DWORD result;
 	auto &snd = dll->process()->mToSend;
 	auto &sendq = dll->process()->mSent;
+	std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
 
 	if (dll->isUnloading()) {
 		if (sendq[s].getUsed() > 0) {
@@ -237,7 +238,7 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 	} else {
 		if (len > 0) {
 			sendq[s].write(buf, len);
-			dll->process()->ParsePacket(sendq[s], snd[s], false);
+			dll->process()->ParsePacket(sendq[s], snd[s], s, false);
 		}
 	}
 
@@ -250,7 +251,6 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 			len = SOCKET_ERROR;
 		delete[] buf2;
 	}
-
 	for (auto i = snd.begin(); i != snd.end(); ) {
 		if (i->second.isStall())
 			i = snd.erase(i);
@@ -273,6 +273,7 @@ int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 	mHookedFunctionDepth++;
 	auto &rcv = dll->process()->mToRecv[s];
 	DWORD recvlen = 0, dflags = 0;
+	std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
 
 	if (dll->isUnloading() && rcv.isEmpty()) {
 		WSABUF buffer = { static_cast<ULONG>(len), buf };
@@ -416,9 +417,6 @@ char Hooks::hook_ProcessWindowMessage() {
 			pfnOrig.ProcessNewLine(chatObject, &res, chatPtrs, 20);
 		}
 	}
-
-	if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001)
-		pOverlayRenderer->CaptureScreen();
 
 	if (dll->hooks()->GetOverlayRenderer())
 		dll->hooks()->GetOverlayRenderer()->DoMainThreadOperation();
@@ -618,10 +616,12 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		case WM_CHAR:
-			if (io.WantCaptureKeyboard || io.WantTextInput) {
-				mHookedFunctionDepth--;
-				return 0;
-			} else if (ffxivHookCaptureControl && !ffxivWndPressed) {
+			if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001) {
+				if(iMessage == WM_KEYDOWN)
+					pOverlayRenderer->CaptureScreen();
+			} else if (io.WantCaptureKeyboard || io.WantTextInput)
+				break;
+			else if (ffxivHookCaptureControl && !ffxivWndPressed) {
 				int res = ffxivHookCaptureControl->callback(hWnd, iMessage, wParam, lParam);
 				switch (res) {
 					case 0: updateLastFocus(nullptr); callDef = true; break;

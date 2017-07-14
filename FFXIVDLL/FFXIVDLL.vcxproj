@@ -200,6 +200,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="ExternalPipe.h" />
+    <ClInclude Include="FFXIVResources.h" />
     <ClInclude Include="ImGuiConfigWindow.h" />
     <ClInclude Include="DOTWindowController.h" />
     <ClInclude Include="DPSWindowController.h" />
@@ -255,6 +256,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="ExternalPipe.cpp" />
+    <ClCompile Include="FFXIVResources.cpp" />
     <ClCompile Include="ImGuiConfigWindow.cpp" />
     <ClCompile Include="DOTWindowController.cpp" />
     <ClCompile Include="DPSWindowController.cpp" />

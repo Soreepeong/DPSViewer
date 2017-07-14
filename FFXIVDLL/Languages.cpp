@@ -52,6 +52,7 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_PARSE_FILTER_CHOICES"] = std::string("Everyone\0Alliance\0Party\0Me\0\0", 29);
 		loc[LANGUAGE_ENGLISH]["OPTION_HEADER_CHAT"] = "Chat/Translate";
 		loc[LANGUAGE_ENGLISH]["OPTION_CHAT_GOOGLE_API_KEY"] = "Google API Key";
+		loc[LANGUAGE_ENGLISH]["OPTION_CHAT_TRANSLATE_TO"] = u8"Language to translate to";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_BOLD"] = "Bold text";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_SIZE"] = "Text size";
 		loc[LANGUAGE_ENGLISH]["OPTION_FONT_NAME"] = "Font name";
@@ -60,9 +61,20 @@ namespace Languages {
 		loc[LANGUAGE_ENGLISH]["OPTION_METER_PADDING"] = "Padding";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_RESET_TIME"] = "DPS reset delay";
 		loc[LANGUAGE_ENGLISH]["OPTION_SHOW_TIMES"] = "Show times";
-		loc[LANGUAGE_ENGLISH]["OPTION_TOOLS_SKILL_DELAY"] = u8"Cooltime offset";
-		loc[LANGUAGE_ENGLISH]["OPTION_TOOLS_TIMESTAMP_DELAY"] = u8"Timestamp offset";
+		loc[LANGUAGE_ENGLISH]["OPTION_TOOLS_FORCE_CANCEL_EVERY_SKILL"] = u8"Treat skills as cancelled";
+		loc[LANGUAGE_ENGLISH]["OPTION_TOOLS_FORCE_CANCEL_EVERY_SKILL_DESCR"] = "Make the game client treat that\n"
+			"the skill has been cancelled.\n"
+			"Unless cooldown timer is wrong\n"
+			"on the client side, the skill\n"
+			"will execute on server side.";
+		loc[LANGUAGE_ENGLISH]["OPTION_TOOLS_SHOW_DAMAGE_DEALT_TWICE"] = u8"Show my damage dealt twice";
+		loc[LANGUAGE_ENGLISH]["OPTION_TOOLS_SHOW_DAMAGE_DEALT_TWICE_DESCR"] = u8"Using the above function will\n"
+			"sometimes prevent damage dealt\n"
+			"from showing. To circumvent that\n"
+			"you can choose to sometimes see\n"
+			"same effect done by you twice.";
 		loc[LANGUAGE_ENGLISH]["OPTION_APPLY"] = "Apply";
+		loc[LANGUAGE_ENGLISH]["OPTION_CAPTURE_USE"] = "PrtSc to capture";
 		loc[LANGUAGE_ENGLISH]["OPTION_CAPTURE_PATH"] = "Capture path";
 		loc[LANGUAGE_ENGLISH]["OPTION_DPS_RESET"] = "Reset DPS Meter";
 		loc[LANGUAGE_ENGLISH]["OPTION_QUIT"] = "Quit";
@@ -104,6 +116,7 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_SHOW_IFF_CHAT_WINDOW_OPEN"] = u8"동영상 재생 시 숨기기";
 		loc[LANGUAGE_KOREAN]["OPTION_HEADER_CHAT"] = u8"채팅/번역";
 		loc[LANGUAGE_KOREAN]["OPTION_CHAT_GOOGLE_API_KEY"] = u8"구글 API 키";
+		loc[LANGUAGE_KOREAN]["OPTION_CHAT_TRANSLATE_TO"] = u8"번역 대상 언어";
 		loc[LANGUAGE_KOREAN]["OPTION_FONT_BOLD"] = u8"굵은 글자";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_NAME_LENGTH"] = u8"최대 이름 너비";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_SIMPLE_VIEW_THRESHOLD"] = u8"간략 보기 최소 인원";
@@ -116,9 +129,19 @@ namespace Languages {
 		loc[LANGUAGE_KOREAN]["OPTION_METER_PADDING"] = u8"간격";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_RESET_TIME"] = u8"DPS 초기화 대기시간";
 		loc[LANGUAGE_KOREAN]["OPTION_SHOW_TIMES"] = u8"시각 보이기";
-		loc[LANGUAGE_KOREAN]["OPTION_TOOLS_SKILL_DELAY"] = u8"쿨타임 보정";
-		loc[LANGUAGE_KOREAN]["OPTION_TOOLS_TIMESTAMP_DELAY"] = u8"시각 보정";
+		loc[LANGUAGE_KOREAN]["OPTION_TOOLS_FORCE_CANCEL_EVERY_SKILL"] = u8"모든 스킬 취소 취급";
+		loc[LANGUAGE_KOREAN]["OPTION_TOOLS_FORCE_CANCEL_EVERY_SKILL_DESCR"] = 
+			u8"클라이언트에서 스킬을 취소한 효과를 주어\n"
+			u8"다음 스킬을 즉시 이용할 수 있게 합니다.\n"
+			u8"쿨타임에 오류가 없다면 서버에서는 여전히\n"
+			u8"스킬이 실행됩니다.";
+		loc[LANGUAGE_KOREAN]["OPTION_TOOLS_SHOW_DAMAGE_DEALT_TWICE"] = u8"직접 가한 피해 두 번 보이기";
+		loc[LANGUAGE_KOREAN]["OPTION_TOOLS_SHOW_DAMAGE_DEALT_TWICE_DESCR"] =
+			u8"위 효과를 사용할 시 캐스팅 스킬 사용 시\n"
+			u8"피해가 즉시 뜨지 않습니다. 효과를 바로\n"
+			u8"보기 위해 화면에 효과를 두 번 뜨게 합니다.\n";
 		loc[LANGUAGE_KOREAN]["OPTION_APPLY"] = u8"적용";
+		loc[LANGUAGE_KOREAN]["OPTION_CAPTURE_USE"] = u8"PrtSc로 캡쳐";
 		loc[LANGUAGE_KOREAN]["OPTION_CAPTURE_PATH"] = u8"캡쳐 경로";
 		loc[LANGUAGE_KOREAN]["OPTION_DPS_RESET"] = u8"DPS 초기화";
 		loc[LANGUAGE_KOREAN]["OPTION_QUIT"] = u8"종료";

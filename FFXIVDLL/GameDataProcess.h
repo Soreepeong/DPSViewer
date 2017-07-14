@@ -85,7 +85,7 @@ struct ATTACK_INFO_EACH_V4 {
 			ATTACK_ELEMENT_TYPE elementtype : 4;
 			ATTACK_DAMAGE_TYPE damagetype : 4;
 		};
-		struct{
+		struct {
 			uint8_t buffAmount;
 			uint8_t critAmount;
 		};
@@ -147,7 +147,8 @@ struct TARGET_STRUCT {
 struct GAME_MESSAGE {
 	uint32_t length; // 0 ~ 3
 	uint32_t actor; // 4 ~ 7
-	uint8_t _u1[8];  // 8 ~ 15
+	uint32_t actor_copy; // 8 ~ 11
+	uint32_t _u0;  // 12 ~ 15
 	enum MESSAGE_CAT1 : uint16_t {
 		C1_Combat = 0x0014
 	} message_cat1; // 16 ~ 17
@@ -172,6 +173,8 @@ struct GAME_MESSAGE {
 		C2_UseAbilityV4T24 = 0x00F6,
 		C2_UseAbilityV4T32 = 0x00F7,
 		C2_StartCasting = 0x0110,
+		C2_UseAbilityCancelV3 = 0x0103,
+		C2_UseAbilityCancelV4 = 0x0121,
 		C2_AddBuff = 0x0141,
 		C2_Info1 = 0x0142,
 		C2_AbilityResponse = 0x0143,
@@ -181,22 +184,27 @@ struct GAME_MESSAGE {
 		C2_UseAoEAbility = 0x0147,
 		C2_RaidMarker = 0x0335,
 	} message_cat2; // 18 ~ 19
-	uint8_t _u2[12]; // 20 ~ 31
+	uint32_t _u1; // 20 ~ 23
+	uint32_t seqid; // 24 ~ 27
+	uint32_t _u2; // 28 ~ 31
 	union {
 		uint8_t data[65536];
 		union {
 			struct {
 				uint32_t _u1;
 				uint32_t skill;
+				uint32_t seqid;
+				uint32_t _u2;
+				uint32_t target;
 			}AbilityRequest;
 			struct {
 				uint32_t u1;
 				uint32_t u2;
 				uint32_t skill;
-				uint32_t duration;
+				uint32_t duration_or_skid;
 				uint32_t u3;
 				uint32_t u4;
-				uint32_t u5;
+				uint32_t seqid;
 				uint32_t u6;
 			}AbilityResponse;
 			struct {
@@ -222,25 +230,32 @@ struct GAME_MESSAGE {
 				uint32_t skill; // 44
 			} StartCasting;
 			struct {
-				uint8_t _u1[12]; // 32
+				uint32_t primaryTarget; // 32
+				uint8_t _u1[8]; // 36
 				uint32_t skill; // 44
-				uint8_t _u2[16]; // 48
+				uint32_t seqid; // 48
+				uint8_t _u2[12]; // 52
 				uint32_t target; // 64
 				uint8_t _u3[8]; // 68
 				ATTACK_INFO attack;
+				uint8_t _u4[80];
 			} UseAbility;
 			struct {
-				uint8_t _u1[12]; // 32
+				uint32_t primaryTarget; // 32
+				uint8_t _u1[8]; // 36
 				uint32_t skill; // 44
-				uint8_t _u2[20]; // 48
+				uint32_t seqid; // 48
+				uint8_t _u2[16]; // 52
 				ATTACK_INFO attack[16]; // 68
 				uint32_t _u3; // 1092
 				TARGET_STRUCT targets[16]; // 1096
 			} UseAoEAbility;
 			struct {
-				uint8_t _u1[8]; // 32
+				uint32_t primaryTarget; // 32
+				uint32_t _u1; // 36
 				uint32_t skill; // 40
-				uint8_t _u2[23]; // 44
+				uint32_t seqid; // 44
+				uint8_t _u2[19]; // 48
 				uint8_t attackCount; // 67
 				uint8_t _u3[4]; // 68
 				ATTACK_INFO_V4 attack[8]; // 72
@@ -335,13 +350,12 @@ private:
 
 	std::map<std::wstring, DWORD> mClassColors;
 
+	std::recursive_mutex mSocketMapLock;
 	std::map<SOCKET, Tools::ByteQueue> mSent, mRecv;
 	std::map<SOCKET, Tools::ByteQueue> mToSend, mToRecv;
-	Tools::bqueue<GAME_MESSAGE> mRecvAdd;
-	std::map<int, GAME_MESSAGE> mSkillTemplate;
-	GAME_PACKET mOutboundPacketTemplate;
-	std::map<int, uint64_t> mSkillLastUse;
-	uint64_t mLatency = 0; int mLatencySample = 0;
+	std::map<SOCKET, Tools::bqueue<GAME_MESSAGE>> mRecvAdd;
+	GAME_PACKET mInboundPacketTemplate;
+	int mInboundSequenceId;
 
 	int mSelfId;
 	std::deque<TEMPBUFF> mActiveDoT;
@@ -391,16 +405,18 @@ private:
 	void UpdateOverlayMessage();
 	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO *attacks);
 	void SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO_V4 *attacks);
+
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp);
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO_V4 *info, uint64_t timestamp);
-	void ProcessGameMessage(void *data, uint64_t timestamp, size_t len, bool setTimestamp);
-	void PacketErrorMessage(int signature, int length);
-	void ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, bool setTimestamp);
+	void EmulateCancel(SOCKET s, int skillid, int newcd, int seqid);
+	void ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t timestamp, bool setTimestamp);
+	void ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp);
+	void TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp);
 
 	HANDLE hUpdateInfoThread;
 	HANDLE hUpdateInfoThreadLock;
 	void UpdateInfoThread();
-	static DWORD WINAPI UpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*)p)->UpdateInfoThread(); return 0; }
+	static DWORD WINAPI UpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*) p)->UpdateInfoThread(); return 0; }
 
 public:
 	GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent);
@@ -413,6 +429,9 @@ public:
 
 	void ResetMeter();
 	void ReloadLocalization();
+
+	bool IsInCombat();
+	int GetVersion();
 
 	void OnRecv(SOCKET s, char* buf, int len) {
 		mRecv[s].write(buf, len);

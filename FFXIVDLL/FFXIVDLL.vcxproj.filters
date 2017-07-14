@@ -76,6 +76,9 @@
     <ClCompile Include="ChatWindowController.cpp">
       <Filter>CustomControls</Filter>
     </ClCompile>
+    <ClCompile Include="FFXIVResources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FFXIVDLL.h">
@@ -172,6 +175,9 @@
       <Filter>CustomControls</Filter>
     </ClInclude>
     <ClInclude Include="json.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FFXIVResources.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

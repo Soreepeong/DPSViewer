@@ -15,587 +15,7 @@
 #include "OverlayRenderer.h"
 #include "Hooks.h"
 #include <psapi.h>
-
-std::string debug_skillname(int skillid) {
-	switch (skillid) {
-		case 0x9: return "fast blade";
-		case 0xb: return "savage blade";
-		case 0x14: return "fight or flight";
-		case 0xe: return "flash";
-		case 0xf: return "riot blade";
-		case 0x18: return "shield lob";
-		case 0x10: return "shield bash";
-		case 0x15: return "rage of halone";
-		case 0x19: return "shield swipe";
-		case 0x11: return "sentinel";
-		case 0x13: return "tempered will";
-		case 0x16: return "bulwark";
-		case 0x17: return "circle of scorn";
-		case 0x35: return "bootshine";
-		case 0x36: return "true strike";
-		case 0x38: return "snap punch";
-		case 0x3b: return "internal release";
-		case 0x3c: return "fists of earth";
-		case 0x3d: return "twin snakes";
-		case 0x3e: return "arm of the destroyer";
-		case 0x42: return "demolish";
-		case 0x49: return "fists of wind";
-		case 0x40: return "steel peak";
-		case 0x41: return "mantra";
-		case 0x43: return "howling fist";
-		case 0x45: return "perfect balance";
-		case 0x1f: return "heavy swing";
-		case 0x23: return "skull sunder";
-		case 0x26: return "berserk";
-		case 0x29: return "overpower";
-		case 0x2e: return "tomahawk";
-		case 0x25: return "maim";
-		case 0x28: return "thrill of battle";
-		case 0x2f: return "butcher's block";
-		case 0x2a: return "storm's path";
-		case 0x2b: return "holmgang";
-		case 0x2c: return "vengeance";
-		case 0x2d: return "storm's eye";
-		case 0x4b: return "true thrust";
-		case 0x4e: return "vorpal thrust";
-		case 0x51: return "impulse drive";
-		case 0x4f: return "heavy thrust";
-		case 0x5a: return "piercing talon";
-		case 0x53: return "life surge";
-		case 0x54: return "full thrust";
-		case 0x55: return "blood for blood";
-		case 0x57: return "disembowel";
-		case 0x58: return "chaos thrust";
-		case 0x61: return "heavy shot";
-		case 0x62: return "straight shot";
-		case 0x65: return "raging strikes";
-		case 0x64: return "venomous bite";
-		case 0x67: return "misery's end";
-		case 0x6e: return "bloodletter";
-		case 0x70: return "repelling shot";
-		case 0x6a: return "quick nock";
-		case 0x71: return "windbite";
-		case 0x6b: return "barrage";
-		case 0x77: return "stone";
-		case 0x78: return "cure";
-		case 0x79: return "aero";
-		case 0x7c: return "medica";
-		case 0x7d: return "raise";
-		case 0x86: return "fluid aura";
-		case 0x7f: return "stone ii";
-		case 0x80: return "repose";
-		case 0x87: return "cure ii";
-		case 0x84: return "aero ii";
-		case 0x85: return "medica ii";
-		case 0x8e: return "blizzard";
-		case 0x8d: return "fire";
-		case 0x95: return "transpose";
-		case 0x90: return "thunder";
-		case 0x91: return "sleep";
-		case 0x92: return "blizzard ii";
-		case 0x9c: return "scathe";
-		case 0x93: return "fire ii";
-		case 0x94: return "thunder ii";
-		case 0x9d: return "manaward";
-		case 0x98: return "fire iii";
-		case 0x9b: return "aetherial manipulation";
-		case 0x1c: return "shield oath";
-		case 0x1a: return "sword oath";
-		case 0x1b: return "cover";
-		case 0x1d: return "spirits within";
-		case 0x1e: return "hallowed ground";
-		case 0xdd6: return "sheltron";
-		case 0xdd2: return "goring blade";
-		case 0xdd4: return "divine veil";
-		case 0xdd5: return "clemency";
-		case 0xdd3: return "royal authority";
-		case 0x1cd6: return "intervention";
-		case 0x1cd8: return "holy spirit";
-		case 0x1cd7: return "requiescat";
-		case 0x1cd9: return "passage of arms";
-		case 0x46: return "rockbreaker";
-		case 0x47: return "shoulder tackle";
-		case 0x3f: return "fists of fire";
-		case 0x48: return "one ilm punch";
-		case 0x4a: return "dragon kick";
-		case 0x10a6: return "form shift";
-		case 0xdda: return "meditation";
-		case 0xddb: return "the forbidden chakra";
-		case 0xdd9: return "elixir field";
-		case 0xdd8: return "purification";
-		case 0xdd7: return "tornado kick";
-		case 0x1ce2: return "riddle of earth";
-		case 0x1eb8: return "earth tackle";
-		case 0x1eb9: return "wind tackle";
-		case 0x1eba: return "fire tackle";
-		case 0x1ebc: return "riddle of wind";
-		case 0x1ce3: return "riddle of fire";
-		case 0x1ce4: return "brotherhood";
-		case 0x30: return "defiance";
-		case 0x31: return "inner beast";
-		case 0x32: return "unchained";
-		case 0x33: return "steel cyclone";
-		case 0x34: return "infuriate";
-		case 0xddc: return "deliverance";
-		case 0xddd: return "fell cleave";
-		case 0xddf: return "raw intuition";
-		case 0xde0: return "equilibrium";
-		case 0xdde: return "decimate";
-		case 0x1cda: return "onslaught";
-		case 0x1cdb: return "upheaval";
-		case 0x1cdc: return "shake it off";
-		case 0x1cdd: return "inner release";
-		case 0x5c: return "jump";
-		case 0x5e: return "elusive jump";
-		case 0x56: return "doom spike";
-		case 0x5f: return "spineshatter dive";
-		case 0x60: return "dragonfire dive";
-		case 0xde5: return "battle litany";
-		case 0xde1: return "blood of the dragon";
-		case 0xde2: return "fang and claw";
-		case 0xde4: return "wheeling thrust";
-		case 0xde3: return "geirskogul";
-		case 0x1ce5: return "sonic thrust";
-		case 0x1ce6: return "dragon sight";
-		case 0x1ce7: return "mirage dive";
-		case 0x1ce8: return "nastrond";
-		case 0x72: return "mage's ballad";
-		case 0x73: return "foe requiem";
-		case 0x74: return "army's paeon";
-		case 0x75: return "rain of death";
-		case 0x76: return "battle voice";
-		case 0xde7: return "the wanderer's minuet";
-		case 0x228a: return "pitch perfect";
-		case 0xde6: return "empyreal arrow";
-		case 0xde8: return "iron jaws";
-		case 0xde9: return "the warden's paean";
-		case 0xdea: return "sidewinder";
-		case 0x1ced: return "troubador";
-		case 0x1cee: return "caustic bite";
-		case 0x1cef: return "stormbite";
-		case 0x1cf0: return "nature's minne";
-		case 0x1cf1: return "refulgent arrow";
-		case 0x88: return "presence of mind";
-		case 0x89: return "regen";
-		case 0x83: return "cure iii";
-		case 0x8b: return "holy";
-		case 0x8c: return "benediction";
-		case 0xdf1: return "asylum";
-		case 0xdf0: return "stone iii";
-		case 0xdf3: return "assize";
-		case 0xdf4: return "aero iii";
-		case 0xdf2: return "tetragrammaton";
-		case 0x1d06: return "thin air";
-		case 0x1d07: return "stone iv";
-		case 0x1d08: return "divine benison";
-		case 0x1d09: return "plenary indulgence";
-		case 0x9e: return "convert";
-		case 0x9f: return "freeze";
-		case 0x9a: return "blizzard iii";
-		case 0x99: return "thunder iii";
-		case 0xa2: return "flare";
-		case 0xdf5: return "ley lines";
-		case 0xdf6: return "sharpcast";
-		case 0xdf7: return "enochian";
-		case 0xdf8: return "blizzard iv";
-		case 0xdf9: return "fire iv";
-		case 0x1cfb: return "between the lines";
-		case 0x1cfc: return "thunder iv";
-		case 0x1cfd: return "triplecast";
-		case 0x1cfe: return "foul";
-		case 0xa3: return "ruin";
-		case 0xa4: return "bio";
-		case 0xa5: return "summon";
-		case 0xbe: return "physick";
-		case 0xa6: return "aetherflow";
-		case 0xa7: return "energy drain";
-		case 0xa8: return "miasma";
-		case 0xaa: return "summon ii";
-		case 0xad: return "resurrection";
-		case 0xb2: return "bio ii";
-		case 0xae: return "bane";
-		case 0xac: return "ruin ii";
-		case 0xb0: return "rouse";
-		case 0xb3: return "shadow flare";
-		case 0xb4: return "summon iii";
-		case 0xb5: return "fester";
-		case 0xb6: return "tri-bind";
-		case 0xb8: return "enkindle";
-		case 0xdfa: return "painflare";
-		case 0xdfb: return "ruin iii";
-		case 0xb7: return "spur";
-		case 0xdfc: return "tri-disaster";
-		case 0xdfd: return "dreadwyrm trance";
-		case 0xdfe: return "deathflare";
-		case 0x1d02: return "ruin iv";
-		case 0x1cff: return "aetherpact";
-		case 0x1d1a: return "devotion";
-		case 0x1d00: return "bio iii";
-		case 0x1d01: return "miasma iii";
-		case 0x1d03: return "summon bahamut";
-		case 0x1d04: return "wyrmweave";
-		case 0x1d05: return "enkindle bahamut";
-		case 0x1d19: return "akh morn";
-		case 0xb9: return "adloquium";
-		case 0xba: return "succor";
-		case 0xbc: return "sacred soil";
-		case 0xbd: return "lustrate";
-		case 0xdff: return "indomitability";
-		case 0xe00: return "broil";
-		case 0xe01: return "deployment tactics";
-		case 0xe02: return "emergency tactics";
-		case 0xe03: return "dissipation";
-		case 0x1d0a: return "Excogitation";
-		case 0x1d0b: return "Broil II";
-		case 0x1d0c: return "Chain Strategem";
-		case 0x1d0d: return "Aetherpact ";
-		case 0x1d0e: return "Fey Union";
-		case 0x1ebd: return "Dissolve Union";
-		case 0x8c0: return "spinning edge";
-		case 0x8c1: return "shade shift";
-		case 0x8c2: return "gust slash";
-		case 0x8c5: return "hide";
-		case 0x8c6: return "assassinate";
-		case 0x8c7: return "throwing dagger";
-		case 0x8c8: return "mug";
-		case 0x8d2: return "trick attack";
-		case 0x8cf: return "aeoilian edge";
-		case 0x8d0: return "jugulate";
-		case 0x8d1: return "shadow fang";
-		case 0x8ce: return "death blossom";
-		case 0x8d3: return "ten";
-		case 0x8d4: return "ninjutsu";
-		case 0x8d5: return "chi";
-		case 0x8d6: return "shukuchi";
-		case 0x8d7: return "jin";
-		case 0x8d8: return "kassatsu";
-		case 0xded: return "smoke screen";
-		case 0xdeb: return "armor crush";
-		case 0xdec: return "shadewalker";
-		case 0xdef: return "duality";
-		case 0xdee: return "dream within a dream";
-		case 0x8d9: return "fuma shuriken";
-		case 0x8da: return "katon";
-		case 0x8db: return "raiton";
-		case 0x8dc: return "hyoton";
-		case 0x8dd: return "huton";
-		case 0x8de: return "doton";
-		case 0x8df: return "suiton";
-		case 0x8e0: return "rabbit medium";
-		case 0x1ce9: return "hellfrog medium";
-		case 0x1cea: return "bhavacakra";
-		case 0x1ceb: return "ten chi jin";
-		case 0xb32: return "split shot";
-		case 0x2290: return "heated split shot";
-		case 0xb34: return "slug shot";
-		case 0x2291: return "heated slug shot";
-		case 0xb33: return "reload";
-		case 0xb3b: return "heartbreak";
-		case 0xb3c: return "reassemble";
-		case 0xb48: return "blank";
-		case 0xb36: return "spread shot";
-		case 0xb3f: return "quick reload";
-		case 0xb38: return "hot shot";
-		case 0xb41: return "rapid fire";
-		case 0xb39: return "clean shot";
-		case 0x2292: return "heated clean shot";
-		case 0xb3e: return "wildfire";
-		case 0xb30: return "rook autoturret";
-		case 0xd9f: return "turret retrieval";
-		case 0xb31: return "bishop autoturret";
-		case 0xb40: return "gauss barrel";
-		case 0x2337: return "remove barrel";
-		case 0xb3a: return "gauss round";
-		case 0xb47: return "dismantle";
-		case 0xb45: return "hypercharge";
-		case 0xb4a: return "ricochet";
-		case 0x1cf2: return "cooldown";
-		case 0x1cf6: return "barrel stabilizer";
-		case 0x1cf7: return "rook overdrive";
-		case 0x1cf8: return "rook overload";
-		case 0x1cf9: return "bishop overload";
-		case 0x1cfa: return "flamethrower";
-		case 0xe21: return "hard slash";
-		case 0xe23: return "spinning slash";
-		case 0xe25: return "unleash";
-		case 0xe27: return "syphon strike";
-		case 0xe28: return "unmend";
-		case 0xe29: return "blood weapon";
-		case 0xe2b: return "power slash";
-		case 0xe2d: return "grit";
-		case 0xe2c: return "darkside";
-		case 0xe2f: return "blood price";
-		case 0xe30: return "souleater";
-		case 0xe31: return "dark passenger";
-		case 0xe32: return "dark mind";
-		case 0xe33: return "dark arts";
-		case 0xe34: return "shadow wall";
-		case 0xe36: return "living dead";
-		case 0xe37: return "salted earth";
-		case 0xe38: return "plunge";
-		case 0xe39: return "abyssal drain";
-		case 0xe3a: return "sole survivor";
-		case 0xe3b: return "carve and spit";
-		case 0x1cde: return "delirium";
-		case 0x1cdf: return "quietus";
-		case 0x1ce0: return "bloodspiller";
-		case 0x1ce1: return "the blackest night";
-		case 0xe0c: return "malefic";
-		case 0xe0a: return "benefic";
-		case 0xe0f: return "combust";
-		case 0xe16: return "lightspeed";
-		case 0xe10: return "helios";
-		case 0xe13: return "ascend";
-		case 0xe1e: return "essential dignity";
-		case 0xe1a: return "benefic ii";
-		case 0xe06: return "draw";
-		case 0xe14: return "diurnal sect";
-		case 0xe0b: return "aspected benefic";
-		case 0xe07: return "royal road";
-		case 0xe19: return "disable";
-		case 0xe08: return "spread";
-		case 0xe11: return "aspected helios";
-		case 0xe09: return "redraw";
-		case 0xe18: return "combust ii";
-		case 0xe15: return "nocturnal sect";
-		case 0xe1c: return "synastry";
-		case 0xe1f: return "gravity";
-		case 0xe0e: return "malefic ii";
-		case 0xe1b: return "time dilation";
-		case 0xe1d: return "collective unconscious";
-		case 0xe20: return "celestial opposition";
-		case 0x1d0f: return "earthly star";
-		case 0x2084: return "stellar detonation";
-		case 0x1d11: return "stellar explosion";
-		case 0x1d12: return "malefic iii";
-		case 0x1d13: return "minor arcana";
-		case 0x1d18: return "sleeve draw";
-		case 0x1131: return "the balance";
-		case 0x1132: return "the bole";
-		case 0x1135: return "the ewer";
-		case 0x1136: return "the spire";
-		case 0x1133: return "the arrow";
-		case 0x1134: return "the spear";
-		case 0x1d14: return "lord of crowns";
-		case 0x1d15: return "lady of crowns";
-		case 0x1d35: return "hakaze";
-		case 0x1d36: return "jinpu";
-		case 0x1d4a: return "third eye";
-		case 0x1d4c: return "ageha";
-		case 0x1d3e: return "enpi";
-		case 0x1d37: return "shifu";
-		case 0x1d3b: return "fuga";
-		case 0x1d39: return "gekko";
-		case 0x1ebb: return "iaijutsu";
-		case 0x1d41: return "higanbana";
-		case 0x1d40: return "tenka goken";
-		case 0x1d3f: return "midare setsugekka";
-		case 0x1d3c: return "mangetsu";
-		case 0x1d3a: return "kasha";
-		case 0x1d3d: return "oka";
-		case 0x1d38: return "yukikaze";
-		case 0x1d4b: return "meikyo shisui";
-		case 0x1d46: return "hissatsu: kaiten";
-		case 0x1d44: return "hissatsu: gyoten";
-		case 0x1d43: return "hissatsu: yaten";
-		case 0x1d4e: return "merciful eyes";
-		case 0x1d49: return "meditate";
-		case 0x1d42: return "hissatsu: shinten";
-		case 0x1d4d: return "hissatsu: seigan";
-		case 0x1d47: return "hagakure";
-		case 0x1d48: return "hissatsu: guren";
-		case 0x1d50: return "riposte";
-		case 0x1d4f: return "jolt";
-		case 0x1d51: return "verthunder";
-		case 0x1d52: return "corps-a-corps";
-		case 0x1d53: return "veraero";
-		case 0x1d54: return "tether";
-		case 0x1d55: return "scatter";
-		case 0x1d56: return "verfire";
-		case 0x1d57: return "verstone";
-		case 0x1d58: return "zwerchhau";
-		case 0x1d5b: return "displacement";
-		case 0x1d5d: return "fleche";
-		case 0x1d5c: return "redoublement";
-		case 0x1d5e: return "acceleration";
-		case 0x1d59: return "moulinet";
-		case 0x1d5a: return "vercure";
-		case 0x1d5f: return "contre sixte";
-		case 0x1d60: return "embolden";
-		case 0x1d61: return "manafication";
-		case 0x1d64: return "jolt ii";
-		case 0x1d63: return "verraise";
-		case 0x1d62: return "impact";
-		case 0x1d65: return "verflare";
-		case 0x1d66: return "verholy";
-		case 0x1d67: return "enchanted riposte";
-		case 0x1d68: return "enchanted zwerchhau";
-		case 0x1d69: return "enchanted redoublement";
-		case 0x1d6a: return "enchanted moulinet";
-		case 0x1d6b: return "rampart";
-		case 0x1d74: return "low blow";
-		case 0x1d6d: return "provoke";
-		case 0x1d6c: return "convalescence";
-		case 0x1d70: return "anticipation";
-		case 0x1d6f: return "reprisal";
-		case 0x1d6e: return "awareness";
-		case 0x1d72: return "interject";
-		case 0x1d73: return "ultimatum";
-		case 0x1d71: return "shirk";
-		case 0x1d8f: return "cleric stance";
-		case 0x1d86: return "break";
-		case 0x1d94: return "protect";
-		case 0x1d90: return "esuna";
-		case 0x1d8a: return "lucid dreaming";
-		case 0x1d89: return "swiftcast";
-		case 0x1d91: return "eye for an eye";
-		case 0x1d92: return "largesse";
-		case 0x1d87: return "surecast";
-		case 0x1d93: return "rescue";
-		case 0x1d75: return "second wind";
-		case 0x1d7c: return "arm's length";
-		case 0x1eb7: return "leg sweep";
-		case 0x1d79: return "diversion";
-		case 0x1d78: return "invigorate";
-		case 0x1d76: return "bloodbath";
-		case 0x1d77: return "goad";
-		case 0x1d7d: return "feint";
-		case 0x1d7b: return "crutch";
-		case 0x1d7a: return "true north";
-		case 0x1d81: return "foot graze";
-		case 0x1d82: return "leg graze";
-		case 0x1d85: return "peloton";
-		case 0x1d83: return "tactician";
-		case 0x1d84: return "refresh";
-		case 0x1d7f: return "head graze";
-		case 0x1d80: return "arm graze";
-		case 0x1d7e: return "palisade";
-		case 0x1d88: return "addle";
-		case 0x1d8c: return "drain";
-		case 0x1d8d: return "mana shift";
-		case 0x1d8b: return "apocatastasis";
-		case 0x1d8e: return "erase";
-		case 0x27d: return "gust";
-		case 0x27e: return "backdraft";
-		case 0x27f: return "downburst";
-		case 0x280: return "shining emerald";
-		case 0x27a: return "shining topaz";
-		case 0x279: return "gouge";
-		case 0x27b: return "curl";
-		case 0x27c: return "storm";
-		case 0x318: return "wind blade";
-		case 0x319: return "shockwave";
-		case 0x31a: return "aerial slash";
-		case 0x31b: return "contagion";
-		case 0x31c: return "aerial blast";
-		case 0x313: return "rock buster";
-		case 0x314: return "mountain buster";
-		case 0x315: return "earthen ward";
-		case 0x316: return "landslide";
-		case 0x317: return "earthen fury";
-		case 0x338: return "choco slash";
-		case 0x337: return "choco beak";
-		case 0x336: return "choco rush";
-		case 0x335: return "choco blast";
-		case 0x334: return "choco drop";
-		case 0x333: return "choco kick";
-		case 0x332: return "choco guard";
-		case 0x331: return "choco strike";
-		case 0x339: return "choco medica";
-		case 0x33a: return "choco surge";
-		case 0x33b: return "choco cure";
-		case 0x33c: return "choco regen";
-		case 0x31d: return "crimson cyclone";
-		case 0x31e: return "burning strike";
-		case 0x31f: return "radiant shield";
-		case 0x320: return "flaming crush";
-		case 0x321: return "inferno";
-		case 0x322: return "embrace";
-		case 0x323: return "whispering dawn";
-		case 0x324: return "fey covenant";
-		case 0x325: return "fey illumination";
-		case 0x326: return "embrace-selene";
-		case 0x327: return "silent dusk";
-		case 0x32b: return "fey wind";
-		case 0x32a: return "fey caress";
-		case 0xb4c: return "aether mortar";
-		case 0xb4b: return "volley fire";
-		case 0xe05: return "charged aether mortar";
-		case 0xe04: return "charged volley fire";
-		case 0x1d10: return "stellar burst";
-		case 0xc8: return "braver";
-		case 0xc9: return "bladedance";
-		case 0xca: return "final heaven";
-		case 0xcb: return "skyshard";
-		case 0xcc: return "starstorm";
-		case 0xcd: return "meteor";
-		case 0xce: return "healing wind";
-		case 0xcf: return "breath of the earth";
-		case 0xd0: return "pulse of life";
-		case 0xc5: return "shield wall";
-		case 0xc6: return "mighty guard";
-		case 0xc7: return "last bastion";
-		case 0x1090: return "land walker";
-		case 0x1091: return "dark force";
-		case 0x1092: return "dragonsong dive";
-		case 0x1093: return "chimatsuri";
-		case 0x108f: return "desperado";
-		case 0x108e: return "big shot";
-		case 0x1095: return "satellite beam";
-		case 0x1094: return "sagittarius arrow";
-		case 0x1096: return "teraflare";
-		case 0x1097: return "angel feathers";
-		case 0x1098: return "astral stasis";
-		case 0x1eb5: return "doom of the living";
-		case 0x1eb6: return "vermillion scourge";
-		case 0x2d4: return "digest";
-		case 0x5cd: return "lunatic voice";
-		case 0x67b: return "putrid cloud";
-		case 0x2b6: return "immortalize";
-		case 0x72c: return "bravery";
-		case 0x5fe: return "infernal fetters";
-		case 0x4da: return "death sentence";
-		case 0x4bc: return "disseminate";
-		case 0x64a: return "blood sword";
-		case 0x80a: return "pom cure";
-		case 0x89c: return "ripe banana";
-		case 0x986: return "aura curtain";
-		case 0x7da: return "lunar dynamo";
-		case 0x874: return "Mantle of the Whorl";
-		case 0x875: return "Veil of the Whorl";
-		case 0x923: return "drain-mob";
-		case 0x964: return "head over heals";
-		case 0x9ff: return "lunar dynamo 9ff";
-		case 0x993: return "frost blade";
-		case 0xb91: return "bluefire";
-		case 0xcb1: return "Mini - WoD";
-		case 0x943: return "Mini";
-		case 0xd0e: return "marrow drain";
-		case 0xd5b: return "Aetherial Distribution";
-		case 0x35b: return "ice spikes";
-		case 0x3de: return "bang toss";
-		case 0x13cc: return "sanguine bite";
-		case 0x156: return "soul drain";
-		case 0x1598: return "guzzle";
-		case 0x1734: return "retribution";
-		case 0x1731: return "seed of the sky";
-		case 0xe81: return "scorpion avatar";
-		case 0xe80: return "dragonfly avatar";
-		case 0xe82: return "beetle avatar";
-		case 0xeb1: return "warlord shell";
-		case 0x1327: return "brainhurt breakblock";
-		case 0x132c: return "meltyspume";
-		case 0x13cf: return "brainshaker";
-		case 0xfdc: return "explosion";
-		case 0x128b: return "bloodstain";
-		case 0x3: return "sprint";
-		case 0x5: return "teleport";
-
-	}
-	char res[256];
-	sprintf(res, "(skill id %x)", skillid);
-	return res;
-}
+#include "FFXIVResources.h"
 
 #define LIGHTER_COLOR(color,how) (((color)&0xFF000000) | (min(255, max(0, (((color)>>16)&0xFF)+(how)))<<16) | (min(255, max(0, (((color)>>8)&0xFF)+(how)))<<8) | (min(255, max(0, (((color)>>0)&0xFF)+(how)))<<0)))
 
@@ -718,6 +138,10 @@ GameDataProcess::~GameDataProcess() {
 	WaitForSingleObject(hUpdateInfoThread, -1);
 	CloseHandle(hUpdateInfoThread);
 	CloseHandle(hUpdateInfoThreadLock);
+}
+
+int GameDataProcess::GetVersion() {
+	return version;
 }
 
 int GameDataProcess::getDoTPotency(int dot) {
@@ -1143,9 +567,8 @@ void GameDataProcess::UpdateOverlayMessage() {
 			Tools::MillisToLocalTime(timestamp, &s1);
 			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
 			if (mShowTimeInfo)
-				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"%lld / %lld / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
+				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"%lld / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
 				(uint64_t) dll->hooks()->GetOverlayRenderer()->GetFPS(),
-					(uint64_t) (mLatencySample == 0 ? 0 : mLatency/mLatencySample),
 					(int) s1.wHour, (int) s1.wMinute, (int) s1.wSecond,
 					(int) s2.wHour, (int) s2.wMinute, (int) s2.wSecond);
 			if (!mDpsInfo.empty()) {
@@ -1155,7 +578,7 @@ void GameDataProcess::UpdateOverlayMessage() {
 					total += it->second;
 				pos += swprintf(res + pos, sizeof (tmp) / sizeof (tmp[0]) - pos, L"%02d:%02d.%03d%s / %.2f (%d)",
 					(int) ((dur / 60000) % 60), (int) ((dur / 1000) % 60), (int) (dur % 1000),
-					mLastAttack.timestamp < timestamp - mCombatResetTime ? L"" : (
+					!IsInCombat() ? L"" : (
 						GetTickCount() % 600 < 200 ? L".  " :
 						GetTickCount() % 600 < 400 ? L".. " : L"..."
 						),
@@ -1615,8 +1038,33 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		}
 	}
 }
+void GameDataProcess::EmulateCancel(SOCKET s, int skid, int newcd, int seqid) {
+	GAME_MESSAGE nmsg;
+	nmsg.length = 0x40;
+	nmsg.actor = mSelfId;
+	nmsg.actor_copy = mSelfId;
+	nmsg._u0 = 0xE5BF0003;
+	nmsg.message_cat1 = GAME_MESSAGE::C1_Combat;
+	nmsg.message_cat2 = GAME_MESSAGE::C2_AbilityResponse;
+	nmsg._u1 = 0x160000;
+	nmsg._u2 = 0;
+	nmsg.Combat.AbilityResponse.skill = 1;
+	nmsg.Combat.AbilityResponse.duration_or_skid = skid;
+	nmsg.Combat.AbilityResponse.u1 = 0x2BC;
+	nmsg.Combat.AbilityResponse.u2 = 0; // 0x246;
+	nmsg.Combat.AbilityResponse.u3 = 0; // some kind of index???
+	nmsg.Combat.AbilityResponse.u4 = newcd; // cooldown
+	nmsg.Combat.AbilityResponse.seqid = seqid;
+	nmsg.Combat.AbilityResponse.u6 = 0;
+	mRecvAdd[s].push(nmsg);
+	SetEvent(hUpdateInfoThreadLock);
+}
 
-void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t len, bool setTimestamp) {
+bool GameDataProcess::IsInCombat() {
+	return mLastAttack.timestamp > mServerTimestamp - mLocalTimestamp + Tools::GetLocalTimestamp() - mCombatResetTime;
+}
+
+void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t timestamp, bool setTimestamp) {
 
 	if (setTimestamp) {
 		mServerTimestamp = timestamp;
@@ -1634,24 +1082,15 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 					case GAME_MESSAGE::C2_UseAbilityRequestV4:
 						if ((version == 340 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityRequestV3) ||
 							(version == 400 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityRequestV4)) {
-							GAME_MESSAGE nmsg;
-							int skid = msg->Combat.AbilityRequest.skill;
-							if (mSkillTemplate.find(skid) != mSkillTemplate.end()) {
-								nmsg = mSkillTemplate[skid];
-							} else if (!mSkillTemplate.empty()){
-								nmsg = mSkillTemplate.cbegin()->second;
-								nmsg.Combat.AbilityResponse.duration = 500;
-							} else
-								break;
-							nmsg.Combat.AbilityResponse.skill = skid;
-							mRecvAdd.push(nmsg);
-							// dll->addChat("/e Emulate skill end: %s", debug_skillname(skid).c_str());
-							SetEvent(hUpdateInfoThreadLock);
-							mSkillLastUse[skid] = GetTickCount64();
+							if (dll->hooks()->GetOverlayRenderer()) {
+								auto conf = dll->hooks()->GetOverlayRenderer()->mConfig;
+								if (conf.ForceCancelEverySkill && IsInCombat() && FFXIVResources::IsKnownSkill(msg->Combat.AbilityRequest.skill))
+									EmulateCancel(s, msg->Combat.AbilityRequest.skill, 100, msg->Combat.AbilityRequest.seqid);
+							}
 						}
 						break;
 				}
-			}else {
+			} else {
 				switch (msg->message_cat2) {
 					case 0xFB:
 					case GAME_MESSAGE::C2_ActorInfo:
@@ -1712,10 +1151,6 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 							int who = msg->Combat.Info1.c5;
 							if (IsParseTarget(msg->actor))
 								mDpsInfo[msg->actor].deaths++;
-							/*
-							sprintf(tss, "cmsgDeath %s killed %s", getActorName(who), getActorName(msg->actor));
-							dll->pipe()->sendInfo(tss);
-							//*/
 							auto it = mActiveDoT.begin();
 							while (it != mActiveDoT.end()) {
 								if (it->expires < timestamp || it->target == msg->actor)
@@ -1766,52 +1201,40 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 								b.contagioned = 0;
 								b.simulated = 0;
 								mActiveDoT.push_back(b);
-								/*
-								char tss[512];
-								sprintf(tss, "/e AddBuff %s->%s / %d (%.2f) %04X %04X %04x", GetActorName(msg->Combat.AddBuff.buffs[i].actorID).c_str(), GetActorName(msg->actor).c_str(), (int) b.buffid, msg->Combat.AddBuff.buffs[i].duration, (int) msg->Combat.AddBuff.buffs[i]._u1, (int) msg->Combat.AddBuff.buffs[i]._u2, (int) msg->Combat.AddBuff.buffs[i].extra);
-								dll->addChat(tss);
-								//*/
 							}
 						}
 						break;
 					case GAME_MESSAGE::C2_AbilityResponse:
 					{
-						if (msg->Combat.AbilityResponse.skill > 7 &&
-							msg->Combat.AbilityResponse.duration >= 10 &&
-							msg->Combat.AbilityResponse.duration <= 60000*8 &&
-							msg->actor == mSelfId
-							) {
-							if (dll->hooks()->GetOverlayRenderer())
-								msg->Combat.AbilityResponse.duration -= dll->hooks()->GetOverlayRenderer()->mConfig.LatencySkillDelay;
-							mSkillTemplate[msg->Combat.AbilityResponse.skill] = *msg;
-
-							auto it = mSkillLastUse.find(msg->Combat.AbilityResponse.skill);
-							if (it != mSkillLastUse.end()) {
-								mLatency += GetTickCount64() - it->second;
-								mSkillLastUse.erase(it);
-								mLatencySample++;
+						if (dll->hooks()->GetOverlayRenderer()) {
+							auto conf = dll->hooks()->GetOverlayRenderer()->mConfig;
+							if (msg->Combat.AbilityResponse.skill > 7 &&
+								msg->Combat.AbilityResponse.duration_or_skid >= 10 &&
+								msg->Combat.AbilityResponse.duration_or_skid <= 60000 * 8 &&
+								msg->actor == mSelfId && 
+								FFXIVResources::IsKnownSkill(msg->Combat.AbilityResponse.skill) &&
+								IsInCombat()
+								) {
+								if (conf.ForceCancelEverySkill)
+									EmulateCancel(s, msg->Combat.AbilityResponse.skill, msg->Combat.AbilityResponse.duration_or_skid, msg->Combat.AbilityResponse.seqid);
+							} else if (msg->Combat.AbilityResponse.skill == 1) {
 							}
-							/*
-							char tss[32768];
-							int pos = 0;
-							pos += sprintf(tss + pos, "/e ");
-							pos += sprintf(tss + pos, "%s %d / %08x %08x %08x %08x %08x %08x",
-								debug_skillname(msg->Combat.AbilityResponse.skill).c_str(),
-								msg->Combat.AbilityResponse.duration,
-								msg->Combat.AbilityResponse.u1,
-								msg->Combat.AbilityResponse.u2,
-								msg->Combat.AbilityResponse.u3,
-								msg->Combat.AbilityResponse.u4,
-								msg->Combat.AbilityResponse.u5,
-								msg->Combat.AbilityResponse.u6);
-							dll->addChat(tss);
-							//*/
 						}
 						break;
 					}
+					case GAME_MESSAGE::C2_UseAbilityCancelV3:
+					case GAME_MESSAGE::C2_UseAbilityCancelV4:
+						if ((version == 340 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityCancelV3) ||
+							(version == 400 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityCancelV4)) {
+						}
+						break;
 					case GAME_MESSAGE::C2_UseAbility:
-						if (version == 340)
+						if (version == 340) {
 							ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
+
+							if (msg->actor == mSelfId && dll->hooks()->GetOverlayRenderer() && dll->hooks()->GetOverlayRenderer()->mConfig.ShowDamageDealtTwice && IsInCombat())
+								mRecvAdd[s].push(*msg);
+						}
 						break;
 					case GAME_MESSAGE::C2_UseAoEAbility:
 						if (version == 340) {
@@ -1823,6 +1246,8 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 										ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbility.targets[i].target, msg->Combat.UseAoEAbility.skill, &msg->Combat.UseAoEAbility.attack[i], timestamp);
 									}
 							}
+							if (msg->actor == mSelfId && dll->hooks()->GetOverlayRenderer() && dll->hooks()->GetOverlayRenderer()->mConfig.ShowDamageDealtTwice && IsInCombat())
+								mRecvAdd[s].push(*msg);
 						}
 						break;
 					case GAME_MESSAGE::C2_UseAbilityV4T1:
@@ -1860,16 +1285,9 @@ void GameDataProcess::ProcessGameMessage(void *data, uint64_t timestamp, size_t 
 									ProcessAttackInfo(msg->actor, targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attack[i], timestamp);
 								}
 							}
-							/*
-							if (GetActorName(msg->actor), msg->Combat.UseAoEAbilityV4.skill == 174) { // Bane
-								SimulateBane(timestamp, msg->actor, 16, msg->Combat.UseAoEAbilityV4.targets, msg->Combat.UseAoEAbilityV4.attack);
-							} else {
-								for (int i = 0; i < 16; i++)
-									if (msg->Combat.UseAoEAbilityV4.targets[i].target != 0) {
-										ProcessAttackInfo(msg->actor, msg->Combat.UseAoEAbilityV4.targets[i].target, msg->Combat.UseAoEAbilityV4.skill, &msg->Combat.UseAoEAbilityV4.attack[i], timestamp);
-									}
-							}
-							//*/
+
+							if (msg->actor == mSelfId && dll->hooks()->GetOverlayRenderer() && dll->hooks()->GetOverlayRenderer()->mConfig.ShowDamageDealtTwice && IsInCombat())
+								mRecvAdd[s].push(*msg);
 						}
 						break;
 					default:
@@ -1882,26 +1300,6 @@ DEFPRT:
 		default:
 			break;
 	}
-	/*
-	bool debugprint = false;
-	for (int i = 0; i < msg->length; i++)
-		if (((unsigned char*) msg)[i] == 0xac)
-			debugprint = true;
-	if(debugprint) {
-		char tss[32768];
-		int pos = 0;
-		pos += sprintf(tss + pos, "%020lld: ", GetTickCount64());
-		pos += sprintf(tss + pos, "%d %04X:%04X (%s, %x) ", setTimestamp ? 1 : 0, (int) msg->message_cat1, (int) msg->message_cat2, GetActorName(msg->actor).c_str(), msg->length);
-		if (msg->actor == 0x102464F7 || strcmp(GetActorName(msg->actor).c_str(), u8"Sound Falcon") == 0) {
-			for (int i = 0; i < msg->length; i++)
-				pos += sprintf(tss + pos, "%02X ", (int) ((unsigned char*) msg)[i]);
-			pos += sprintf(tss + pos, "\r\n");
-			FILE *ff = fopen("Z:\\fd.txt", "a");
-			fputs(tss, ff);
-			fclose(ff);
-		}
-	}
-	//*/
 }
 
 void GameDataProcess::SimulateBane(uint64_t timestamp, uint32_t actor, int maxCount, TARGET_STRUCT* targets, ATTACK_INFO* attacks) {
@@ -2004,12 +1402,6 @@ void GameDataProcess::SimulateBane(uint64_t timestamp, uint32_t actor, int maxCo
 
 }
 
-void GameDataProcess::PacketErrorMessage(int signature, int length) {
-	/*
-	char t[1024];
-	sprintf(t, "cmsgError: packet error %08X / %08X", signature, length);
-	//*/
-}
 int tryInflate(z_stream *inf, int flags) {
 	__try {
 		return inflate(inf, Z_NO_FLUSH);
@@ -2017,150 +1409,150 @@ int tryInflate(z_stream *inf, int flags) {
 	return -1;
 }
 
-void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, bool setTimestamp) {
+void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp) {
 	const size_t maxLength = 0x80000;
 	GAME_PACKET packetpeek;
 
-	while (in.getUsed() >= 28) {
-		in.peek(&packetpeek, 28);
-		if ((packetpeek.signature != 0x41A05252 && (packetpeek.signature_2[0] | packetpeek.signature_2[1])) || packetpeek.length > maxLength || packetpeek.length < 40) {
+	size_t lengthOffset = offsetof(GAME_PACKET, length) + sizeof(GAME_PACKET::length);
+	size_t dataOffset = offsetof(GAME_PACKET, data);
+
+	while (in.getUsed() >= lengthOffset) {
+		in.peek(&packetpeek, lengthOffset);
+		if ((packetpeek.signature != 0x41A05252 && (packetpeek.signature_2[0] | packetpeek.signature_2[1])) || packetpeek.length > maxLength || packetpeek.length < dataOffset) {
 			char t;
 			in.read(&t, 1);
 			out.write(&t, 1);
-			PacketErrorMessage(packetpeek.signature, packetpeek.length);
-			continue;
-		}
-		if (in.getUsed() < packetpeek.length) {
+		} else if (in.getUsed() < packetpeek.length) {
 			if (mLastRecv + 200 < GetTickCount64()) { // stall
 				char t;
 				in.read(&t, 1);
 				out.write(&t, 1);
 			}
-			break;
-		}
-		GAME_PACKET *packet = (GAME_PACKET*) malloc(packetpeek.length);
-		mLastRecv = GetTickCount64();
-		in.read(packet, packetpeek.length);
-
-		if (setTimestamp)
-			mOutboundPacketTemplate = *packet;
-
-		if (packet->length == sizeof(GAME_PACKET) || packet->signature != 0x41A05252) { // empty
-			out.write(packet, packet->length);
-			free(packet);
-			continue;
-		}
-
-		size_t dataLength = 0, dataBufferSize = 0;
-		uint8_t *data = nullptr;
-		if (packet->is_gzip) {
-			z_stream inflater;
-			dataBufferSize = maxLength;
-			data = (uint8_t*) malloc(dataBufferSize);
-
-			memset(&inflater, 0, sizeof(inflater));
-			inflater.next_in = packet->data;
-			inflater.avail_in = packet->length - offsetof(GAME_PACKET, data);
-
-			if (inflateInit(&inflater) == Z_OK) {
-				int res;
-				do {
-					unsigned char inflateBuffer[maxLength];
-					inflater.avail_out = sizeof(inflateBuffer);
-					inflater.next_out = inflateBuffer;
-					res = tryInflate(&inflater, Z_NO_FLUSH);
-					int len = sizeof(inflateBuffer) - inflater.avail_out;
-					while (dataLength + len >= dataBufferSize)
-						dataBufferSize *= 2;
-					data = (uint8_t*) realloc(data, dataBufferSize);
-					memcpy(data + dataLength, inflateBuffer, len);
-					dataLength += len;
-				} while (res == Z_OK);
-				inflateEnd(&inflater);
-				if (res != Z_STREAM_END) {
-					out.write(packet, packet->length);
-					free(data);
-					free(packet);
-					continue;
-				}
-			}
 		} else {
-			data = packet->data;
+			mLastRecv = GetTickCount64();
+			GAME_PACKET *packet = (GAME_PACKET*) malloc(packetpeek.length);
+			in.read(packet, packetpeek.length);
+			if (packetpeek.length == dataOffset || packetpeek.signature != 0x41A05252) { // empty
+				out.write(packet, packet->length);
+			} else {
+				size_t dataLength = 0, dataBufferSize = 0;
+				uint8_t *data = nullptr;
+
+				if (setTimestamp)
+					memcpy(&mInboundPacketTemplate, packet, dataOffset);
+
+				if (packet->is_gzip) {
+					z_stream inflater;
+					dataBufferSize = maxLength;
+					data = (uint8_t*) malloc(dataBufferSize);
+
+					memset(&inflater, 0, sizeof(inflater));
+					inflater.next_in = packet->data;
+					inflater.avail_in = packet->length - offsetof(GAME_PACKET, data);
+
+					if (inflateInit(&inflater) == Z_OK) {
+						int res;
+						do {
+							unsigned char inflateBuffer[maxLength];
+							inflater.avail_out = sizeof(inflateBuffer);
+							inflater.next_out = inflateBuffer;
+							res = tryInflate(&inflater, Z_NO_FLUSH);
+							int len = sizeof(inflateBuffer) - inflater.avail_out;
+							while (dataLength + len >= dataBufferSize)
+								dataBufferSize *= 2;
+							data = (uint8_t*) realloc(data, dataBufferSize);
+							memcpy(data + dataLength, inflateBuffer, len);
+							dataLength += len;
+						} while (res == Z_OK);
+						inflateEnd(&inflater);
+						if (res != Z_STREAM_END) {
+							out.write(packet, packet->length);
+							free(data);
+							free(packet);
+							continue;
+						}
+					}
+				} else {
+					data = packet->data;
+					dataLength = packet->length - dataOffset;
+				}
+
+				uint8_t *buf2 = data;
+				for (int i = 0; i < packet->message_count; i++) {
+					GAME_MESSAGE *msg = ((GAME_MESSAGE*) buf2);
+					ProcessGameMessage(s, msg, packet->timestamp, setTimestamp);
+					mInboundSequenceId = msg->seqid;
+					dll->sendPipe(setTimestamp ? "recv" : "send", (char*) buf2, msg->length);
+					buf2 += msg->length;
+				}
+				packet->is_gzip = 0;
+				packet->length = dataOffset + dataLength;
+				out.write(packet, dataOffset);
+				out.write(data, dataLength);
+
+				if (dataBufferSize)
+					free(data);
+			}
+			//*/
+			free(packet);
 		}
-		
-		bool packetSent = false;
-
-		if (dll->hooks()->GetOverlayRenderer())
-			packet->timestamp -= dll->hooks()->GetOverlayRenderer()->mConfig.LatencyTimestampDelay;
-
-		uint8_t *buf2 = data;
-		for (int i = 0; i < packet->message_count; i++) {
-			int len = *((uint32_t*) buf2);
-			ProcessGameMessage(buf2, packet->timestamp, len, setTimestamp);
-			dll->sendPipe(setTimestamp ? "recv" : "send", (char*) buf2, len);
-			buf2 += len;
-		}
-
-		size_t len = buf2 - data;
-		packet->length = offsetof(GAME_PACKET, data) + len;
-		packet->is_gzip = 0;
-		out.write(packet, offsetof(GAME_PACKET, data));
-		out.write(data, len);
-		packetSent = true;
-
-		if(dataBufferSize)
-			free(data);
-		free(packet);
 	}
-	if (in.getUsed() > 1048576) dll->addChat("/e in > 1M");
-	if (out.getUsed() > 1048576) dll->addChat("/e out > 1M");
 
-	//*
-	if (setTimestamp && mOutboundPacketTemplate.signature == 0x41A05252) {
+	if (setTimestamp && mInboundPacketTemplate.signature == 0x41A05252) {
 		GAME_MESSAGE m;
 		std::vector<GAME_MESSAGE> messages;
 		int len = 0;
-		while (mRecvAdd.tryPop(&m)) {
+		while (mRecvAdd[s].tryPop(&m)) {
 			messages.push_back(m);
 			len += m.length;
 		}
 		if (!messages.empty()) {
-			// dll->addChat("/e Emulate packet");
 			uint64_t timestamp = mServerTimestamp - mLocalTimestamp + Tools::GetLocalTimestamp();
-			mOutboundPacketTemplate.timestamp = timestamp;
-			mOutboundPacketTemplate.message_count = static_cast<uint16_t>(messages.size());
-			mOutboundPacketTemplate.is_gzip = false;
-			mOutboundPacketTemplate.length = offsetof(GAME_PACKET, data) + len;
-			uint8_t *data = (uint8_t*) malloc(len);
-			uint8_t *buf2 = data;
+			mInboundPacketTemplate.timestamp = timestamp;
+			mInboundPacketTemplate.message_count = static_cast<uint16_t>(messages.size());
+			mInboundPacketTemplate.is_gzip = false;
+			mInboundPacketTemplate.length = dataOffset + len;
+			out.write(&mInboundPacketTemplate, dataOffset);
 			for (auto i = messages.cbegin(); i != messages.cend(); ++i) {
-				memcpy(buf2, &*i, i->length);
-				buf2 += i->length;
+				auto msg = *i;
+				msg.seqid = mInboundSequenceId;
+				out.write(&msg, msg.length);
 			}
-			out.write(&mOutboundPacketTemplate, offsetof(GAME_PACKET, data));
-			out.write(data, len);
-			free(data);
 		}
 	}
-	//*/
+}
+
+void GameDataProcess::TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp) {
+	__try {
+		ParsePacket(in, out, s, setTimestamp);
+	} __except (1) {
+		int len = in.getUsed();
+		uint8_t* buf = new uint8_t[len];
+		in.read(buf, len);
+		out.write(buf, len);
+		delete buf;
+	}
 }
 
 void GameDataProcess::UpdateInfoThread() {
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		WaitForSingleObject(hUpdateInfoThreadLock, 50);
 		ResolveUsers();
-		for (auto i = mRecv.begin(); i != mRecv.end(); ) {
-			ParsePacket(i->second, mToRecv[i->first], true);
-			if (i->second.isStall())
-				i = mRecv.erase(i);
-			else
-				++i;
-		}
-		for (auto i = mToRecv.begin(); i != mToRecv.end(); ) {
-			if (i->second.isStall())
-				i = mToRecv.erase(i);
-			else
-				++i;
+		{
+			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			for (auto i = mRecv.begin(); i != mRecv.end(); ) {
+				TryParsePacket(i->second, mToRecv[i->first], i->first, true);
+				if (i->second.isStall())
+					i = mRecv.erase(i);
+				else
+					++i;
+			}
+			for (auto i = mToRecv.begin(); i != mToRecv.end(); ) {
+				if (i->second.isStall())
+					i = mToRecv.erase(i);
+				else
+					++i;
+			}
 		}
 		UpdateOverlayMessage();
 	}
