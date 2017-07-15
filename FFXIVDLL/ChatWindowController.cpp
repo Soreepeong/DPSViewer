@@ -23,29 +23,6 @@ ChatWindowController::ChatWindowController(FFXIVDLL *dll) :
 	dll(dll) {
 	width = 320;
 	height = 240;
-	/*
-	{
-		PCHATITEM_CUSTOM itm = new CHATITEM_CUSTOM;
-		itm->by = L"A"; itm->text = L"This is a test text!";
-		itm->translationStatus = TRANSLATE_NONE;
-		itm->obj = this;
-		mLines.push_back(itm);
-	}
-	{
-		PCHATITEM_CUSTOM itm = new CHATITEM_CUSTOM;
-		itm->by = L"B"; itm->text = L"Er, I don't get it.";
-		itm->translationStatus = TRANSLATE_NONE;
-		itm->obj = this;
-		mLines.push_back(itm);
-	}
-	{
-		PCHATITEM_CUSTOM itm = new CHATITEM_CUSTOM;
-		itm->by = L"C"; itm->text = L"It might work after all!";
-		itm->translationStatus = TRANSLATE_NONE;
-		itm->obj = this;
-		mLines.push_back(itm);
-	}
-	//*/
 	mScrollPos = mLines.size() - 1;
 }
 

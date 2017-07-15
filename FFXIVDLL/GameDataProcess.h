@@ -351,8 +351,8 @@ private:
 	std::map<std::wstring, DWORD> mClassColors;
 
 	std::recursive_mutex mSocketMapLock;
-	std::map<SOCKET, Tools::ByteQueue*> mSent, mRecv;
-	std::map<SOCKET, Tools::ByteQueue*> mToSend, mToRecv;
+	std::map<SOCKET, Tools::ByteQueue> mSent, mRecv;
+	std::map<SOCKET, Tools::ByteQueue> mToSend, mToRecv;
 	std::map<SOCKET, Tools::bqueue<std::pair<uint64_t, GAME_MESSAGE>>> mRecvAdd;
 	GAME_PACKET mInboundPacketTemplate;
 	int mInboundSequenceId;
@@ -418,12 +418,12 @@ private:
 	void TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp);
 
 	HANDLE hRecvUpdateInfoThread;
-	HANDLE hRecvUpdateInfoThreadLock;
+	HANDLE hRecvEvent;
 	void RecvUpdateInfoThread();
 	static DWORD WINAPI RecvUpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*) p)->RecvUpdateInfoThread(); return 0; }
 
 	HANDLE hSendUpdateInfoThread;
-	HANDLE hSendUpdateInfoThreadLock;
+	HANDLE hSendEvent;
 	void SendUpdateInfoThread();
 	static DWORD WINAPI SendUpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*) p)->SendUpdateInfoThread(); return 0; }
 
@@ -443,30 +443,16 @@ public:
 	int GetVersion();
 
 	void OnRecv(SOCKET s, char* buf, int len) {
-		Tools::ByteQueue *bq;
-		{
-			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
-			if (mRecv[s] == nullptr)
-				bq = mRecv[s] = new Tools::ByteQueue();
-			else
-				bq = mRecv[s];
-		}
-		bq->write(buf, len);
-		if (bq->getUsed() >= 28)
-			SetEvent(hRecvUpdateInfoThreadLock);
+		Tools::ByteQueue &bq = mRecv[s];
+		bq.write(buf, len);
+		if (bq.getUsed() >= 28)
+			SetEvent(hRecvEvent);
 	}
 
 	void OnSend(SOCKET s, const char* buf, int len) {
-		Tools::ByteQueue *bq;
-		{
-			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
-			if (mSent[s] == nullptr)
-				bq = mSent[s] = new Tools::ByteQueue();
-			else
-				bq = mSent[s];
-		}
-		bq->write(buf, len);
-		if (bq->getUsed() >= 28)
-			SetEvent(hSendUpdateInfoThreadLock);
+		Tools::ByteQueue &bq = mSent[s];
+		bq.write(buf, len);
+		if (bq.getUsed() >= 28)
+			SetEvent(hSendEvent);
 	}
 };

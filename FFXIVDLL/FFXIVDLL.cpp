@@ -30,8 +30,10 @@ void RemoveFFXIVMutex() {
 		handleInfo = (PSYSTEM_HANDLE_INFORMATION) realloc(handleInfo, handleInfoSize *= 2);
 
 	/* NtQuerySystemInformation stopped giving us STATUS_INFO_LENGTH_MISMATCH. */
-	if (!NT_SUCCESS(status))
+	if (!NT_SUCCESS(status)) {
+		free(handleInfo);
 		return;
+	}
 
 	for (i = 0; i < handleInfo->HandleCount; i++) {
 		SYSTEM_HANDLE handle = handleInfo->Handles[i];
@@ -48,8 +50,10 @@ void RemoveFFXIVMutex() {
 
 		/* Query the object type. */
 		objectTypeInfo = (POBJECT_TYPE_INFORMATION) malloc(0x1000);
-		if (!NT_SUCCESS(NtQueryObject(dupHandle, ObjectTypeInformation, objectTypeInfo, 0x1000, NULL )))
+		if (!NT_SUCCESS(NtQueryObject(dupHandle, ObjectTypeInformation, objectTypeInfo, 0x1000, NULL))) {
+			free(objectTypeInfo);
 			continue;
+		}
 
 		/* Query the object name (unless it has an access of 0x0012019f, on which NtQueryObject could hang. */
 		if (handle.GrantedAccess == 0x0012019f) {
@@ -97,15 +101,14 @@ BOOL WINAPI FFXIVDLL::FindFFXIVWindow(HWND handle) {
 }
 
 FFXIVDLL::FFXIVDLL(HMODULE instance) :
-	mInstance(instance)
+	mInstance(instance),
+	hUnloadEvent(CreateEvent(NULL, true, false, NULL))
 {
 	RemoveFFXIVMutex();
 
 	EnumWindows(FFXIVDLL::FindFFXIVWindow, (LPARAM) this);
 
 	Languages::initialize();
-
-	hUnloadEvent = CreateEvent(NULL, true, false, NULL);
 
 	mPipe = new ExternalPipe(this, hUnloadEvent);
 	mDataProcess = new GameDataProcess(this, hUnloadEvent);

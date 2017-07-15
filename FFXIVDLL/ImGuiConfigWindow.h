@@ -97,5 +97,6 @@ public:
 
 	void Show();
 	void Render();
+	void SaveSettings();
 };
 

@@ -33,9 +33,9 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 
 	mLocalTimestamp = mServerTimestamp = Tools::GetLocalTimestamp();
 
-	hRecvUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
+	hRecvEvent = CreateEvent(NULL, false, false, NULL);
 	hRecvUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::RecvUpdateInfoThreadExternal, this, NULL, NULL);
-	hSendUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
+	hSendEvent = CreateEvent(NULL, false, false, NULL);
 	hSendUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::SendUpdateInfoThreadExternal, this, NULL, NULL);
 
 	TCHAR ffxivPath[MAX_PATH];
@@ -142,9 +142,9 @@ GameDataProcess::~GameDataProcess() {
 	WaitForSingleObject(hRecvUpdateInfoThread, -1);
 	WaitForSingleObject(hSendUpdateInfoThread, -1);
 	CloseHandle(hRecvUpdateInfoThread);
-	CloseHandle(hRecvUpdateInfoThreadLock);
+	CloseHandle(hRecvEvent);
 	CloseHandle(hSendUpdateInfoThread);
-	CloseHandle(hSendUpdateInfoThreadLock);
+	CloseHandle(hSendEvent);
 }
 
 int GameDataProcess::GetVersion() {
@@ -551,10 +551,10 @@ void GameDataProcess::UpdateOverlayMessage() {
 			if (mShowTimeInfo) {
 				size_t sums[4] = { 0 };
 				std::lock_guard<std::recursive_mutex> guard2(dll->process()->mSocketMapLock);
-				for (auto i = dll->process()->mRecv.begin(); i != dll->process()->mRecv.end(); ++i) sums[0] += i->second->getUsed();
-				for (auto i = dll->process()->mToRecv.begin(); i != dll->process()->mToRecv.end(); ++i) sums[1] += i->second->getUsed();
-				for (auto i = dll->process()->mSent.begin(); i != dll->process()->mSent.end(); ++i) sums[2] += i->second->getUsed();
-				for (auto i = dll->process()->mToSend.begin(); i != dll->process()->mToSend.end(); ++i) sums[3] += i->second->getUsed();
+				for (auto i = dll->process()->mRecv.begin(); i != dll->process()->mRecv.end(); ++i) sums[0] += i->second.getUsed();
+				for (auto i = dll->process()->mToRecv.begin(); i != dll->process()->mToRecv.end(); ++i) sums[1] += i->second.getUsed();
+				for (auto i = dll->process()->mSent.begin(); i != dll->process()->mSent.end(); ++i) sums[2] += i->second.getUsed();
+				for (auto i = dll->process()->mToSend.begin(); i != dll->process()->mToSend.end(); ++i) sums[3] += i->second.getUsed();
 				SYSTEMTIME s1, s2;
 				Tools::MillisToLocalTime(timestamp, &s1);
 				Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
@@ -1050,7 +1050,7 @@ void GameDataProcess::EmulateCancel(SOCKET s, int skid, int newcd, int spent, in
 	nmsg.Combat.AbilityResponse.seqid = seqid;
 	nmsg.Combat.AbilityResponse.u6 = 0;
 	mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(when, nmsg));
-	SetEvent(hRecvUpdateInfoThreadLock);
+	SetEvent(hRecvEvent);
 }
 void GameDataProcess::EmulateEnableSkill(SOCKET s, uint64_t when) {
 	GAME_MESSAGE nmsg;
@@ -1067,7 +1067,7 @@ void GameDataProcess::EmulateEnableSkill(SOCKET s, uint64_t when) {
 	nmsg.data[0] = 2;
 	nmsg.data[2] = 4;
 	mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(when, nmsg));
-	SetEvent(hRecvUpdateInfoThreadLock);
+	SetEvent(hRecvEvent);
 }
 
 bool GameDataProcess::IsInCombat() {
@@ -1229,7 +1229,7 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 								IsInCombat()
 								) {
 								if (conf.ForceCancelEverySkill && mLastSkillRequest) {
-									int dur = (GetTickCount64() - mLastSkillRequest) / 10;
+									int dur = static_cast<int>((GetTickCount64() - mLastSkillRequest) / 10);
 									dur = max(0, dur);
 									EmulateCancel(s, msg->Combat.AbilityResponse.skill, msg->Combat.AbilityResponse.duration_or_skid, dur, msg->Combat.AbilityResponse.seqid);
 									mCachedSkillCooldown[msg->Combat.AbilityResponse.skill] = msg->Combat.AbilityResponse.duration_or_skid;
@@ -1453,25 +1453,23 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 			}
 		} else {
 			mLastRecv = GetTickCount64();
-			GAME_PACKET *packet = (GAME_PACKET*) malloc(packetpeek.length);
+			std::vector<uint8_t> packet_vector(packetpeek.length);
+			GAME_PACKET *packet = (GAME_PACKET*) packet_vector.data();
 			in.read(packet, packetpeek.length);
 			if (packetpeek.length == dataOffset || packetpeek.signature != 0x41A05252) { // empty
 				out.write(packet, packet->length);
 			} else {
-				size_t dataLength = 0, dataBufferSize = 0;
-				uint8_t *data = nullptr;
+				std::vector<uint8_t> data;
 
 				if (setTimestamp)
 					memcpy(&mInboundPacketTemplate, packet, dataOffset);
 
 				if (packet->is_gzip) {
 					z_stream inflater;
-					dataBufferSize = maxLength;
-					data = (uint8_t*) malloc(dataBufferSize);
 
 					memset(&inflater, 0, sizeof(inflater));
 					inflater.next_in = packet->data;
-					inflater.avail_in = packet->length - offsetof(GAME_PACKET, data);
+					inflater.avail_in = packet->length - dataOffset;
 
 					if (inflateInit(&inflater) == Z_OK) {
 						int res;
@@ -1481,27 +1479,20 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 							inflater.next_out = inflateBuffer;
 							res = tryInflate(&inflater, Z_NO_FLUSH);
 							int len = sizeof(inflateBuffer) - inflater.avail_out;
-							while (dataLength + len >= dataBufferSize)
-								dataBufferSize *= 2;
-							data = (uint8_t*) realloc(data, dataBufferSize);
-							memcpy(data + dataLength, inflateBuffer, len);
-							dataLength += len;
+							data.insert(data.cend(), inflateBuffer, inflateBuffer + len);
 						} while (res == Z_OK);
 						inflateEnd(&inflater);
 						if (res != Z_STREAM_END) {
 							out.write(packet, packet->length);
-							free(data);
-							free(packet);
 							dll->addChat("/e packet error: inflate");
 							continue;
 						}
 					}
 				} else {
-					data = packet->data;
-					dataLength = packet->length - dataOffset;
+					data.insert(data.cend(), packet->data, packet->data + packet->length - dataOffset);
 				}
 
-				uint8_t *buf2 = data;
+				uint8_t *buf2 = data.data();
 				for (int i = 0; i < packet->message_count; i++) {
 					GAME_MESSAGE *msg = ((GAME_MESSAGE*) buf2);
 					ProcessGameMessage(s, msg, packet->timestamp, setTimestamp);
@@ -1510,15 +1501,11 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 					buf2 += msg->length;
 				}
 				packet->is_gzip = 0;
-				packet->length = dataOffset + dataLength;
+				packet->length = dataOffset + data.size();
 				out.write(packet, dataOffset);
-				out.write(data, dataLength);
+				out.write(data.data(), data.size());
 
-				if (dataBufferSize)
-					free(data);
 			}
-			//*/
-			free(packet);
 		}
 	}
 
@@ -1559,11 +1546,7 @@ void GameDataProcess::TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out
 	__try {
 		ParsePacket(in, out, s, setTimestamp);
 	} __except (1) {
-		int len = in.getUsed();
-		uint8_t* buf = new uint8_t[len];
-		in.read(buf, len);
-		out.write(buf, len);
-		delete buf;
+		out.passthrough(in);
 	}
 }
 
@@ -1572,42 +1555,32 @@ void GameDataProcess::RecvUpdateInfoThread() {
 	bool processed = false;
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		if (!processed)
-			WaitForSingleObject(hRecvUpdateInfoThreadLock, 50);
+			WaitForSingleObject(hRecvEvent, 50);
 		processed = false;
 		ResolveUsers();
 		std::set<SOCKET> availSocks;
 		{
 			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
 			for (auto i = mRecv.cbegin(); i != mRecv.cend(); ++i)
-				if (!i->second->isEmpty())
+				if (!i->second.isEmpty())
 					availSocks.insert(i->first);
 		}
 		for (auto ss = availSocks.cbegin(); ss != availSocks.cend(); ++ss) {
 			SOCKET s = *ss;
-			Tools::ByteQueue *need_process;
-			if (!(need_process = mRecv[s])->isEmpty()) {
-				Tools::ByteQueue *torecv;
-				{
-					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
-					torecv = mToRecv[s] ? mToRecv[s] : (mToRecv[s] = new Tools::ByteQueue());
-				}
-				TryParsePacket(*need_process, *(torecv), s, true);
-				processed = true;
-			}
+			TryParsePacket(mRecv[s], mToRecv[s], s, true);
+			processed = true;
 		}
 		if (++mapClearer > 100) {
 			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
 			mapClearer = 0;
 			for (auto i = mRecv.begin(); i != mRecv.end(); ) {
-				if (i->second->isStall()) {
-					delete i->second;
+				if (i->second.isStall()) {
 					i = mRecv.erase(i);
 				} else
 					++i;
 			}
 			for (auto i = mToRecv.begin(); i != mToRecv.end(); ) {
-				if (i->second->isStall()) {
-					delete i->second;
+				if (i->second.isStall()) {
 					i = mToRecv.erase(i);
 				} else
 					++i;
@@ -1624,57 +1597,45 @@ void GameDataProcess::SendUpdateInfoThread() {
 	bool processed = false;
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
 		if (!processed)
-			WaitForSingleObject(hSendUpdateInfoThreadLock, 50);
+			WaitForSingleObject(hSendEvent, 50);
 		processed = false;
 		std::set<SOCKET> availSocks;
 		{
 			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
 			for (auto i = mSent.cbegin(); i != mSent.cend(); ++i)
-				if (!i->second->isEmpty())
+				if (!i->second.isEmpty())
 					availSocks.insert(i->first);
 		}
 		for (auto ss = availSocks.cbegin(); ss != availSocks.cend(); ++ss) {
 			SOCKET s = *ss;
-			Tools::ByteQueue *need_process;
-			if (!(need_process = mSent[s])->isEmpty()) {
-				Tools::ByteQueue *tosend;
-				{
-					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
-					tosend = mToSend[s] ? mToSend[s] : (mToSend[s] = new Tools::ByteQueue());
-				}
-				processed = true;
-				TryParsePacket(*need_process, *(tosend), s, false);
+			processed = true;
+			TryParsePacket(mSent[s], mToSend[s], s, false);
 
-				if (tosend->getUsed() > 0) {
-					DWORD result = 0, flags = 0;
-					int buf2len = tosend->getUsed();
-					char* buf2 = new char[buf2len];
-					tosend->peek(buf2, buf2len);
-					WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
-					Tools::DebugPrint(L"WSASend in SendUpdateInfoThread %d: %d\n", (int) s, buf2len);
-					if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
-						if (WSAGetLastError() == WSAEWOULDBLOCK) {
-						}
-					} else
-						tosend->waste(buf2len);
-					delete[] buf2;
-				}
+			if (mToSend[s].getUsed() > 0) {
+				DWORD result = 0, flags = 0;
+				std::vector<char> buf(mToSend[s].getUsed());
+				mToSend[s].peek(buf.data(), buf.size());
+				WSABUF buffer = { static_cast<ULONG>(buf.size()), buf.data() };
+				Tools::DebugPrint(L"WSASend in SendUpdateInfoThread %d: %d\n", (int) s, buf.size());
+				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
+					if (WSAGetLastError() == WSAEWOULDBLOCK) {
+					}
+				} else
+					mToSend[s].waste(buf.size());
 			}
 		}
 		if (++mapClearer > 100) {
 			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
 			mapClearer = 0;
 			for (auto i = mSent.begin(); i != mSent.end(); ) {
-				if (i->second->isStall()) {
-					delete i->second;
+				if (i->second.isStall()) {
 					i = mSent.erase(i);
 				} else
 					++i;
 			}
 
 			for (auto i = mToSend.begin(); i != mToSend.end(); ) {
-				if (i->second->isStall()) {
-					delete i->second;
+				if (i->second.isStall()) {
 					i = mToSend.erase(i);
 				} else
 					++i;

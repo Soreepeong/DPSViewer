@@ -128,7 +128,7 @@ clear_dx_alloc:
 
 Hooks::~Hooks() {
 
-	std::map<SOCKET, Tools::ByteQueue*> *queues[] = { &dll->process()->mToRecv,
+	std::map<SOCKET, Tools::ByteQueue> *queues[] = { &dll->process()->mToRecv,
 		&dll->process()->mRecv,
 		&dll->process()->mToSend,
 		&dll->process()->mSent };
@@ -136,9 +136,8 @@ Hooks::~Hooks() {
 	int stallTime = GetTickCount() + 6000;
 	for (int i = 0; i < sizeof(queues) / sizeof(queues[0]); i++) {
 		for (auto j = queues[i]->begin(); j != queues[i]->end(); ++j) {
-			if (j->second)
-				while (!j->second->isEmpty() && !j->second->isStall(stallTime - GetTickCount() + 100))
-					Sleep(0);
+			while (!j->second.isEmpty() && !j->second.isStall(stallTime - GetTickCount() + 100))
+				Sleep(0);
 		}
 	}
 
@@ -161,11 +160,6 @@ Hooks::~Hooks() {
 	if (pOverlayRenderer != nullptr)
 		delete pOverlayRenderer;
 
-	for (int i = 0; i < sizeof(queues) / sizeof(queues[0]); i++) {
-		for (auto j = queues[i]->begin(); j != queues[i]->end(); ++j) {
-			delete j->second;
-		}
-	}
 }
 
 void Hooks::MemorySearchCompleteCallback() {
@@ -231,46 +225,37 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 	{
 		DWORD result;
 		std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
-		Tools::ByteQueue *snd = dll->process()->mToSend[s];
-		Tools::ByteQueue *sndq = dll->process()->mSent[s];
-		if (snd == nullptr) snd = dll->process()->mToSend[s] = new Tools::ByteQueue();
-		if (sndq == nullptr) sndq = dll->process()->mSent[s] = new Tools::ByteQueue();
+		Tools::ByteQueue &snd = dll->process()->mToSend[s];
+		Tools::ByteQueue &sndq = dll->process()->mSent[s];
 
-		if ((dll->isUnloading() && snd->isEmpty() && sndq->isEmpty()) || WaitForSingleObject(dll->process()->hSendUpdateInfoThread, 0) != WAIT_TIMEOUT) {
-
-
-			if (snd->getUsed() > 0) {
+		if ((dll->isUnloading() && snd.isEmpty() && sndq.isEmpty()) || WaitForSingleObject(dll->process()->hSendUpdateInfoThread, 0) != WAIT_TIMEOUT) {
+			if (snd.getUsed() > 0) {
 				DWORD result = 0, flags = 0;
-				int buf2len = snd->getUsed();
-				char* buf2 = new char[buf2len];
-				snd->peek(buf2, buf2len);
-				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
-				Tools::DebugPrint(L"WSASend in send %d: %d\n", (int) s, buf2len);
+				std::vector<char> buf2(snd.getUsed());
+				snd.peek(buf2.data(), buf2.size());
+				WSABUF buffer = { static_cast<ULONG>(buf2.size()), buf2.data() };
+				Tools::DebugPrint(L"WSASend in send %d: %d\n", (int) s, buf2.size());
 				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
 					if (WSAGetLastError() != WSAEWOULDBLOCK) {
 						Tools::DebugPrint(L" -> error %d\n", WSAGetLastError());
 						len = SOCKET_ERROR;
 					}
 				} else
-					snd->waste(buf2len);
-				delete[] buf2;
+					snd.waste(buf2.size());
 			}
-			if (len>0 && dll->process()->mSent.find(s) != dll->process()->mSent.end() && dll->process()->mSent[s]->getUsed()) {
-				snd = dll->process()->mSent[s];
+			if (len>0 && dll->process()->mSent[s].getUsed()) {
 				DWORD result = 0, flags = 0;
-				int buf2len = snd->getUsed();
-				char* buf2 = new char[buf2len];
-				snd->peek(buf2, buf2len);
-				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
-				Tools::DebugPrint(L"WSASend in send %d: %d\n", (int) s, buf2len);
+				std::vector<char> buf2(sndq.getUsed());
+				sndq.peek(buf2.data(), buf2.size());
+				WSABUF buffer = { static_cast<ULONG>(buf2.size()), const_cast<CHAR *>(buf2.data()) };
+				Tools::DebugPrint(L"WSASend in send %d: %d\n", (int) s, buf2.size());
 				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
 					if (WSAGetLastError() != WSAEWOULDBLOCK) {
 						Tools::DebugPrint(L" -> error %d\n", WSAGetLastError());
 						len = SOCKET_ERROR;
 					}
 				} else
-					snd->waste(buf2len);
-				delete[] buf2;
+					sndq.waste(buf2.size());
 			}
 			if (len > 0) {
 				WSABUF buffer = { static_cast<ULONG>(len), const_cast<CHAR *>(buf) };
@@ -292,12 +277,9 @@ int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 	DWORD recvlen = 0, dflags = 0;
 	{
 		std::lock_guard<std::recursive_mutex> guard(dll->process()->mSocketMapLock);
-		Tools::ByteQueue *rcv = dll->process()->mToRecv[s];
+		auto &rcv = dll->process()->mToRecv[s];
 
-		if (rcv == nullptr)
-			rcv = dll->process()->mToRecv[s] = new Tools::ByteQueue();
-
-		if (dll->isUnloading() && rcv->isEmpty()) {
+		if (dll->isUnloading() && rcv.isEmpty()) {
 			WSABUF buffer = { static_cast<ULONG>(len), buf };
 			if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR)
 				recvlen = -1;
@@ -324,10 +306,10 @@ int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 			}
 
 			if (recvlen == 0) {
-				recvlen = static_cast<int>(min(rcv->getUsed(), static_cast<size_t>(len)));
+				recvlen = static_cast<int>(min(rcv.getUsed(), static_cast<size_t>(len)));
 				Tools::DebugPrint(L"recv buffer pull %d: %d\n", (int) s, recvlen);
 				if (recvlen) {
-					rcv->read(buf, recvlen);
+					rcv.read(buf, recvlen);
 				} else
 					WSASetLastError(WSAEWOULDBLOCK);
 			}
@@ -348,12 +330,10 @@ int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds
 		if (dll->isUnloading()) {
 			for (size_t i = 0; i < readfds1.fd_count && !take; i++) {
 				SOCKET &s = readfds1.fd_array[i];
-				if (dll->process()->mRecv.find(s) != dll->process()->mRecv.end()) {
-					if (!dll->process()->mRecv[s]->isEmpty())
-						take = true;
-					else if (dll->process()->mToRecv.find(s) != dll->process()->mToRecv.end() && !dll->process()->mToRecv[s]->isEmpty())
-						take = true;
-				}
+				if (!dll->process()->mRecv[s].isEmpty())
+					take = true;
+				else if (!dll->process()->mToRecv[s].isEmpty())
+					take = true;
 			}
 		} else
 			take = true;
@@ -388,9 +368,7 @@ int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds
 			}
 			for (size_t i = 0; i < readfds1.fd_count; i++) {
 				SOCKET &s = readfds1.fd_array[i];
-				if (dll->process()->mToRecv.find(s) == dll->process()->mToRecv.end())
-					continue;
-				if (dll->process()->mToRecv[s]->getUsed() && res != SOCKET_ERROR) {
+				if (dll->process()->mToRecv[s].getUsed() && res != SOCKET_ERROR) {
 					// Tools::DebugPrint(L"select read avail %d: %d\n", s, (int) dll->process()->mToRecv[s]->getUsed());
 					FD_SET(s, readfds);
 					res++;
@@ -639,9 +617,8 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		case WM_CHAR:
-			if (GetAsyncKeyState(VK_SNAPSHOT) == (SHORT) 0x8001) {
-				if (iMessage == WM_KEYDOWN)
-					pOverlayRenderer->CaptureScreen();
+			if (wParam == VK_SNAPSHOT) {
+				pOverlayRenderer->CaptureScreen();
 			} else if (io.WantCaptureKeyboard || io.WantTextInput)
 				break;
 			else if (ffxivHookCaptureControl && !ffxivWndPressed) {

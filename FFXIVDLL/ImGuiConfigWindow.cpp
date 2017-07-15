@@ -135,11 +135,11 @@ ImGuiConfigWindow::ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer) :
 	}
 }
 
-ImGuiConfigWindow::~ImGuiConfigWindow() {
+void ImGuiConfigWindow::SaveSettings() {
 	writeIni(L"UI", L"Language", Languages::language);
 	writeIni(L"UI", L"UseOverlay", UseDrawOverlay);
 	writeIni(L"UI", L"FontSize", fontSize);
-	writeIni(L"UI", L"FontBold", (int)bold);
+	writeIni(L"UI", L"FontBold", (int) bold);
 	writeIni(L"UI", L"FontBorder", border);
 	writeIni(L"UI", L"FontName", fontName);
 	writeIni(L"UI", L"ShowOnlyWhenChatWindowOpen", (int) ShowOnlyWhenChatWindowOpen);
@@ -188,13 +188,17 @@ ImGuiConfigWindow::~ImGuiConfigWindow() {
 	writeIni(L"DOT", L"Contagion", dll->process()->mContagionApplyDelayEstimation.save().c_str());
 	writeIni(L"DOT", L"Count", (int) dll->process()->mDotApplyDelayEstimation.size());
 	int i = 0;
-	for(auto it = dll->process()->mDotApplyDelayEstimation.begin(); it != dll->process()->mDotApplyDelayEstimation.end(); ++it, ++i) {
+	for (auto it = dll->process()->mDotApplyDelayEstimation.begin(); it != dll->process()->mDotApplyDelayEstimation.end(); ++it, ++i) {
 		TCHAR key[64];
 		swprintf(key, 64, L"DOT%d.Id", i);
 		writeIni(L"DOT", key, it->first);
 		swprintf(key, 64, L"DOT%d.Data", i);
 		writeIni(L"DOT", key, it->second.save().c_str());
 	}
+}
+
+ImGuiConfigWindow::~ImGuiConfigWindow() {
+	SaveSettings();
 }
 
 int ImGuiConfigWindow::readIni(TCHAR *k1, TCHAR *k2, int def, int min, int max) {
@@ -209,13 +213,12 @@ float ImGuiConfigWindow::readIni(TCHAR *k1, TCHAR *k2, float def, float min, flo
 	return max(min, min(max, val));
 }
 void ImGuiConfigWindow::readIni(TCHAR *k1, TCHAR *k2, char *def, char *target, int bufSize) {
-	TCHAR *buf = new TCHAR[bufSize];
-	GetPrivateProfileString(k1, k2, nullptr, buf, bufSize, mSettingFilePath);
-	if (wcslen(buf) == 0)
+	std::vector<TCHAR> buf(bufSize);
+	GetPrivateProfileString(k1, k2, nullptr, buf.data(), bufSize, mSettingFilePath);
+	if (wcslen(buf.data()) == 0)
 		strncpy(target, def, bufSize);
 	else 
-		WideCharToMultiByte(CP_UTF8, 0, buf, -1, target, bufSize, 0, nullptr);
-	delete[] buf;
+		WideCharToMultiByte(CP_UTF8, 0, buf.data(), -1, target, bufSize, 0, nullptr);
 }
 
 void ImGuiConfigWindow::writeIni(TCHAR *k1, TCHAR *k2, int val) {
@@ -341,6 +344,7 @@ void ImGuiConfigWindow::Render() {
 			dll->process()->mShowTimeInfo = showTimes;
 			mRenderer->ReloadFromConfig();
 			dll->process()->ReloadLocalization();
+			SaveSettings();
 		}ImGui::SameLine();
 		if (ImGui::Button(Languages::get("OPTION_QUIT"), ImVec2(90,30))) {
 			dll->spawnSelfUnloader();

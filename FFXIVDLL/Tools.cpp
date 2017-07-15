@@ -1,7 +1,8 @@
-#include"Tools.h"
-#include<chrono>
+#include "Tools.h"
+#include <chrono>
 #include <tlhelp32.h>
 #include <psapi.h>
+
 void Tools::MillisToSystemTime(UINT64 millis, SYSTEMTIME *st) {
 	UINT64 multiplier = 10000;
 	UINT64 t = multiplier * millis;
@@ -111,18 +112,22 @@ bool Tools::TestValidString(char* p) {
 }
 
 bool Tools::TestValidPtr(void* p, int len) {
-	char *p2 = new char[len];
+	std::vector<char> buf(len);
 	SIZE_T l2;
-	ReadProcessMemory(GetCurrentProcess(), p, p2, len, &l2);
+	ReadProcessMemory(GetCurrentProcess(), p, buf.data(), len, &l2);
 	return l2 == len;
 }
 
 void Tools::DebugPrint(LPCTSTR lpszFormat, ...) {
 	va_list args;
+
 	va_start(args, lpszFormat);
-	int nBuf;
-	TCHAR szBuffer[8192]; // get rid of this hard-coded buffer
-	nBuf = _vsnwprintf(szBuffer, sizeof(szBuffer)-1, lpszFormat, args);
-	::OutputDebugString(szBuffer);
+	std::vector<TCHAR> buf(_vsnwprintf(0, 0, lpszFormat, args) + 1);
 	va_end(args);
+
+	va_start(args, lpszFormat);
+	buf[_vsnwprintf(buf.data(), buf.size(), lpszFormat, args)] = 0;
+	va_end(args);
+
+	::OutputDebugString(buf.data());
 }

@@ -5,6 +5,7 @@
 #include<condition_variable>
 #include<deque>
 #include<mutex>
+#include<vector>
 
 namespace Tools {
 	void MillisToSystemTime(UINT64 millis, SYSTEMTIME *st);
@@ -19,38 +20,65 @@ namespace Tools {
 	void DebugPrint(LPCTSTR lpszFormat, ...);
 	class ByteQueue {
 	private:
-		std::recursive_mutex              d_mutex;
+		std::recursive_mutex mLock;
 		uint64_t mLastUse;
+		bool mAllocated;
+		
+		void init() {
+			if (mAllocated)
+				return;
+			mAllocated = true;
+			_buf = new unsigned char[_capacity];
+			_wptr = 0; _rptr = 0; _used_size = 0;
+		}
+		unsigned char* _buf;
+		size_t _capacity, _wptr, _rptr, _used_size;
+
+		void updateIndex(size_t& index, size_t bytes) {
+			index = (index + bytes) % _capacity;
+		}
 	public:
-		ByteQueue(size_t capacity) : _capacity(capacity) { init(); }
-		ByteQueue() : _capacity(1048576*8) { init(); }
+		ByteQueue(size_t capacity) : _capacity(capacity), mAllocated (false), mLastUse(GetTickCount64()) {}
+		ByteQueue() : ByteQueue(1048576 * 8) {}
+		ByteQueue & operator=(const ByteQueue&) = delete;
+		ByteQueue(const ByteQueue&) = delete;
 		~ByteQueue() { delete[] _buf; }
-		size_t read(void* data, size_t bytes)
-		{
-			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+		size_t read(void* data, size_t bytes) {
+			std::lock_guard<std::recursive_mutex> lock(this->mLock);
+			if (!mAllocated)
+				return 0;
 			mLastUse = GetTickCount64();
 			bytes = min(bytes, getUsed());
 			const size_t bytes_read1 = min(bytes, _capacity - _rptr);
 			memcpy(data, _buf + _rptr, bytes_read1);
-			memcpy((char*)data + bytes_read1, _buf, bytes - bytes_read1);
+			memcpy((char*) data + bytes_read1, _buf, bytes - bytes_read1);
 			updateIndex(_rptr, bytes);
 			return bytes;
 		}
 
-		size_t peek(void* data, size_t bytes)
-		{
-			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+		void passthrough(ByteQueue &r) {
+			std::vector<unsigned char> buf;
+			buf.resize(r.getUsed());
+			r.read(buf.data(), buf.size());
+			write(buf.data(), buf.size());
+		}
+
+		size_t peek(void* data, size_t bytes) {
+			std::lock_guard<std::recursive_mutex> lock(this->mLock);
+			if (!mAllocated)
+				return 0;
 			mLastUse = GetTickCount64();
 			bytes = min(bytes, getUsed());
 			const size_t bytes_read1 = min(bytes, _capacity - _rptr);
 			memcpy(data, _buf + _rptr, bytes_read1);
-			memcpy((char*)data + bytes_read1, _buf, bytes - bytes_read1);
+			memcpy((char*) data + bytes_read1, _buf, bytes - bytes_read1);
 			return bytes;
 		}
 
-		size_t waste(size_t bytes)
-		{
-			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+		size_t waste(size_t bytes) {
+			std::lock_guard<std::recursive_mutex> lock(this->mLock);
+			if (!mAllocated)
+				return 0;
 			mLastUse = GetTickCount64();
 			bytes = min(bytes, getUsed());
 			const size_t bytes_read1 = min(bytes, _capacity - _rptr);
@@ -58,29 +86,38 @@ namespace Tools {
 			return bytes;
 		}
 
-		size_t write(const void* data, size_t bytes)
-		{
-			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+		size_t write(const void* data, size_t bytes) {
+			std::lock_guard<std::recursive_mutex> lock(this->mLock);
+			if (!mAllocated)
+				init();
 			mLastUse = GetTickCount64();
 			bytes = min(bytes, getFree());
 			const size_t bytes_write1 = min(bytes, _capacity - _wptr);
 			memcpy(_buf + _wptr, data, bytes_write1);
-			memcpy(_buf, (char*)data + bytes_write1, bytes - bytes_write1);
+			memcpy(_buf, (char*) data + bytes_write1, bytes - bytes_write1);
 			updateIndex(_wptr, bytes);
 			return bytes;
 		}
-		bool isFull() { return (_wptr + 1) % (_capacity) == _rptr; }
-		bool isEmpty() { return _wptr == _rptr; }
-		size_t getUsed()
-		{
-			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+		bool isFull() const {
+			if (!mAllocated)
+				return _capacity == 0;
+			return (_wptr + 1) % (_capacity) == _rptr;
+		}
+		bool isEmpty() const {
+			return !mAllocated || _wptr == _rptr;
+		}
+		size_t getUsed() {
+			if (!mAllocated)
+				return 0;
+			std::lock_guard<std::recursive_mutex> lock(this->mLock);
 			mLastUse = GetTickCount64();
 			return (_capacity - _rptr + _wptr) % _capacity;
 		}
 
-		size_t getFree()
-		{
-			std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
+		size_t getFree() {
+			if (!mAllocated)
+				return _capacity;
+			std::lock_guard<std::recursive_mutex> lock(this->mLock);
 			mLastUse = GetTickCount64();
 			return (_capacity - 1 - _wptr + _rptr) % _capacity;
 		}
@@ -92,20 +129,6 @@ namespace Tools {
 		bool isStall() {
 			return isStall(30000); // 30 sec
 		}
-	private:
-		//only _capacity-1 is used, one is to identify full or empty.
-		void init() {
-			_buf = new unsigned char[_capacity];
-			_wptr = 0; _rptr = 0; _used_size = 0;
-			mLastUse = GetTickCount64();
-		}
-		unsigned char* _buf;
-		size_t _capacity, _wptr, _rptr, _used_size;
-
-		void updateIndex(size_t& index, size_t bytes)
-		{
-			index = (index + bytes) % _capacity;
-		}
 	};
 	template <typename T>
 	class bqueue {
@@ -114,6 +137,9 @@ namespace Tools {
 		std::condition_variable d_condition;
 		std::deque<T>           d_queue;
 	public:
+		bqueue () {};
+		bqueue & operator=(const bqueue&) = delete;
+		bqueue(const bqueue&) = delete;
 		void push(T const& value) {
 			{
 				std::lock_guard<std::recursive_mutex> lock(this->d_mutex);
