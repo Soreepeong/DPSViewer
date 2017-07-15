@@ -92,6 +92,8 @@ public:
 
 	ImGuiConfigWindow(FFXIVDLL *dll, OverlayRenderer *renderer);
 	~ImGuiConfigWindow();
+	ImGuiConfigWindow & operator=(const ImGuiConfigWindow&) = delete;
+	ImGuiConfigWindow(const ImGuiConfigWindow&) = delete;
 
 	void Show();
 	void Render();

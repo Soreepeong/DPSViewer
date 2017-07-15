@@ -1,3 +1,4 @@
+#include <winsock2.h>
 #include <Windows.h>
 #include <deque>
 #include <vector>
@@ -23,6 +24,7 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 	dll(dll),
 	hUnloadEvent(unloadEvent),
 	mLastIdleTime(0),
+	mLastSkillRequest(0),
 	wDPS(*new DPSWindowController()),
 	wDOT(*new DOTWindowController()),
 	wChat(*new ChatWindowController(dll)) {
@@ -31,8 +33,10 @@ GameDataProcess::GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent) :
 
 	mLocalTimestamp = mServerTimestamp = Tools::GetLocalTimestamp();
 
-	hUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
-	hUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::UpdateInfoThreadExternal, this, NULL, NULL);
+	hRecvUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
+	hRecvUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::RecvUpdateInfoThreadExternal, this, NULL, NULL);
+	hSendUpdateInfoThreadLock = CreateEvent(NULL, false, false, NULL);
+	hSendUpdateInfoThread = CreateThread(NULL, NULL, GameDataProcess::SendUpdateInfoThreadExternal, this, NULL, NULL);
 
 	TCHAR ffxivPath[MAX_PATH];
 	GetModuleFileNameEx(GetCurrentProcess(), NULL, ffxivPath, MAX_PATH);
@@ -135,9 +139,12 @@ void GameDataProcess::ReloadLocalization() {
 }
 
 GameDataProcess::~GameDataProcess() {
-	WaitForSingleObject(hUpdateInfoThread, -1);
-	CloseHandle(hUpdateInfoThread);
-	CloseHandle(hUpdateInfoThreadLock);
+	WaitForSingleObject(hRecvUpdateInfoThread, -1);
+	WaitForSingleObject(hSendUpdateInfoThread, -1);
+	CloseHandle(hRecvUpdateInfoThread);
+	CloseHandle(hRecvUpdateInfoThreadLock);
+	CloseHandle(hSendUpdateInfoThread);
+	CloseHandle(hSendUpdateInfoThreadLock);
 }
 
 int GameDataProcess::GetVersion() {
@@ -536,41 +543,27 @@ void GameDataProcess::UpdateOverlayMessage() {
 	if (dll->hooks()->GetOverlayRenderer() == nullptr)
 		return;
 
-	/* // Debug info
-	mDpsInfo.clear();
-	mLastIdleTime = timestamp - 1000;
-	for (int i = 19; i <= 24+19-1; i++) {
-		char test[256];
-		int p = sprintf(test, "usr%i", i);
-		for (int j = 0; j < i / 2; j++)
-			p += sprintf(test + p, "a");
-		mDpsInfo[i].totalDamage.ind = 100;
-		mDpsInfo[i].totalDamage.def = 100 * i;
-		mDpsInfo[i].totalDamage.crit = min(i * i, mDpsInfo[i].totalDamage.def+ mDpsInfo[i].totalDamage.ind);
-		mDpsInfo[i].critHits = i * 2;
-		mDpsInfo[i].missHits = i;
-		mDpsInfo[i].totalHits = i * 3;
-		mDpsInfo[i].maxDamage.dmg = i * 1000;
-		mDpsInfo[i].maxDamage.isCrit = i % 2;
-		mDpsInfo[i].deaths = i;
-		mDpsInfo[i].dotHits = (int) (i*1.5);
-		mActorInfo[i].job = GetActorJobString(i);
-		mActorInfo[i].name = test;
-	}
-	//*/
 	{
 		CalculateDps(timestamp);
 
 		std::lock_guard<std::recursive_mutex> guard(dll->hooks()->GetOverlayRenderer()->GetRoot()->getLock());
 		{
-			SYSTEMTIME s1, s2;
-			Tools::MillisToLocalTime(timestamp, &s1);
-			Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
-			if (mShowTimeInfo)
-				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"%lld / LT %02d:%02d:%02d / ET %02d:%02d:%02d / ",
-				(uint64_t) dll->hooks()->GetOverlayRenderer()->GetFPS(),
+			if (mShowTimeInfo) {
+				size_t sums[4] = { 0 };
+				std::lock_guard<std::recursive_mutex> guard2(dll->process()->mSocketMapLock);
+				for (auto i = dll->process()->mRecv.begin(); i != dll->process()->mRecv.end(); ++i) sums[0] += i->second->getUsed();
+				for (auto i = dll->process()->mToRecv.begin(); i != dll->process()->mToRecv.end(); ++i) sums[1] += i->second->getUsed();
+				for (auto i = dll->process()->mSent.begin(); i != dll->process()->mSent.end(); ++i) sums[2] += i->second->getUsed();
+				for (auto i = dll->process()->mToSend.begin(); i != dll->process()->mToSend.end(); ++i) sums[3] += i->second->getUsed();
+				SYSTEMTIME s1, s2;
+				Tools::MillisToLocalTime(timestamp, &s1);
+				Tools::MillisToSystemTime((uint64_t) (timestamp*EORZEA_CONSTANT), &s2);
+				pos = swprintf(res, sizeof (tmp) / sizeof (tmp[0]), L"LT %02d:%02d:%02d ET %02d:%02d:%02d %lld %zd>>%zd %zd<<%zd\n",
 					(int) s1.wHour, (int) s1.wMinute, (int) s1.wSecond,
-					(int) s2.wHour, (int) s2.wMinute, (int) s2.wSecond);
+					(int) s2.wHour, (int) s2.wMinute, (int) s2.wSecond,
+					(uint64_t) dll->hooks()->GetOverlayRenderer()->GetFPS(),
+					sums[0], sums[1], sums[3], sums[2]);
+			}
 			if (!mDpsInfo.empty()) {
 				uint64_t dur = mLastAttack.timestamp - mLastIdleTime;
 				int total = 0;
@@ -1038,7 +1031,7 @@ void GameDataProcess::ProcessAttackInfo(int source, int target, int skill, ATTAC
 		}
 	}
 }
-void GameDataProcess::EmulateCancel(SOCKET s, int skid, int newcd, int seqid) {
+void GameDataProcess::EmulateCancel(SOCKET s, int skid, int newcd, int spent, int seqid, uint64_t when) {
 	GAME_MESSAGE nmsg;
 	nmsg.length = 0x40;
 	nmsg.actor = mSelfId;
@@ -1052,12 +1045,29 @@ void GameDataProcess::EmulateCancel(SOCKET s, int skid, int newcd, int seqid) {
 	nmsg.Combat.AbilityResponse.duration_or_skid = skid;
 	nmsg.Combat.AbilityResponse.u1 = 0x2BC;
 	nmsg.Combat.AbilityResponse.u2 = 0; // 0x246;
-	nmsg.Combat.AbilityResponse.u3 = 0; // some kind of index???
+	nmsg.Combat.AbilityResponse.u3 = spent; // time already elapsed
 	nmsg.Combat.AbilityResponse.u4 = newcd; // cooldown
 	nmsg.Combat.AbilityResponse.seqid = seqid;
 	nmsg.Combat.AbilityResponse.u6 = 0;
-	mRecvAdd[s].push(nmsg);
-	SetEvent(hUpdateInfoThreadLock);
+	mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(when, nmsg));
+	SetEvent(hRecvUpdateInfoThreadLock);
+}
+void GameDataProcess::EmulateEnableSkill(SOCKET s, uint64_t when) {
+	GAME_MESSAGE nmsg;
+	nmsg.length = 0x30;
+	nmsg.actor = mSelfId;
+	nmsg.actor_copy = mSelfId;
+	nmsg._u0 = 0xE5BF0003;
+	nmsg.message_cat1 = GAME_MESSAGE::C1_Combat;
+	nmsg.message_cat2 = version == 340 ? GAME_MESSAGE::C2_SetSkillEnabledV3 : GAME_MESSAGE::C2_SetSkillEnabledV4;
+	nmsg._u1 = 0x160000;
+	nmsg._u2 = 0;
+	// 02 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 
+	memset(nmsg.data, 0, 0x10);
+	nmsg.data[0] = 2;
+	nmsg.data[2] = 4;
+	mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(when, nmsg));
+	SetEvent(hRecvUpdateInfoThreadLock);
 }
 
 bool GameDataProcess::IsInCombat() {
@@ -1065,12 +1075,10 @@ bool GameDataProcess::IsInCombat() {
 }
 
 void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t timestamp, bool setTimestamp) {
-
 	if (setTimestamp) {
 		mServerTimestamp = timestamp;
 		mLocalTimestamp = Tools::GetLocalTimestamp();
-	} else
-		timestamp = mServerTimestamp;
+	}
 
 	GAME_MESSAGE *msg = (GAME_MESSAGE*) data;
 	switch (msg->message_cat1) {
@@ -1083,9 +1091,14 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 						if ((version == 340 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityRequestV3) ||
 							(version == 400 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityRequestV4)) {
 							if (dll->hooks()->GetOverlayRenderer()) {
-								auto conf = dll->hooks()->GetOverlayRenderer()->mConfig;
-								if (conf.ForceCancelEverySkill && IsInCombat() && FFXIVResources::IsKnownSkill(msg->Combat.AbilityRequest.skill))
-									EmulateCancel(s, msg->Combat.AbilityRequest.skill, 100, msg->Combat.AbilityRequest.seqid);
+								auto &conf = dll->hooks()->GetOverlayRenderer()->mConfig;
+								if (conf.ForceCancelEverySkill && IsInCombat() && FFXIVResources::IsKnownSkill(msg->Combat.AbilityRequest.skill)) {
+									int cd = mCachedSkillCooldown[msg->Combat.AbilityResponse.skill];
+									cd = min(max(cd, 0), 48000);
+									if (cd == 0) cd = 250;
+									EmulateCancel(s, msg->Combat.AbilityRequest.skill, cd, 0, msg->Combat.AbilityRequest.seqid);
+									mLastSkillRequest = GetTickCount64();
+								}
 							}
 						}
 						break;
@@ -1207,7 +1220,7 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 					case GAME_MESSAGE::C2_AbilityResponse:
 					{
 						if (dll->hooks()->GetOverlayRenderer()) {
-							auto conf = dll->hooks()->GetOverlayRenderer()->mConfig;
+							auto &conf = dll->hooks()->GetOverlayRenderer()->mConfig;
 							if (msg->Combat.AbilityResponse.skill > 7 &&
 								msg->Combat.AbilityResponse.duration_or_skid >= 10 &&
 								msg->Combat.AbilityResponse.duration_or_skid <= 60000 * 8 &&
@@ -1215,25 +1228,27 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 								FFXIVResources::IsKnownSkill(msg->Combat.AbilityResponse.skill) &&
 								IsInCombat()
 								) {
-								if (conf.ForceCancelEverySkill)
-									EmulateCancel(s, msg->Combat.AbilityResponse.skill, msg->Combat.AbilityResponse.duration_or_skid, msg->Combat.AbilityResponse.seqid);
+								if (conf.ForceCancelEverySkill && mLastSkillRequest) {
+									int dur = (GetTickCount64() - mLastSkillRequest) / 10;
+									dur = max(0, dur);
+									EmulateCancel(s, msg->Combat.AbilityResponse.skill, msg->Combat.AbilityResponse.duration_or_skid, dur, msg->Combat.AbilityResponse.seqid);
+									mCachedSkillCooldown[msg->Combat.AbilityResponse.skill] = msg->Combat.AbilityResponse.duration_or_skid;
+
+									uint64_t at = mLastSkillRequest + msg->Combat.AbilityResponse.duration_or_skid * 10 - 600; // enable skill 0.6sec before cast ends so that the next skill can be cast immediately
+									EmulateEnableSkill(s, at);
+
+								}
 							} else if (msg->Combat.AbilityResponse.skill == 1) {
 							}
 						}
 						break;
 					}
-					case GAME_MESSAGE::C2_UseAbilityCancelV3:
-					case GAME_MESSAGE::C2_UseAbilityCancelV4:
-						if ((version == 340 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityCancelV3) ||
-							(version == 400 && msg->message_cat2 == GAME_MESSAGE::C2_UseAbilityCancelV4)) {
-						}
-						break;
 					case GAME_MESSAGE::C2_UseAbility:
 						if (version == 340) {
 							ProcessAttackInfo(msg->actor, msg->Combat.UseAbility.target, msg->Combat.UseAbility.skill, &msg->Combat.UseAbility.attack, timestamp);
 
 							if (msg->actor == mSelfId && dll->hooks()->GetOverlayRenderer() && dll->hooks()->GetOverlayRenderer()->mConfig.ShowDamageDealtTwice && IsInCombat())
-								mRecvAdd[s].push(*msg);
+								mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(GetTickCount64(), *msg));
 						}
 						break;
 					case GAME_MESSAGE::C2_UseAoEAbility:
@@ -1247,7 +1262,7 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 									}
 							}
 							if (msg->actor == mSelfId && dll->hooks()->GetOverlayRenderer() && dll->hooks()->GetOverlayRenderer()->mConfig.ShowDamageDealtTwice && IsInCombat())
-								mRecvAdd[s].push(*msg);
+								mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(GetTickCount64(), *msg));
 						}
 						break;
 					case GAME_MESSAGE::C2_UseAbilityV4T1:
@@ -1287,7 +1302,7 @@ void GameDataProcess::ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t 
 							}
 
 							if (msg->actor == mSelfId && dll->hooks()->GetOverlayRenderer() && dll->hooks()->GetOverlayRenderer()->mConfig.ShowDamageDealtTwice && IsInCombat())
-								mRecvAdd[s].push(*msg);
+								mRecvAdd[s].push(std::pair<uint64_t, GAME_MESSAGE>(GetTickCount64(), *msg));
 						}
 						break;
 					default:
@@ -1416,17 +1431,25 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 	size_t lengthOffset = offsetof(GAME_PACKET, length) + sizeof(GAME_PACKET::length);
 	size_t dataOffset = offsetof(GAME_PACKET, data);
 
+	int lastPacketError = 0;
+
 	while (in.getUsed() >= lengthOffset) {
 		in.peek(&packetpeek, lengthOffset);
 		if ((packetpeek.signature != 0x41A05252 && (packetpeek.signature_2[0] | packetpeek.signature_2[1])) || packetpeek.length > maxLength || packetpeek.length < dataOffset) {
 			char t;
 			in.read(&t, 1);
 			out.write(&t, 1);
+			if (lastPacketError != 1)
+				dll->addChat("/e packet error: bad signature");
+			lastPacketError = 1;
 		} else if (in.getUsed() < packetpeek.length) {
 			if (mLastRecv + 200 < GetTickCount64()) { // stall
 				char t;
 				in.read(&t, 1);
 				out.write(&t, 1);
+				if (lastPacketError != 2)
+					dll->addChat("/e packet error: stall");
+				lastPacketError = 2;
 			}
 		} else {
 			mLastRecv = GetTickCount64();
@@ -1469,6 +1492,7 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 							out.write(packet, packet->length);
 							free(data);
 							free(packet);
+							dll->addChat("/e packet error: inflate");
 							continue;
 						}
 					}
@@ -1499,12 +1523,21 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 	}
 
 	if (setTimestamp && mInboundPacketTemplate.signature == 0x41A05252) {
-		GAME_MESSAGE m;
-		std::vector<GAME_MESSAGE> messages;
+		std::vector<std::pair<uint64_t, GAME_MESSAGE>> messages;
 		int len = 0;
+		std::pair<uint64_t, GAME_MESSAGE> m;
 		while (mRecvAdd[s].tryPop(&m)) {
 			messages.push_back(m);
-			len += m.length;
+		}
+		for (auto i = messages.begin(); i != messages.end(); ) {
+			if (i->first <= GetTickCount64()) {
+				len += i->second.length;
+				// dll->addChat("/e pull: @ %llx / %llx", i->first, GetTickCount64());
+				++i;
+			} else {
+				mRecvAdd[s].push(*i);
+				i = messages.erase(i);
+			}
 		}
 		if (!messages.empty()) {
 			uint64_t timestamp = mServerTimestamp - mLocalTimestamp + Tools::GetLocalTimestamp();
@@ -1513,8 +1546,8 @@ void GameDataProcess::ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, S
 			mInboundPacketTemplate.is_gzip = false;
 			mInboundPacketTemplate.length = dataOffset + len;
 			out.write(&mInboundPacketTemplate, dataOffset);
-			for (auto i = messages.cbegin(); i != messages.cend(); ++i) {
-				auto msg = *i;
+			for (auto i = messages.begin(); i != messages.end(); ++i) {
+				auto &msg = i->second;
 				msg.seqid = mInboundSequenceId;
 				out.write(&msg, msg.length);
 			}
@@ -1534,38 +1567,32 @@ void GameDataProcess::TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out
 	}
 }
 
-void GameDataProcess::UpdateInfoThread() {
+void GameDataProcess::RecvUpdateInfoThread() {
 	int mapClearer = 0;
+	bool processed = false;
 	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
-		WaitForSingleObject(hUpdateInfoThreadLock, 50);
+		if (!processed)
+			WaitForSingleObject(hRecvUpdateInfoThreadLock, 50);
+		processed = false;
 		ResolveUsers();
-		std::map<SOCKET, int> availSocks;
+		std::set<SOCKET> availSocks;
 		{
 			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
 			for (auto i = mRecv.cbegin(); i != mRecv.cend(); ++i)
 				if (!i->second->isEmpty())
-					availSocks[i->first] |= 1;
-			for (auto i = mSent.cbegin(); i != mSent.cend(); ++i)
-				if (!i->second->isEmpty())
-					availSocks[i->first] |= 2;
+					availSocks.insert(i->first);
 		}
-		for (auto s = availSocks.cbegin(); s != availSocks.cend(); ++s) {
+		for (auto ss = availSocks.cbegin(); ss != availSocks.cend(); ++ss) {
+			SOCKET s = *ss;
 			Tools::ByteQueue *need_process;
-			if ((s->second & 1) && !(need_process = mRecv[s->first])->isEmpty()) {
+			if (!(need_process = mRecv[s])->isEmpty()) {
 				Tools::ByteQueue *torecv;
 				{
 					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
-					torecv = mToRecv[s->first] ? mToRecv[s->first] : (mToRecv[s->first] = new Tools::ByteQueue());
+					torecv = mToRecv[s] ? mToRecv[s] : (mToRecv[s] = new Tools::ByteQueue());
 				}
-				TryParsePacket(*need_process, *(torecv), s->first, true);
-			}
-			if ((s->second & 2) && !(need_process = mSent[s->first])->isEmpty()) {
-				Tools::ByteQueue *tosend;
-				{
-					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
-					tosend = mToSend[s->first] ? mToSend[s->first] : (mToSend[s->first] = new Tools::ByteQueue());
-				}
-				TryParsePacket(*need_process, *(tosend), s->first, false);
+				TryParsePacket(*need_process, *(torecv), s, true);
+				processed = true;
 			}
 		}
 		if (++mapClearer > 100) {
@@ -1585,6 +1612,58 @@ void GameDataProcess::UpdateInfoThread() {
 				} else
 					++i;
 			}
+		}
+		UpdateOverlayMessage();
+	}
+	TerminateThread(GetCurrentThread(), 0);
+}
+
+
+void GameDataProcess::SendUpdateInfoThread() {
+	int mapClearer = 0;
+	bool processed = false;
+	while (WaitForSingleObject(hUnloadEvent, 0) == WAIT_TIMEOUT) {
+		if (!processed)
+			WaitForSingleObject(hSendUpdateInfoThreadLock, 50);
+		processed = false;
+		std::set<SOCKET> availSocks;
+		{
+			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			for (auto i = mSent.cbegin(); i != mSent.cend(); ++i)
+				if (!i->second->isEmpty())
+					availSocks.insert(i->first);
+		}
+		for (auto ss = availSocks.cbegin(); ss != availSocks.cend(); ++ss) {
+			SOCKET s = *ss;
+			Tools::ByteQueue *need_process;
+			if (!(need_process = mSent[s])->isEmpty()) {
+				Tools::ByteQueue *tosend;
+				{
+					std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+					tosend = mToSend[s] ? mToSend[s] : (mToSend[s] = new Tools::ByteQueue());
+				}
+				processed = true;
+				TryParsePacket(*need_process, *(tosend), s, false);
+
+				if (tosend->getUsed() > 0) {
+					DWORD result = 0, flags = 0;
+					int buf2len = tosend->getUsed();
+					char* buf2 = new char[buf2len];
+					tosend->peek(buf2, buf2len);
+					WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
+					Tools::DebugPrint(L"WSASend in SendUpdateInfoThread %d: %d\n", (int) s, buf2len);
+					if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
+						if (WSAGetLastError() == WSAEWOULDBLOCK) {
+						}
+					} else
+						tosend->waste(buf2len);
+					delete[] buf2;
+				}
+			}
+		}
+		if (++mapClearer > 100) {
+			std::lock_guard<std::recursive_mutex> guard(mSocketMapLock);
+			mapClearer = 0;
 			for (auto i = mSent.begin(); i != mSent.end(); ) {
 				if (i->second->isStall()) {
 					delete i->second;
@@ -1601,7 +1680,6 @@ void GameDataProcess::UpdateInfoThread() {
 					++i;
 			}
 		}
-		UpdateOverlayMessage();
 	}
 	TerminateThread(GetCurrentThread(), 0);
 }

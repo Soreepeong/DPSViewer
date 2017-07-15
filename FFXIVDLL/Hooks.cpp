@@ -236,13 +236,50 @@ int WINAPI Hooks::hook_socket_send(SOCKET s, const char* buf, int len, int flags
 		if (snd == nullptr) snd = dll->process()->mToSend[s] = new Tools::ByteQueue();
 		if (sndq == nullptr) sndq = dll->process()->mSent[s] = new Tools::ByteQueue();
 
-		if (dll->isUnloading() && snd->isEmpty() && sndq->isEmpty()) {
-			WSABUF buffer = { static_cast<ULONG>(len), const_cast<CHAR *>(buf) };
-			if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) != 0)
-				len = SOCKET_ERROR;
-			Tools::DebugPrint(L"Unloading: send %d\n", (int) s);
+		if ((dll->isUnloading() && snd->isEmpty() && sndq->isEmpty()) || WaitForSingleObject(dll->process()->hSendUpdateInfoThread, 0) != WAIT_TIMEOUT) {
+
+
+			if (snd->getUsed() > 0) {
+				DWORD result = 0, flags = 0;
+				int buf2len = snd->getUsed();
+				char* buf2 = new char[buf2len];
+				snd->peek(buf2, buf2len);
+				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
+				Tools::DebugPrint(L"WSASend in send %d: %d\n", (int) s, buf2len);
+				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
+					if (WSAGetLastError() != WSAEWOULDBLOCK) {
+						Tools::DebugPrint(L" -> error %d\n", WSAGetLastError());
+						len = SOCKET_ERROR;
+					}
+				} else
+					snd->waste(buf2len);
+				delete[] buf2;
+			}
+			if (len>0 && dll->process()->mSent.find(s) != dll->process()->mSent.end() && dll->process()->mSent[s]->getUsed()) {
+				snd = dll->process()->mSent[s];
+				DWORD result = 0, flags = 0;
+				int buf2len = snd->getUsed();
+				char* buf2 = new char[buf2len];
+				snd->peek(buf2, buf2len);
+				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
+				Tools::DebugPrint(L"WSASend in send %d: %d\n", (int) s, buf2len);
+				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
+					if (WSAGetLastError() != WSAEWOULDBLOCK) {
+						Tools::DebugPrint(L" -> error %d\n", WSAGetLastError());
+						len = SOCKET_ERROR;
+					}
+				} else
+					snd->waste(buf2len);
+				delete[] buf2;
+			}
+			if (len > 0) {
+				WSABUF buffer = { static_cast<ULONG>(len), const_cast<CHAR *>(buf) };
+				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) != 0)
+					len = SOCKET_ERROR;
+				// Tools::DebugPrint(L"Unloading: send %d\n", (int) s);
+			}
 		} else {
-			Tools::DebugPrint(L"send buffer put %d: %d\n", (int) s, len);
+			// Tools::DebugPrint(L"send buffer put %d: %d\n", (int) s, len);
 			dll->process()->OnSend(s, buf, len);
 		}
 	}
@@ -269,7 +306,7 @@ int WINAPI Hooks::hook_socket_recv(SOCKET s, char* buf, int len, int flags) {
 			if (ioctlsocket(s, FIONREAD, &recvlen) == SOCKET_ERROR)
 				recvlen = SOCKET_ERROR;
 			else if (recvlen > 0) {
-				int i = 5;
+				int i = 10;
 				do {
 					WSABUF buffer = { static_cast<ULONG>(len), buf };
 					if (WSARecv(s, &buffer, 1, &recvlen, &dflags, nullptr, nullptr) == SOCKET_ERROR) {
@@ -321,39 +358,6 @@ int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds
 		} else
 			take = true;
 
-		for (auto ss = dll->process()->mToSend.cbegin(); ss != dll->process()->mToSend.cend(); ++ss) {
-			SOCKET s = ss->first;
-			Tools::ByteQueue *snd = ss->second;
-			
-			if (snd->getUsed() > 0) {
-				DWORD result = 0, flags = 0;
-				int buf2len = snd->getUsed();
-				char* buf2 = new char[buf2len];
-				snd->read(buf2, buf2len);
-				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
-				Tools::DebugPrint(L"WSASend in select %d: %d\n", (int) s, buf2len);
-				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
-					if (WSAGetLastError() != WSAEWOULDBLOCK)
-						err = true;
-				}
-				delete[] buf2;
-			}
-			if (dll->isUnloading() && dll->process()->mSent.find(s) != dll->process()->mSent.end()) {
-				snd = dll->process()->mSent[s];
-				DWORD result = 0, flags = 0;
-				int buf2len = snd->getUsed();
-				char* buf2 = new char[buf2len];
-				snd->read(buf2, buf2len);
-				WSABUF buffer = { static_cast<ULONG>(buf2len), const_cast<CHAR *>(buf2) };
-				Tools::DebugPrint(L"WSASend in select %d: %d\n", (int) s, buf2len);
-				if (WSASend(s, &buffer, 1, &result, flags, nullptr, nullptr) == SOCKET_ERROR) {
-					if (WSAGetLastError() != WSAEWOULDBLOCK)
-						err = true;
-				}
-				delete[] buf2;
-			}
-		}
-
 		if (take) {
 			if (readfds->fd_count) {
 				res -= readfds->fd_count;
@@ -387,7 +391,7 @@ int WINAPI Hooks::hook_socket_select(int nfds, fd_set *readfds, fd_set *writefds
 				if (dll->process()->mToRecv.find(s) == dll->process()->mToRecv.end())
 					continue;
 				if (dll->process()->mToRecv[s]->getUsed() && res != SOCKET_ERROR) {
-					Tools::DebugPrint(L"select read avail %d: %d\n", s, (int) dll->process()->mToRecv[s]->getUsed());
+					// Tools::DebugPrint(L"select read avail %d: %d\n", s, (int) dll->process()->mToRecv[s]->getUsed());
 					FD_SET(s, readfds);
 					res++;
 				}

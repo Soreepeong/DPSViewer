@@ -173,8 +173,8 @@ struct GAME_MESSAGE {
 		C2_UseAbilityV4T24 = 0x00F6,
 		C2_UseAbilityV4T32 = 0x00F7,
 		C2_StartCasting = 0x0110,
-		C2_UseAbilityCancelV3 = 0x0103,
-		C2_UseAbilityCancelV4 = 0x0121,
+		C2_SetSkillEnabledV3 = 0x0103,
+		C2_SetSkillEnabledV4 = 0x0121,
 		C2_AddBuff = 0x0141,
 		C2_Info1 = 0x0142,
 		C2_AbilityResponse = 0x0143,
@@ -353,9 +353,12 @@ private:
 	std::recursive_mutex mSocketMapLock;
 	std::map<SOCKET, Tools::ByteQueue*> mSent, mRecv;
 	std::map<SOCKET, Tools::ByteQueue*> mToSend, mToRecv;
-	std::map<SOCKET, Tools::bqueue<GAME_MESSAGE>> mRecvAdd;
+	std::map<SOCKET, Tools::bqueue<std::pair<uint64_t, GAME_MESSAGE>>> mRecvAdd;
 	GAME_PACKET mInboundPacketTemplate;
 	int mInboundSequenceId;
+
+	uint64_t mLastSkillRequest;
+	std::map<int, int> mCachedSkillCooldown;
 
 	int mSelfId;
 	std::deque<TEMPBUFF> mActiveDoT;
@@ -408,15 +411,21 @@ private:
 
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO *info, uint64_t timestamp);
 	void ProcessAttackInfo(int source, int target, int skill, ATTACK_INFO_V4 *info, uint64_t timestamp);
-	void EmulateCancel(SOCKET s, int skillid, int newcd, int seqid);
+	void EmulateCancel(SOCKET s, int skillid, int newcd, int spent, int seqid, uint64_t when = GetTickCount64());
+	void EmulateEnableSkill(SOCKET s, uint64_t when = GetTickCount64());
 	void ProcessGameMessage(SOCKET s, GAME_MESSAGE *data, uint64_t timestamp, bool setTimestamp);
 	void ParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp);
 	void TryParsePacket(Tools::ByteQueue &in, Tools::ByteQueue &out, SOCKET s, bool setTimestamp);
 
-	HANDLE hUpdateInfoThread;
-	HANDLE hUpdateInfoThreadLock;
-	void UpdateInfoThread();
-	static DWORD WINAPI UpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*) p)->UpdateInfoThread(); return 0; }
+	HANDLE hRecvUpdateInfoThread;
+	HANDLE hRecvUpdateInfoThreadLock;
+	void RecvUpdateInfoThread();
+	static DWORD WINAPI RecvUpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*) p)->RecvUpdateInfoThread(); return 0; }
+
+	HANDLE hSendUpdateInfoThread;
+	HANDLE hSendUpdateInfoThreadLock;
+	void SendUpdateInfoThread();
+	static DWORD WINAPI SendUpdateInfoThreadExternal(PVOID p) { ((GameDataProcess*) p)->SendUpdateInfoThread(); return 0; }
 
 public:
 	GameDataProcess(FFXIVDLL *dll, HANDLE unloadEvent);
@@ -444,7 +453,7 @@ public:
 		}
 		bq->write(buf, len);
 		if (bq->getUsed() >= 28)
-			SetEvent(hUpdateInfoThreadLock);
+			SetEvent(hRecvUpdateInfoThreadLock);
 	}
 
 	void OnSend(SOCKET s, const char* buf, int len) {
@@ -458,6 +467,6 @@ public:
 		}
 		bq->write(buf, len);
 		if (bq->getUsed() >= 28)
-			SetEvent(hUpdateInfoThreadLock);
+			SetEvent(hSendUpdateInfoThreadLock);
 	}
 };
