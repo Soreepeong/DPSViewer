@@ -617,7 +617,7 @@ LRESULT CALLBACK Hooks::hook_ffxivWndProc(HWND hWnd, UINT iMessage, WPARAM wPara
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		case WM_CHAR:
-			if (wParam == VK_SNAPSHOT) {
+			if (wParam == VK_SNAPSHOT && (int(lParam & (0xff << 16)) >> 16) == 55) {
 				pOverlayRenderer->CaptureScreen();
 			} else if (io.WantCaptureKeyboard || io.WantTextInput)
 				break;
