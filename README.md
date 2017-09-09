@@ -6,7 +6,7 @@
 ![Chat](https://raw.githubusercontent.com/Soreepeong/DPSViewer/master/readme-images/en-chat-translate.png)
 
 
-DPSViewer is a lightweight DPS meter for FFXIV (v4.05 for Global version and v3.41 for Korean version).
+DPSViewer is a lightweight DPS meter for FFXIV (v4.05 for Global version and v3.5 for Korean version).
 It supports both DX9 and DX11 versions.
 
   - See the DPS of everyone around you
@@ -33,7 +33,7 @@ About using 2 oGCD skills: The program will make the client think that the skill
 # DPSViewer (한국어 설명)
 
 DPSViewer는 파이널 판타지 14를 위한 가벼운 DPS 미터 프로그램입니다.
-글로벌 서버는 v4.05, 한국 서버는 v3.41 까지 지원합니다. 파이널 판타지 업데이트 이후에는 사용 불가능해지니 그 때는 이 프로그램의 업데이트를 기다리셔야 합니다.
+글로벌 서버는 v4.05, 한국 서버는 v3.5 까지 지원합니다. 파이널 판타지 업데이트 이후에는 사용 불가능해지니 그 때는 이 프로그램의 업데이트를 기다리셔야 합니다.
 현재 DX9 및 DX11 버전을 지원합니다.
 
   - 주변 모두의 DPS 보기.
