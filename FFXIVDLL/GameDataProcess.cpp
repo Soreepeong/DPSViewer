@@ -389,11 +389,7 @@ bool GameDataProcess::IsParseTarget(uint32_t id) {
 						uint32_t _u1[3];
 						char* name;
 					};
-#ifdef _WIN64
 					char _u[544];
-#else
-					char _u[528];
-#endif;
 				};
 			} members[24];
 		};

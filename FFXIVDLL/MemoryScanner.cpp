@@ -26,7 +26,7 @@ textSectionFound:
 		ActorMap.push_back(DataSignature("48c1e8033dffff0000742b3da80100007324488d0d", 21, true, 2, new int[2]{ 0, 0 }));
 		TargetMap.push_back(DataSignature("400fb6f684c0410f45f5488d0d", 13, true, 2, new int[2]{ 0, 184 }));
 		PartyMap.push_back(DataSignature("85d27508b0014883c4205bc3488d0d", 15, true, 2, new int[2]{ 0, 16 }));
-		Struct.Actor = { 116, 48, 132, 138, 5336 };
+		Struct.Actor = { 116, 48, 132, 140, 5184 };
 		Struct.Target = { 0, 32, 80 };
 	} else {
 		ActorMap.push_back(DataSignature("488b03488bcbff90a0000000888391000000488d0d", 21, true, 2, new int[2]{ 0, 0 }));
@@ -41,7 +41,7 @@ textSectionFound:
 		ActorMap.push_back(DataSignature("81feffff0000743581fe58010000732d8b3cb5", 19, false, 2, new int[2]{ 0, 0 }));
 		TargetMap.push_back(DataSignature("750e85d2750ab9", 7, false, 2, new int[2]{ 0, 108 }));
 		PartyMap.push_back(DataSignature("85c074178b407450b9", 9, false, 2, new int[2]{ 0, 16 }));
-		Struct.Actor = { 116, 48, 132, 138, 4656 };
+		Struct.Actor = { 116, 48, 132, 140, 4504 };
 		Struct.Target = { 0, 16, 48 };
 	} else {
 		ActorMap.push_back(DataSignature("CCCCCCCCCCCCCCCCB801000000833C85", 16, false, 2, new int[2]{ 0, 0 }));
