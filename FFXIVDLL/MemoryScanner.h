@@ -3,6 +3,7 @@
 #include <vector>
 #include <Windows.h>
 #include <mutex>
+#include <functional>
 
 typedef std::function<void()> MemoryScannerCallback;
 
