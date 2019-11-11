@@ -17,6 +17,7 @@
 #include "Hooks.h"
 #include <psapi.h>
 #include "FFXIVResources.h"
+#include <sstream>
 
 #define LIGHTER_COLOR(color,how) (((color)&0xFF000000) | (min(255, max(0, (((color)>>16)&0xFF)+(how)))<<16) | (min(255, max(0, (((color)>>8)&0xFF)+(how)))<<8) | (min(255, max(0, (((color)>>0)&0xFF)+(how)))<<0)))
 
